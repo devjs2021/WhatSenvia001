@@ -15,9 +15,11 @@ WORKDIR /app
 ENV NODE_ENV=production
 
 COPY package*.json ./
-RUN npm ci --omit=dev
+RUN npm ci
 
 COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/src ./src
+COPY --from=builder /app/drizzle.config.ts ./
 
 # WhatsApp sessions directory
 RUN mkdir -p sessions
