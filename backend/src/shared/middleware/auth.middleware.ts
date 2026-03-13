@@ -11,16 +11,10 @@ export interface AuthUser {
   role: string; // "admin" | "user"
 }
 
-declare module "fastify" {
-  interface FastifyRequest {
-    user: AuthUser;
-  }
-}
-
 export async function authGuard(request: FastifyRequest, reply: FastifyReply) {
   try {
     const decoded = await request.jwtVerify<AuthUser>();
-    request.user = decoded;
+    (request as any).user = decoded;
   } catch (err) {
     reply.status(401).send({ error: "Unauthorized" });
   }
@@ -29,7 +23,7 @@ export async function authGuard(request: FastifyRequest, reply: FastifyReply) {
 export async function adminGuard(request: FastifyRequest, reply: FastifyReply) {
   try {
     const decoded = await request.jwtVerify<AuthUser>();
-    request.user = decoded;
+    (request as any).user = decoded;
     if (decoded.role !== "admin") {
       reply.status(403).send({ error: "Admin access required" });
     }
@@ -41,10 +35,11 @@ export async function adminGuard(request: FastifyRequest, reply: FastifyReply) {
 // Factory: creates a guard that checks if the user's license has a specific feature enabled
 export function licenseGuard(feature: keyof LicenseFeatures) {
   return async (request: FastifyRequest, reply: FastifyReply) => {
+    const user = (request as any).user as AuthUser | undefined;
     // Admin bypasses license checks
-    if (request.user?.role === "admin") return;
+    if (user?.role === "admin") return;
 
-    const userId = request.user?.id;
+    const userId = user?.id;
     if (!userId) {
       return reply.status(401).send({ error: "Unauthorized" });
     }

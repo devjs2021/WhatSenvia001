@@ -68,7 +68,7 @@ export class MetaCloudProvider implements IWhatsAppProvider {
         body: JSON.stringify(body),
       });
 
-      const data = await response.json();
+      const data: any = await response.json();
 
       if (!response.ok) {
         return { success: false, error: data.error?.message || "Meta API error" };

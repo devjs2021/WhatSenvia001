@@ -57,7 +57,7 @@ export class CampaignService {
   async update(userId: string, campaignId: string, input: UpdateCampaignInput) {
     const [campaign] = await db
       .update(campaigns)
-      .set({ ...input, updatedAt: new Date() })
+      .set({ ...input, scheduledAt: input.scheduledAt ? new Date(input.scheduledAt) : undefined, updatedAt: new Date() })
       .where(and(eq(campaigns.id, campaignId), eq(campaigns.userId, userId)))
       .returning();
 
