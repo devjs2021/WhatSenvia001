@@ -1,0 +1,18 @@
+{
+  "name": "whatsenvia",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "docker compose up -d && concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "install:all": "cd backend && npm install && cd ../frontend && npm install",
+    "build": "cd backend && npm run build && cd ../frontend && npm run build",
+    "db:up": "docker compose up -d",
+    "db:down": "docker compose down",
+    "db:push": "cd backend && npm run db:push"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  }
+}
