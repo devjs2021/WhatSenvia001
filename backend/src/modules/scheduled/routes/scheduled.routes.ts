@@ -5,19 +5,22 @@ import { scheduledService } from "../services/scheduled.service.js";
 export async function scheduledRoutes(app: FastifyInstance) {
   app.addHook("preHandler", authGuard);
 
-  app.get("/", async () => {
-    const data = await scheduledService.list();
+  app.get("/", async (request: FastifyRequest) => {
+    const userId = (request as any).user.id as string;
+    const data = await scheduledService.list(userId);
     return { success: true, data };
   });
 
   app.get("/:id", async (request: FastifyRequest, reply: FastifyReply) => {
     const { id } = request.params as { id: string };
-    const campaign = await scheduledService.getById(id);
+    const userId = (request as any).user.id as string;
+    const campaign = await scheduledService.getById(id, userId);
     if (!campaign) return reply.status(404).send({ error: "Campaña programada no encontrada" });
     return { success: true, data: campaign };
   });
 
   app.post("/", { preHandler: [licenseGuard("scheduledCampaigns")] }, async (request: FastifyRequest, reply: FastifyReply) => {
+    const userId = (request as any).user.id as string;
     const { sessionId, name, message, contacts, scheduledAt, contactListId, options } = request.body as {
       sessionId: string;
       name: string;
@@ -39,6 +42,7 @@ export async function scheduledRoutes(app: FastifyInstance) {
     if (scheduledDate <= new Date()) return reply.status(422).send({ error: "La fecha debe ser en el futuro" });
 
     const campaign = await scheduledService.create({
+      userId,
       sessionId,
       name: name.trim(),
       message,
@@ -53,17 +57,19 @@ export async function scheduledRoutes(app: FastifyInstance) {
 
   app.post("/:id/cancel", async (request: FastifyRequest, reply: FastifyReply) => {
     const { id } = request.params as { id: string };
-    const campaign = await scheduledService.getById(id);
+    const userId = (request as any).user.id as string;
+    const campaign = await scheduledService.getById(id, userId);
     if (!campaign) return reply.status(404).send({ error: "Campaña no encontrada" });
     if (campaign.status !== "pending") return reply.status(422).send({ error: "Solo se pueden cancelar campañas pendientes" });
 
-    const updated = await scheduledService.cancel(id);
+    const updated = await scheduledService.cancel(id, userId);
     return { success: true, data: updated };
   });
 
   app.delete("/:id", async (request: FastifyRequest, reply: FastifyReply) => {
     const { id } = request.params as { id: string };
-    const deleted = await scheduledService.delete(id);
+    const userId = (request as any).user.id as string;
+    const deleted = await scheduledService.delete(id, userId);
     if (!deleted) return reply.status(404).send({ error: "Campaña no encontrada" });
     return { success: true };
   });

@@ -1,9 +1,10 @@
 import { db } from "../../../config/database.js";
 import { scheduledCampaigns } from "../../../infrastructure/database/schema/scheduled-campaigns.js";
-import { eq, lte, desc } from "drizzle-orm";
+import { and, eq, lte, desc } from "drizzle-orm";
 
 export class ScheduledService {
   async create(data: {
+    userId: string;
     sessionId: string;
     name: string;
     message: string;
@@ -15,6 +16,7 @@ export class ScheduledService {
     const [campaign] = await db
       .insert(scheduledCampaigns)
       .values({
+        userId: data.userId,
         sessionId: data.sessionId,
         name: data.name,
         message: data.message,
@@ -29,37 +31,38 @@ export class ScheduledService {
     return campaign;
   }
 
-  async list() {
+  async list(userId: string) {
     return db
       .select()
       .from(scheduledCampaigns)
+      .where(eq(scheduledCampaigns.userId, userId))
       .orderBy(desc(scheduledCampaigns.scheduledAt));
   }
 
-  async getById(id: string) {
+  async getById(id: string, userId: string) {
     const [campaign] = await db
       .select()
       .from(scheduledCampaigns)
-      .where(eq(scheduledCampaigns.id, id))
+      .where(and(eq(scheduledCampaigns.id, id), eq(scheduledCampaigns.userId, userId)))
       .limit(1);
 
     return campaign || null;
   }
 
-  async cancel(id: string) {
+  async cancel(id: string, userId: string) {
     const [updated] = await db
       .update(scheduledCampaigns)
       .set({ status: "cancelled" })
-      .where(eq(scheduledCampaigns.id, id))
+      .where(and(eq(scheduledCampaigns.id, id), eq(scheduledCampaigns.userId, userId)))
       .returning();
 
     return updated || null;
   }
 
-  async delete(id: string) {
+  async delete(id: string, userId: string) {
     const [deleted] = await db
       .delete(scheduledCampaigns)
-      .where(eq(scheduledCampaigns.id, id))
+      .where(and(eq(scheduledCampaigns.id, id), eq(scheduledCampaigns.userId, userId)))
       .returning({ id: scheduledCampaigns.id });
 
     return deleted || null;
@@ -70,7 +73,10 @@ export class ScheduledService {
       .select()
       .from(scheduledCampaigns)
       .where(
-        eq(scheduledCampaigns.status, "pending")
+        and(
+          eq(scheduledCampaigns.status, "pending"),
+          lte(scheduledCampaigns.scheduledAt, new Date())
+        )
       );
   }
 

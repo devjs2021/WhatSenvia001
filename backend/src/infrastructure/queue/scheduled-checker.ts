@@ -8,11 +8,8 @@ import { eq } from "drizzle-orm";
 async function checkScheduledCampaigns() {
   try {
     const pending = await scheduledService.getPending();
-    const now = new Date();
 
     for (const campaign of pending) {
-      if (new Date(campaign.scheduledAt) > now) continue;
-
       logger.info({ id: campaign.id, name: campaign.name }, "Executing scheduled campaign");
 
       await scheduledService.markRunning(campaign.id);

@@ -1,7 +1,9 @@
 import { pgTable, uuid, varchar, timestamp, text, integer, jsonb } from "drizzle-orm/pg-core";
+import { users } from "./users";
 
 export const scheduledCampaigns = pgTable("scheduled_campaigns", {
   id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   sessionId: uuid("session_id").notNull(),
   name: varchar("name", { length: 255 }).notNull(),
   message: text("message").notNull(),
