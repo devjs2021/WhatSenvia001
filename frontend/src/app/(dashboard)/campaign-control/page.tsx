@@ -232,11 +232,11 @@ export default function CampaignControlPage() {
       : 0;
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-4 md:space-y-6">
       <div className="flex items-center gap-3">
-        <Shield className="h-7 w-7 text-primary" />
+        <Shield className="h-5 w-5 md:h-7 md:w-7 text-primary" />
         <div>
-          <h1 className="text-2xl font-bold">Control de Campanas</h1>
+          <h1 className="text-lg md:text-xl font-bold">Control de Campanas</h1>
           <p className="text-sm text-muted-foreground">
             Configura limites, calentamiento, variaciones y tiempos de espera
           </p>
@@ -264,7 +264,7 @@ export default function CampaignControlPage() {
 
             {config.dailyLimit.enabled && (
               <>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <label className="text-sm font-medium">Maximo de mensajes por dia</label>
                     <Input

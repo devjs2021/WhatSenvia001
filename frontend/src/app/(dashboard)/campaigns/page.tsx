@@ -222,7 +222,7 @@ export default function CampaignsPage() {
   const isConnected = selectedSession?.status === "connected";
 
   return (
-    <div className="bg-gray-50/50 dark:bg-gray-950/50 p-6 space-y-4">
+    <div className="bg-gray-50/50 dark:bg-gray-950/50 p-3 md:p-6 space-y-3 md:space-y-4">
 
       {/* Header */}
       <div>
@@ -231,7 +231,7 @@ export default function CampaignsPage() {
       </div>
 
       {/* Barra de configuración compacta */}
-      <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm px-5 py-3 flex items-center gap-0 divide-x divide-gray-100 dark:divide-gray-800">
+      <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm px-3 md:px-5 py-3 flex flex-col md:flex-row md:items-center gap-3 md:gap-0 md:divide-x divide-gray-100 dark:divide-gray-800">
 
         {/* Dispositivo */}
         <div className="flex items-center gap-3 pr-5 min-w-0 flex-1">
@@ -321,7 +321,7 @@ export default function CampaignsPage() {
       </div>
 
       {/* Main two-column section */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
         {/* Destinatarios */}
         <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-5">
@@ -579,7 +579,7 @@ export default function CampaignsPage() {
       </div>
 
       {/* Send Bar */}
-      <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm px-5 py-3 flex items-center justify-between">
+      <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm px-3 md:px-5 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-4 text-xs text-gray-500">
           <span><span className="font-semibold text-gray-900 dark:text-gray-100">{totalRecipients}</span> destinatarios</span>
           <span className="text-gray-200 dark:text-gray-700">·</span>

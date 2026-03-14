@@ -122,11 +122,11 @@ export default function PollResultsPage() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Resultados de Encuestas</h1>
+          <h1 className="text-lg md:text-xl font-semibold">Resultados de Encuestas</h1>
           <p className="text-muted-foreground">Analiza las respuestas y segmenta tu audiencia</p>
         </div>
         <Button
@@ -143,9 +143,9 @@ export default function PollResultsPage() {
         </Button>
       </div>
 
-      <div className="flex gap-6">
+      <div className="flex flex-col md:flex-row gap-4 md:gap-6">
         {/* Left sidebar - Campaign list */}
-        <div className="w-72 space-y-2">
+        <div className="w-full md:w-72 space-y-2">
           <h3 className="text-sm font-semibold text-primary uppercase tracking-wide mb-2">
             Campanas Recientes
           </h3>

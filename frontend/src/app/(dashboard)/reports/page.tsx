@@ -103,8 +103,8 @@ export default function ReportsPage() {
 
   if (statsLoading || weeklyLoading) {
     return (
-      <div className="space-y-6">
-        <h1 className="text-2xl font-bold">Reportes</h1>
+      <div className="space-y-4 md:space-y-6">
+        <h1 className="text-lg md:text-xl font-semibold">Reportes</h1>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {[...Array(4)].map((_, i) => (
             <Card key={i} className="animate-pulse">
@@ -144,10 +144,10 @@ export default function ReportsPage() {
   const maxCount = Math.max(...chartData.map((d) => d.count), 1);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold">Reportes</h1>
+        <h1 className="text-lg md:text-xl font-semibold">Reportes</h1>
         <p className="text-muted-foreground text-sm">
           Metricas y estadisticas de tu cuenta
         </p>

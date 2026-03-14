@@ -216,16 +216,16 @@ export default function ImportPage() {
   const previewRows = rows.slice(0, 5);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Importar Contactos</h1>
+        <h1 className="text-lg md:text-xl font-semibold">Importar Contactos</h1>
         <p className="text-muted-foreground text-sm">
           Importa contactos desde archivos CSV, datos pegados o Google Sheets
         </p>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 border-b">
+      <div className="flex gap-2 border-b overflow-x-auto">
         {tabs.map((tab) => (
           <button
             key={tab.id}

@@ -229,13 +229,13 @@ export default function ContactsPage() {
   const pagination = data?.pagination;
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-4 md:space-y-6">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Contactos</h1>
-          <p className="text-muted-foreground">Gestiona contactos y listas para envios masivos</p>
+          <h1 className="text-lg md:text-xl font-semibold">Contactos</h1>
+          <p className="text-sm text-muted-foreground">Gestiona contactos y listas para envios masivos</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {tab === "contacts" ? (
             <>
               <Button variant="outline" size="sm" onClick={() => { setShowImport(!showImport); setShowCreate(false); }}>
@@ -345,12 +345,12 @@ export default function ContactsPage() {
             <Card>
               <CardHeader><CardTitle className="text-lg">Nuevo Contacto</CardTitle></CardHeader>
               <CardContent>
-                <form onSubmit={handleCreate} className="grid grid-cols-2 gap-4">
+                <form onSubmit={handleCreate} className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <Input placeholder="Telefono (ej: 573001234567)" value={form.phone} onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value }))} required />
                   <Input placeholder="Nombre" value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} />
                   <Input placeholder="Email" type="email" value={form.email} onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))} />
                   <Input placeholder="Tags (separados por coma)" value={form.tags} onChange={(e) => setForm((p) => ({ ...p, tags: e.target.value }))} />
-                  <div className="col-span-2 flex justify-end gap-2">
+                  <div className="col-span-1 md:col-span-2 flex justify-end gap-2">
                     <Button type="button" variant="outline" onClick={() => setShowCreate(false)}>Cancelar</Button>
                     <Button type="submit" disabled={createMutation.isPending}>
                       {createMutation.isPending ? "Creando..." : "Crear Contacto"}
@@ -371,7 +371,7 @@ export default function ContactsPage() {
 
           <Card>
             <div className="overflow-x-auto">
-              <table className="w-full">
+              <table className="w-full min-w-[700px]">
                 <thead className="border-b bg-muted/50">
                   <tr>
                     <th className="px-4 py-3 text-left text-sm font-medium">Nombre</th>
@@ -438,7 +438,7 @@ export default function ContactsPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <Input
                     placeholder="Nombre de la lista (ej: Clientes VIP, Promo Marzo)"
                     value={listName}
@@ -574,7 +574,7 @@ export default function ContactsPage() {
                           <p className="text-xs text-muted-foreground mt-0.5 truncate">{list.description}</p>
                         )}
                       </div>
-                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                         <Button
                           variant="ghost"
                           size="icon"

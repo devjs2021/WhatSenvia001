@@ -86,12 +86,12 @@ export default function DashboardPage() {
   ];
 
   return (
-    <div className="bg-gray-50/50 dark:bg-gray-950/50 p-6 space-y-4">
+    <div className="bg-gray-50/50 dark:bg-gray-950/50 p-3 md:p-6 space-y-3 md:space-y-4">
 
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100 tracking-tight">Dashboard</h1>
+          <h1 className="text-lg md:text-xl font-semibold text-gray-900 dark:text-gray-100 tracking-tight">Dashboard</h1>
           <p className="text-xs text-gray-400 mt-0.5">Resumen general de tu plataforma</p>
         </div>
         <div className={`flex items-center gap-2 text-xs font-medium px-3 py-1.5 rounded-xl border ${
@@ -108,14 +108,14 @@ export default function DashboardPage() {
       {/* Stat cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {statCards.map(({ label, value, sub, icon: Icon, color, iconColor }) => (
-          <div key={label} className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-4">
+          <div key={label} className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-3 md:p-4">
             <div className="flex items-center justify-between mb-3">
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{label}</p>
               <div className={`h-8 w-8 rounded-xl ${color} flex items-center justify-center`}>
                 <Icon className={`h-4 w-4 ${iconColor}`} />
               </div>
             </div>
-            <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{value}</p>
+            <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-100">{value}</p>
             <p className="text-xs text-gray-400 mt-0.5">{sub}</p>
           </div>
         ))}
@@ -125,7 +125,7 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
 
         {/* Bar chart */}
-        <div className="lg:col-span-2 bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-5">
+        <div className="lg:col-span-2 bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-3 md:p-5">
           <div className="flex items-center gap-2 mb-4">
             <div className="h-7 w-7 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
               <Activity className="h-3.5 w-3.5 text-gray-500" />

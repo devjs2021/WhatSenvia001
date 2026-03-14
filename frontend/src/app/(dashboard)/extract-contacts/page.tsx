@@ -171,9 +171,9 @@ export default function ExtractContactsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Extraer Contactos</h1>
+        <h1 className="text-lg md:text-xl font-semibold">Extraer Contactos</h1>
         <p className="text-muted-foreground">
           Extrae contactos desde grupos de WhatsApp o verifica numeros existentes
         </p>
@@ -182,7 +182,7 @@ export default function ExtractContactsPage() {
       {/* Session selector */}
       <Card>
         <CardContent className="pt-6">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
             <label className="text-sm font-medium whitespace-nowrap">Sesion WhatsApp:</label>
             <select
               className="flex h-10 w-full max-w-sm rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"

@@ -183,15 +183,15 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold flex items-center gap-2">
-          <Crown className="h-6 w-6" />
+    <div className="space-y-4 md:space-y-6">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="text-lg md:text-xl font-bold flex items-center gap-2">
+          <Crown className="h-5 w-5" />
           Panel de Administracion
         </h1>
         <button
           onClick={() => setShowCreateUser(true)}
-          className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+          className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 w-fit"
         >
           <Plus className="h-4 w-4" />
           Crear Usuario
@@ -200,7 +200,7 @@ export default function AdminPage() {
 
       {/* Stats */}
       {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
           <div className="rounded-lg border bg-card p-4">
             <div className="flex items-center gap-2 text-muted-foreground text-sm">
               <Users className="h-4 w-4" />
@@ -240,7 +240,7 @@ export default function AdminPage() {
 
       {/* Create User Modal */}
       {showCreateUser && (
-        <div className="rounded-lg border bg-card p-6">
+        <div className="rounded-lg border bg-card p-4 md:p-6">
           <h3 className="font-semibold mb-4">Crear Nuevo Usuario</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <input
@@ -300,7 +300,7 @@ export default function AdminPage() {
       {/* Users Table */}
       <div className="rounded-lg border bg-card">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-sm min-w-[800px]">
             <thead>
               <tr className="border-b bg-muted/50">
                 <th className="px-4 py-3 text-left font-medium">Usuario</th>

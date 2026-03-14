@@ -175,19 +175,19 @@ export default function BotBuilderPage() {
   const modeInfo = modeLabels[currentMode];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-            <Bot className="h-6 w-6 text-primary" />
+          <div className="flex h-8 w-8 md:h-10 md:w-10 items-center justify-center rounded-lg bg-primary/10">
+            <Bot className="h-5 w-5 md:h-6 md:w-6 text-primary" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold">Bot Builder</h1>
-            <p className="text-muted-foreground">Crea flujos visuales para automatizar conversaciones en WhatsApp</p>
+            <h1 className="text-lg md:text-xl font-semibold">Bot Builder</h1>
+            <p className="text-xs md:text-sm text-muted-foreground">Crea flujos para automatizar conversaciones</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 px-3 py-1">
             <Bot className="h-3 w-3 mr-1" />
             {modeInfo?.label.split(" ")[1] || "Hibrido"}
@@ -210,7 +210,7 @@ export default function BotBuilderPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2">
+      <div className="flex gap-2 overflow-x-auto pb-1">
         <Button
           variant={tab === "flows" ? "default" : "outline"}
           onClick={() => setTab("flows")}
@@ -297,7 +297,7 @@ export default function BotBuilderPage() {
                       <p className="text-xs text-muted-foreground">
                         {flow.nodes?.length || 0} nodos · Editado {new Date(flow.updatedAt).toLocaleDateString("es-CO")}
                       </p>
-                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                         <Button
                           variant="ghost"
                           size="icon"

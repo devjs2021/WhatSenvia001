@@ -121,9 +121,9 @@ export default function WhatsAppPage() {
   }, [sessions, connectingId]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">WhatsApp</h1>
+        <h1 className="text-lg md:text-xl font-semibold">WhatsApp</h1>
         <p className="text-muted-foreground">Gestiona tus sesiones de WhatsApp</p>
       </div>
 
@@ -138,13 +138,13 @@ export default function WhatsAppPage() {
               e.preventDefault();
               if (sessionName.trim()) createMutation.mutate(sessionName.trim());
             }}
-            className="flex gap-2"
+            className="flex flex-col sm:flex-row gap-2"
           >
             <Input
               placeholder="Nombre de la sesion (ej: Marketing, Ventas)"
               value={sessionName}
               onChange={(e) => setSessionName(e.target.value)}
-              className="max-w-md"
+              className="sm:max-w-md"
             />
             <Button type="submit" disabled={createMutation.isPending || !sessionName.trim()}>
               <Plus className="mr-2 h-4 w-4" />
@@ -350,17 +350,17 @@ export default function WhatsAppPage() {
         ) : (
           sessions.map((session) => (
             <Card key={session.id}>
-              <CardContent className="flex items-center justify-between p-4">
+              <CardContent className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4">
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
-                    <h3 className="font-semibold">{session.name}</h3>
+                    <h3 className="font-semibold text-sm">{session.name}</h3>
                     <Badge variant={statusColors[session.status]}>{session.status}</Badge>
                   </div>
                   {session.phone && (
                     <p className="text-sm text-muted-foreground font-mono">+{session.phone}</p>
                   )}
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   {session.status === "disconnected" && (
                     <Button
                       size="sm"

@@ -8,9 +8,9 @@ export default function SettingsPage() {
   const { user } = useAuth();
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Configuracion</h1>
+        <h1 className="text-lg md:text-xl font-semibold">Configuracion</h1>
         <p className="text-muted-foreground">Administra tu cuenta y preferencias</p>
       </div>
 
@@ -20,7 +20,7 @@ export default function SettingsPage() {
           <CardDescription>Informacion de tu cuenta</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <p className="text-sm text-muted-foreground">Nombre</p>
               <p className="font-medium">{user?.name}</p>
@@ -43,7 +43,7 @@ export default function SettingsPage() {
           <CardDescription>Limites para proteger tu cuenta de WhatsApp</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="rounded-lg border p-4 text-center">
               <p className="text-2xl font-bold">8</p>
               <p className="text-sm text-muted-foreground">msgs/minuto</p>

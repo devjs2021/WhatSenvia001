@@ -125,11 +125,11 @@ export default function CampaignMonitorPage() {
   const isComplete = stats.total > 0 && stats.pending === 0;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Monitor de Campana</h1>
+          <h1 className="text-lg md:text-xl font-semibold">Monitor de Campana</h1>
           <p className="text-muted-foreground">
             Progreso en tiempo real del envio masivo
           </p>

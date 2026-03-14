@@ -37,14 +37,14 @@ export default function MessagesPage() {
   const stats = statsData?.data;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Mensajes</h1>
+        <h1 className="text-lg md:text-xl font-semibold">Mensajes</h1>
         <p className="text-muted-foreground">Historial de mensajes enviados</p>
       </div>
 
       {stats && (
-        <div className="grid grid-cols-3 md:grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 md:gap-4">
           {Object.entries(stats).map(([status, count]) => (
             <Card key={status}>
               <CardContent className="pt-4 pb-4 text-center">
@@ -58,7 +58,7 @@ export default function MessagesPage() {
 
       <Card>
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full min-w-[600px]">
             <thead className="border-b bg-muted/50">
               <tr>
                 <th className="px-4 py-3 text-left text-sm font-medium">Telefono</th>

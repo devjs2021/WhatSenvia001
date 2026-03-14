@@ -120,10 +120,10 @@ export default function TemplatesPage() {
   const isSaving = createMutation.isPending || updateMutation.isPending;
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-4 md:space-y-6">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Plantillas</h1>
+          <h1 className="text-lg md:text-xl font-semibold">Plantillas</h1>
           <p className="text-muted-foreground">Guarda mensajes frecuentes para reutilizar en envios masivos</p>
         </div>
         <Button
@@ -147,7 +147,7 @@ export default function TemplatesPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Input
                 placeholder="Nombre de la plantilla"
                 value={form.name}
@@ -195,8 +195,8 @@ export default function TemplatesPage() {
       )}
 
       {/* Filters */}
-      <div className="flex items-center gap-4">
-        <div className="relative flex-1 max-w-sm">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+        <div className="relative flex-1 sm:max-w-sm">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Buscar plantillas..."
@@ -206,7 +206,7 @@ export default function TemplatesPage() {
           />
         </div>
         {categories.length > 0 && (
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <button
               onClick={() => setFilterCategory("")}
               className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
@@ -253,7 +253,7 @@ export default function TemplatesPage() {
       ) : (
         <Card>
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="w-full min-w-[600px]">
               <thead className="border-b bg-muted/50">
                 <tr>
                   <th className="px-4 py-2.5 text-left text-xs font-medium text-muted-foreground">Nombre</th>
@@ -284,7 +284,7 @@ export default function TemplatesPage() {
                       {new Date(template.updatedAt).toLocaleDateString("es", { day: "numeric", month: "short" })}
                     </td>
                     <td className="px-4 py-2.5 text-right">
-                      <div className="flex gap-0.5 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex gap-0.5 justify-end sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => copyContent(template.content)} title="Copiar">
                           <Copy className="h-3.5 w-3.5" />
                         </Button>

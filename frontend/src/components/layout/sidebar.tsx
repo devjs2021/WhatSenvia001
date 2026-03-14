@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -26,6 +27,8 @@ import {
   LogOut,
   AlertTriangle,
   Headphones,
+  Menu,
+  X,
 } from "lucide-react";
 
 const SUPPORT_PHONE = "573202101789";
@@ -59,7 +62,6 @@ function getLicenseStatus(user: any) {
   if (license.status === "expired") return { type: "expired" as const, message: "Licencia expirada" };
   if (license.status === "cancelled") return { type: "expired" as const, message: "Licencia cancelada" };
 
-  // Check if about to expire (3 days)
   if (license.expiresAt) {
     const daysLeft = Math.ceil((new Date(license.expiresAt).getTime() - Date.now()) / 86400000);
     if (daysLeft <= 0) return { type: "expired" as const, message: "Licencia expirada" };
@@ -69,7 +71,7 @@ function getLicenseStatus(user: any) {
   return null;
 }
 
-export function Sidebar() {
+function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
   const { user, logout, hasFeature, isAdmin } = useAuth();
 
@@ -78,17 +80,15 @@ export function Sidebar() {
   );
 
   const licenseStatus = getLicenseStatus(user);
-
   const supportUrl = `https://wa.me/${SUPPORT_PHONE}?text=${encodeURIComponent(SUPPORT_MESSAGE)}`;
 
   return (
-    <aside className="flex h-screen w-56 flex-col border-r bg-card">
+    <>
       <div className="flex h-14 items-center gap-2 border-b px-4">
         <Image src="/logo.png" alt="What's Envia" width={30} height={30} className="rounded-full" />
-        <span className="text-sm font-bold tracking-tight">What's Envia</span>
+        <span className="text-sm font-bold tracking-tight">What&apos;s Envia</span>
       </div>
 
-      {/* License status banner */}
       {licenseStatus && (
         <div
           className={cn(
@@ -128,6 +128,7 @@ export function Sidebar() {
             <Link
               key={item.name}
               href={item.href}
+              onClick={onNavigate}
               className={cn(
                 "flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors",
                 isActive
@@ -146,6 +147,7 @@ export function Sidebar() {
             <div className="my-2 border-t" />
             <Link
               href="/admin"
+              onClick={onNavigate}
               className={cn(
                 "flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors",
                 pathname.startsWith("/admin")
@@ -160,7 +162,6 @@ export function Sidebar() {
         )}
       </nav>
 
-      {/* Support */}
       <div className="px-3 pb-2">
         <a
           href={supportUrl}
@@ -184,12 +185,60 @@ export function Sidebar() {
           <button
             onClick={logout}
             className="text-muted-foreground hover:text-destructive transition-colors p-1"
-            title="Cerrar sesión"
+            title="Cerrar sesion"
           >
             <LogOut className="h-3.5 w-3.5" />
           </button>
         </div>
       </div>
+    </>
+  );
+}
+
+export function MobileHeader() {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <>
+      {/* Mobile top bar */}
+      <div className="md:hidden flex items-center justify-between border-b bg-card px-4 py-3">
+        <div className="flex items-center gap-2">
+          <Image src="/logo.png" alt="What's Envia" width={28} height={28} className="rounded-full" />
+          <span className="text-sm font-bold tracking-tight">What&apos;s Envia</span>
+        </div>
+        <button
+          onClick={() => setOpen(true)}
+          className="p-1.5 rounded-lg hover:bg-accent transition-colors"
+        >
+          <Menu className="h-5 w-5" />
+        </button>
+      </div>
+
+      {/* Mobile sidebar overlay */}
+      {open && (
+        <div className="fixed inset-0 z-50 md:hidden">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setOpen(false)} />
+          <aside className="absolute left-0 top-0 bottom-0 w-64 bg-card flex flex-col shadow-xl animate-in slide-in-from-left duration-200">
+            <div className="absolute right-2 top-2 z-10">
+              <button
+                onClick={() => setOpen(false)}
+                className="p-1.5 rounded-lg hover:bg-accent transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <SidebarContent onNavigate={() => setOpen(false)} />
+          </aside>
+        </div>
+      )}
+    </>
+  );
+}
+
+export function Sidebar() {
+  return (
+    <aside className="hidden md:flex h-screen w-56 flex-col border-r bg-card">
+      <SidebarContent />
     </aside>
   );
 }

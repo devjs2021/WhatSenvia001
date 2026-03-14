@@ -21,6 +21,7 @@ import {
   PanelRightClose,
   Phone,
   StickyNote,
+  ArrowLeft,
 } from "lucide-react";
 
 // ── Types ──────────────────────────────────────────────────────────────
@@ -274,7 +275,7 @@ export default function ChatLivePage() {
   return (
     <div className="flex h-[calc(100vh-theme(spacing.28))] gap-0 overflow-hidden rounded-lg border bg-card">
       {/* ── Left Panel: Conversations ─────────────────────────────── */}
-      <div className="flex w-80 flex-shrink-0 flex-col border-r">
+      <div className={`flex w-full md:w-80 flex-shrink-0 flex-col border-r ${selectedPhone ? "hidden md:flex" : "flex"}`}>
         {/* Search */}
         <div className="border-b p-3">
           <div className="relative">
@@ -336,12 +337,18 @@ export default function ChatLivePage() {
       </div>
 
       {/* ── Center Panel: Chat ─────────────────────────────────────── */}
-      <div className="flex flex-1 flex-col">
+      <div className={`flex flex-1 flex-col ${!selectedPhone ? "hidden md:flex" : "flex"}`}>
         {selectedPhone ? (
           <>
             {/* Chat header */}
             <div className="flex items-center justify-between border-b px-4 py-3">
               <div className="flex items-center gap-3">
+                <button
+                  onClick={() => handleSelectConversation("")}
+                  className="md:hidden p-1 rounded hover:bg-accent"
+                >
+                  <ArrowLeft className="h-5 w-5" />
+                </button>
                 <div className="flex h-9 w-9 items-center justify-center rounded-full bg-muted">
                   <User className="h-4 w-4 text-muted-foreground" />
                 </div>
@@ -403,7 +410,7 @@ export default function ChatLivePage() {
                       className={`mb-2 flex ${msg.fromMe ? "justify-end" : "justify-start"}`}
                     >
                       <div
-                        className={`relative max-w-[70%] rounded-2xl px-3 py-2 shadow-sm ${
+                        className={`relative max-w-[85%] md:max-w-[70%] rounded-2xl px-3 py-2 shadow-sm ${
                           msg.fromMe
                             ? msg.source === "bot"
                               ? "rounded-br-md bg-[#25D366] text-white"
@@ -480,7 +487,7 @@ export default function ChatLivePage() {
 
       {/* ── Right Panel: Contact Info ──────────────────────────────── */}
       {showInfo && selectedPhone && (
-        <div className="flex w-72 flex-shrink-0 flex-col border-l">
+        <div className="hidden lg:flex w-72 flex-shrink-0 flex-col border-l">
           {/* Contact header */}
           <div className="border-b p-4 text-center">
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-muted">

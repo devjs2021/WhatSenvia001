@@ -219,10 +219,10 @@ export default function ScheduledPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-4 md:space-y-6">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Envios Programados</h1>
+          <h1 className="text-lg md:text-xl font-semibold">Envios Programados</h1>
           <p className="text-muted-foreground">
             Programa campañas para enviar en una fecha y hora futura
           </p>
@@ -252,7 +252,7 @@ export default function ScheduledPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Name */}
               <div className="space-y-2">
                 <label className="text-sm font-medium">Nombre de la campaña</label>
