@@ -6,3 +6,6 @@ dist/
 sessions/
 *.log
 .DS_Store
+
+# Production env
+.env.prod

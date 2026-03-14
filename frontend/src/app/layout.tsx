@@ -6,8 +6,8 @@ import { Providers } from "./providers";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "WhatSenvia - WhatsApp Mass Messaging Platform",
-  description: "Send WhatsApp messages at scale with smart automation",
+  title: "What's Envia - Plataforma de Mensajería Masiva",
+  description: "Envía mensajes masivos con automatización inteligente",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
