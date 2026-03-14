@@ -33,6 +33,7 @@ const SUPPORT_MESSAGE = "Hola, necesito ayuda con mi cuenta de What's Envia";
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, feature: null },
+  { name: "Conexion", href: "/whatsapp", icon: Smartphone, feature: null },
   { name: "Bot Builder", href: "/bot-builder", icon: Bot, feature: "botBuilder" },
   { name: "Chat Live", href: "/chat-live", icon: MessageCircle, feature: "chatLive" },
   { name: "Envio Masivo", href: "/campaigns", icon: Send, feature: "campaigns" },
@@ -45,7 +46,6 @@ const navigation = [
   { name: "Extraer Contactos", href: "/extract-contacts", icon: UserPlus, feature: "contactExtraction" },
   { name: "Importar", href: "/import", icon: Upload, feature: "import" },
   { name: "Mensajes", href: "/messages", icon: MessageSquare, feature: null },
-  { name: "WhatsApp", href: "/whatsapp", icon: Smartphone, feature: null },
   { name: "Reportes", href: "/reports", icon: PieChart, feature: "reports" },
   { name: "Configuracion", href: "/settings", icon: Settings, feature: null },
 ];
