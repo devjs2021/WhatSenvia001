@@ -1,8 +1,25 @@
 import { db } from "../../../config/database.js";
 import { botFlows } from "../../../infrastructure/database/schema/bot-flows.js";
+import { users } from "../../../infrastructure/database/schema/users.js";
 import { eq } from "drizzle-orm";
+import bcrypt from "bcryptjs";
 
 const SYSTEM_USER_ID = "00000000-0000-0000-0000-000000000000";
+
+async function ensureSystemUser() {
+  const existing = await db.select().from(users).where(eq(users.id, SYSTEM_USER_ID)).limit(1);
+  if (existing.length === 0) {
+    const hashedPassword = await bcrypt.hash("system-user-no-login", 12);
+    await db.insert(users).values({
+      id: SYSTEM_USER_ID,
+      email: "system@whatsenvia.internal",
+      password: hashedPassword,
+      name: "System",
+      role: "admin",
+      isActive: false,
+    });
+  }
+}
 
 const edgeStyle = { stroke: "#94a3b8", strokeWidth: 2, strokeDasharray: "5 5" };
 
@@ -955,6 +972,8 @@ export async function seedTemplates() {
     .where(eq(botFlows.isTemplate, true));
 
   if (existing.length > 0) return;
+
+  await ensureSystemUser();
 
   for (const tmpl of templates) {
     await db.insert(botFlows).values({

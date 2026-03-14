@@ -10,7 +10,8 @@
     "build": "cd backend && npm run build && cd ../frontend && npm run build",
     "db:up": "docker compose up -d",
     "db:down": "docker compose down",
-    "db:push": "cd backend && npm run db:push"
+    "db:push": "cd backend && npm run db:push",
+    "db:reseed-templates": "cd backend && npm run db:reseed-templates"
   },
   "devDependencies": {
     "concurrently": "^9.1.0"
