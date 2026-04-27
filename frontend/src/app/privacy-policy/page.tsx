@@ -19,7 +19,7 @@ export default function PrivacyPolicyPage() {
           </Link>
           <h1 className="text-4xl md:text-5xl font-bold mb-4 tracking-tight">Política de Privacidad</h1>
           <p className="text-green-50 text-lg max-w-2xl opacity-90">
-            En What's Envia, valoramos tu privacidad y nos comprometemos a proteger tus datos personales. 
+            Bajo la responsabilidad de <strong>Angel David Avendaño</strong>, en What's Envia valoramos tu privacidad y nos comprometemos a proteger tus datos personales. 
             Esta política explica cómo recopilamos, usamos y gestionamos tu información.
           </p>
           <div className="mt-8 flex items-center gap-2 text-sm bg-white/10 w-fit px-4 py-2 rounded-full backdrop-blur-sm border border-white/20">
@@ -127,8 +127,10 @@ export default function PrivacyPolicyPage() {
                     <Mail className="h-6 w-6 text-red-600 dark:text-red-400" />
                   </div>
                   <div>
-                    <span className="block font-bold text-lg">Vía Correo Electrónico</span>
-                    <p className="text-gray-500 dark:text-gray-400">Envía una solicitud a <span className="text-red-600 dark:text-red-400 font-medium">soporte@whatsenvia.com</span> indicando tu correo de usuario.</p>
+                    <span className="block font-bold text-lg">Contacto Directo</span>
+                    <p className="text-gray-500 dark:text-gray-400">
+                      Envía una solicitud a <span className="text-red-600 dark:text-red-400 font-medium">soporte@whatsenvia.com</span> o comunícate al <span className="text-red-600 dark:text-red-400 font-medium">+57 350 5193801</span>.
+                    </p>
                   </div>
                 </div>
               </div>
@@ -139,18 +141,23 @@ export default function PrivacyPolicyPage() {
             </div>
           </section>
 
-          {/* Sección 5: Contacto */}
-          <section className="space-y-4 border-t border-gray-100 dark:border-gray-800 pt-10 text-center">
-            <h2 className="text-xl font-bold">¿Tienes dudas?</h2>
-            <p className="text-gray-600 dark:text-gray-400">
-              Si tienes alguna pregunta sobre esta Política de Privacidad, puedes contactarnos en cualquier momento.
-            </p>
-            <a 
-              href="mailto:soporte@whatsenvia.com" 
-              className="inline-flex items-center justify-center px-8 py-3 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-xl font-bold hover:scale-105 transition-transform"
-            >
-              Contactar Soporte
-            </a>
+          {/* Sección 5: Responsable y Contacto */}
+          <section className="space-y-6 border-t border-gray-100 dark:border-gray-800 pt-10 text-center">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Responsable del Tratamiento de Datos</h2>
+            <div className="flex flex-col items-center gap-2 text-gray-600 dark:text-gray-400">
+              <p className="font-semibold text-gray-900 dark:text-white text-lg">Angel David Avendaño</p>
+              <p>Cll 133 #91-45, Bogotá, Colombia</p>
+              <p>Teléfono: +57 350 5193801</p>
+              <p>Email: soporte@whatsenvia.com</p>
+            </div>
+            <div className="pt-4">
+              <a 
+                href="mailto:soporte@whatsenvia.com" 
+                className="inline-flex items-center justify-center px-8 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold transition-all hover:scale-105"
+              >
+                Contactar Soporte
+              </a>
+            </div>
           </section>
         </div>
         

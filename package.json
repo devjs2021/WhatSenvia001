@@ -1,6 +1,7 @@
 {
   "name": "whatsenvia",
   "version": "1.0.0",
+  "author": "Angel David Avendaño",
   "private": true,
   "scripts": {
     "dev": "docker compose up -d && concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
