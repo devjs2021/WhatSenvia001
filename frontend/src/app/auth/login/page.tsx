@@ -29,25 +29,25 @@ export default function LoginPage() {
     <div className="min-h-screen flex">
 
       {/* Panel izquierdo — decorativo */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-green-500 via-emerald-500 to-teal-600 flex-col items-center justify-center p-12 relative overflow-hidden">
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-600 via-blue-500 to-cyan-500 flex-col items-center justify-center p-12 relative overflow-hidden">
         {/* Círculos decorativos */}
         <div className="absolute top-[-80px] left-[-80px] h-72 w-72 rounded-full bg-white/10" />
         <div className="absolute bottom-[-60px] right-[-60px] h-96 w-96 rounded-full bg-white/10" />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[500px] w-[500px] rounded-full bg-white/5" />
 
         <div className="relative z-10 text-center text-white space-y-6">
-          <Image src="/logo.png" alt="What's Envia" width={120} height={120} className="rounded-full mx-auto shadow-2xl border-4 border-white/30" />
+          <Image src="/logo.png" alt="CallMesd" width={120} height={120} className="rounded-full mx-auto shadow-2xl border-4 border-white/30" />
           <div>
-            <h1 className="text-4xl font-bold tracking-tight">What's Envia</h1>
-            <p className="text-green-100 mt-2 text-lg">Plataforma de Mensajería Masiva</p>
+            <h1 className="text-4xl font-bold tracking-tight">CallMesd</h1>
+            <p className="text-blue-100 mt-2 text-lg">Solución Inteligente de Comunicación</p>
           </div>
           <div className="space-y-3 pt-4">
             {[
-              { icon: Send, text: "Envíos masivos inteligentes" },
-              { icon: Mail, text: "Gestión de contactos avanzada" },
-              { icon: Lock, text: "Plataforma segura y confiable" },
+              { icon: Send, text: "Comunicación fluida y masiva" },
+              { icon: Mail, text: "Gestión inteligente de contactos" },
+              { icon: Lock, text: "Seguridad y privacidad garantizada" },
             ].map(({ icon: Icon, text }) => (
-              <div key={text} className="flex items-center gap-3 text-green-50">
+              <div key={text} className="flex items-center gap-3 text-blue-50">
                 <div className="h-8 w-8 rounded-lg bg-white/20 flex items-center justify-center shrink-0">
                   <Icon className="h-4 w-4" />
                 </div>
@@ -64,8 +64,8 @@ export default function LoginPage() {
 
           {/* Logo mobile */}
           <div className="lg:hidden flex flex-col items-center gap-3">
-            <Image src="/logo.png" alt="What's Envia" width={72} height={72} className="rounded-full shadow-lg" />
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">What's Envia</h1>
+            <Image src="/logo.png" alt="CallMesd" width={72} height={72} className="rounded-full shadow-lg" />
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">CallMesd</h1>
           </div>
 
           {/* Encabezado */}
@@ -89,7 +89,7 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl pl-10 pr-4 py-3 text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500/30 focus:border-green-400 transition-all"
+                  className="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl pl-10 pr-4 py-3 text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-all"
                 />
               </div>
             </div>
@@ -107,7 +107,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl pl-10 pr-11 py-3 text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500/30 focus:border-green-400 transition-all"
+                  className="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl pl-10 pr-11 py-3 text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-all"
                 />
                 <button
                   type="button"
@@ -123,7 +123,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-semibold py-3 rounded-xl text-sm transition-all shadow-md shadow-green-200 dark:shadow-green-900/30 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-2"
+              className="w-full bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white font-semibold py-3 rounded-xl text-sm transition-all shadow-md shadow-blue-200 dark:shadow-blue-900/30 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-2"
             >
               {isLoading ? (
                 <>
@@ -140,7 +140,7 @@ export default function LoginPage() {
 
             <p className="text-center text-sm text-gray-500 dark:text-gray-400 pt-1">
               ¿No tienes cuenta?{" "}
-              <Link href="/auth/register" className="font-semibold text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 transition-colors">
+              <Link href="/auth/register" className="font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors">
                 Regístrate aquí
               </Link>
             </p>

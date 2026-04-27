@@ -6,8 +6,8 @@ import { Providers } from "./providers";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "What's Envia - Plataforma de Mensajería Masiva",
-  description: "Envía mensajes masivos con automatización inteligente",
+  title: "CallMesd - Solución Inteligente de Comunicación",
+  description: "Conecta con tus clientes a través de múltiples canales de mensajería",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

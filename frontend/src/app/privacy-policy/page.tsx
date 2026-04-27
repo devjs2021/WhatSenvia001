@@ -5,25 +5,25 @@ export default function PrivacyPolicyPage() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 font-sans">
       {/* Header decorativo */}
-      <div className="bg-gradient-to-r from-green-600 to-emerald-700 text-white py-16 px-4 relative overflow-hidden">
+      <div className="bg-gradient-to-r from-blue-600 to-cyan-700 text-white py-16 px-4 relative overflow-hidden">
         <div className="absolute top-[-50px] right-[-50px] h-64 w-64 rounded-full bg-white/10 blur-3xl" />
-        <div className="absolute bottom-[-50px] left-[-50px] h-64 w-64 rounded-full bg-emerald-400/10 blur-3xl" />
+        <div className="absolute bottom-[-50px] left-[-50px] h-64 w-64 rounded-full bg-cyan-400/10 blur-3xl" />
         
         <div className="max-w-4xl mx-auto relative z-10">
           <Link 
             href="/auth/login" 
-            className="inline-flex items-center text-green-100 hover:text-white mb-8 transition-colors group"
+            className="inline-flex items-center text-blue-100 hover:text-white mb-8 transition-colors group"
           >
             <ChevronLeft className="h-5 w-5 mr-1 group-hover:-translate-x-1 transition-transform" />
             Volver al inicio
           </Link>
           <h1 className="text-4xl md:text-5xl font-bold mb-4 tracking-tight">Política de Privacidad</h1>
-          <p className="text-green-50 text-lg max-w-2xl opacity-90">
-            Bajo la responsabilidad de <strong>Angel David Avendaño</strong>, en What's Envia valoramos tu privacidad y nos comprometemos a proteger tus datos personales. 
+          <p className="text-blue-50 text-lg max-w-2xl opacity-90">
+            Bajo la responsabilidad de <strong>Angel David Avendaño</strong>, en CallMesd valoramos tu privacidad y nos comprometemos a proteger tus datos personales. 
             Esta política explica cómo recopilamos, usamos y gestionamos tu información.
           </p>
           <div className="mt-8 flex items-center gap-2 text-sm bg-white/10 w-fit px-4 py-2 rounded-full backdrop-blur-sm border border-white/20">
-            <Shield className="h-4 w-4 text-green-300" />
+            <Shield className="h-4 w-4 text-blue-300" />
             <span>Última actualización: 26 de Abril, 2026</span>
           </div>
         </div>
@@ -35,8 +35,8 @@ export default function PrivacyPolicyPage() {
           {/* Sección 1: Recopilación */}
           <section className="space-y-4">
             <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
-                <Eye className="h-6 w-6 text-green-600 dark:text-green-400" />
+              <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                <Eye className="h-6 w-6 text-blue-600 dark:text-blue-400" />
               </div>
               <h2 className="text-2xl font-bold">1. Información que Recopilamos</h2>
             </div>
@@ -102,7 +102,7 @@ export default function PrivacyPolicyPage() {
               Implementamos medidas de seguridad robustas para proteger tu información contra acceso no autorizado, 
               alteración o divulgación. Esto incluye cifrado SSL/TLS, firewalls y controles de acceso restringido a nuestros servidores.
               <br /><br />
-              <strong className="text-gray-900 dark:text-white">Nota importante:</strong> What's Envia NO vende, alquila ni comparte tus datos personales o los de tus contactos con terceros para fines comerciales o de marketing.
+              <strong className="text-gray-900 dark:text-white">Nota importante:</strong> CallMesd NO vende, alquila ni comparte tus datos personales o los de tus contactos con terceros para fines comerciales o de marketing.
             </p>
           </section>
 
@@ -162,7 +162,7 @@ export default function PrivacyPolicyPage() {
         </div>
         
         <p className="text-center text-gray-400 dark:text-gray-600 text-sm mt-8">
-          © 2026 What's Envia. Todos los derechos reservados.
+          © 2026 CallMesd. Todos los derechos reservados.
         </p>
       </div>
     </div>

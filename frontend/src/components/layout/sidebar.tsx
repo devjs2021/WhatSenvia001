@@ -32,7 +32,7 @@ import {
 } from "lucide-react";
 
 const SUPPORT_PHONE = "573202101789";
-const SUPPORT_MESSAGE = "Hola, necesito ayuda con mi cuenta de What's Envia";
+const SUPPORT_MESSAGE = "Hola, necesito ayuda con mi cuenta de CallMesd";
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, feature: null },
@@ -85,8 +85,8 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <>
       <div className="flex h-14 items-center gap-2 border-b px-4">
-        <Image src="/logo.png" alt="What's Envia" width={30} height={30} className="rounded-full" />
-        <span className="text-sm font-bold tracking-tight">What&apos;s Envia</span>
+        <Image src="/logo.png" alt="CallMesd" width={30} height={30} className="rounded-full" />
+        <span className="text-sm font-bold tracking-tight">CallMesd</span>
       </div>
 
       {licenseStatus && (
@@ -208,8 +208,8 @@ export function MobileHeader() {
       {/* Mobile top bar */}
       <div className="md:hidden flex items-center justify-between border-b bg-card px-4 py-3">
         <div className="flex items-center gap-2">
-          <Image src="/logo.png" alt="What's Envia" width={28} height={28} className="rounded-full" />
-          <span className="text-sm font-bold tracking-tight">What&apos;s Envia</span>
+          <Image src="/logo.png" alt="CallMesd" width={28} height={28} className="rounded-full" />
+          <span className="text-sm font-bold tracking-tight">CallMesd</span>
         </div>
         <button
           onClick={() => setOpen(true)}

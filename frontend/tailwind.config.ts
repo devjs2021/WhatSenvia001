@@ -41,9 +41,9 @@ const config: Config = {
           foreground: "hsl(var(--popover-foreground))",
         },
         whatsapp: {
-          DEFAULT: "#25D366",
-          dark: "#128C7E",
-          light: "#DCF8C6",
+          DEFAULT: "#3B82F6",
+          dark: "#1D4ED8",
+          light: "#DBEAFE",
         },
       },
       borderRadius: {

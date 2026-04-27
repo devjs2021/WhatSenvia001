@@ -32,18 +32,18 @@ export default function RegisterPage() {
     <div className="min-h-screen flex">
 
       {/* Panel izquierdo */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-green-500 via-emerald-500 to-teal-600 flex-col items-center justify-center p-12 relative overflow-hidden">
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-600 via-blue-500 to-cyan-500 flex-col items-center justify-center p-12 relative overflow-hidden">
         <div className="absolute top-[-80px] left-[-80px] h-72 w-72 rounded-full bg-white/10" />
         <div className="absolute bottom-[-60px] right-[-60px] h-96 w-96 rounded-full bg-white/10" />
         <div className="relative z-10 text-center text-white space-y-6">
-          <Image src="/logo.png" alt="What's Envia" width={120} height={120} className="rounded-full mx-auto shadow-2xl border-4 border-white/30" />
+          <Image src="/logo.png" alt="CallMesd" width={120} height={120} className="rounded-full mx-auto shadow-2xl border-4 border-white/30" />
           <div>
-            <h1 className="text-4xl font-bold tracking-tight">What's Envia</h1>
-            <p className="text-green-100 mt-2 text-lg">Crea tu cuenta gratis</p>
+            <h1 className="text-4xl font-bold tracking-tight">CallMesd</h1>
+            <p className="text-blue-100 mt-2 text-lg">Crea tu cuenta gratis</p>
           </div>
           <div className="space-y-3 pt-4">
-            {["Envíos masivos sin límites", "Gestión avanzada de contactos", "Bots y automatizaciones"].map((text) => (
-              <div key={text} className="flex items-center gap-3 text-green-50">
+            {["Comunicación integral y masiva", "Gestión avanzada de contactos", "Automatización de mensajes"].map((text) => (
+              <div key={text} className="flex items-center gap-3 text-blue-50">
                 <div className="h-2 w-2 rounded-full bg-white/70 shrink-0" />
                 <span className="text-sm font-medium">{text}</span>
               </div>
@@ -58,8 +58,8 @@ export default function RegisterPage() {
 
           {/* Logo mobile */}
           <div className="lg:hidden flex flex-col items-center gap-3">
-            <Image src="/logo.png" alt="What's Envia" width={72} height={72} className="rounded-full shadow-lg" />
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">What's Envia</h1>
+            <Image src="/logo.png" alt="CallMesd" width={72} height={72} className="rounded-full shadow-lg" />
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">CallMesd</h1>
           </div>
 
           <div className="hidden lg:block">
@@ -83,7 +83,7 @@ export default function RegisterPage() {
                     value={(form as any)[field]}
                     onChange={(e) => update(field, e.target.value)}
                     required={field !== "company"}
-                    className="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl pl-10 pr-4 py-3 text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500/30 focus:border-green-400 transition-all"
+                    className="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl pl-10 pr-4 py-3 text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-all"
                   />
                 </div>
               </div>
@@ -100,7 +100,7 @@ export default function RegisterPage() {
                   onChange={(e) => update("password", e.target.value)}
                   required
                   minLength={8}
-                  className="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl pl-10 pr-11 py-3 text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500/30 focus:border-green-400 transition-all"
+                  className="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl pl-10 pr-11 py-3 text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-all"
                 />
                 <button type="button" onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors">
@@ -114,11 +114,11 @@ export default function RegisterPage() {
                 type="checkbox" 
                 id="privacy" 
                 required 
-                className="h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500"
+                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
               />
               <label htmlFor="privacy" className="text-xs text-gray-500 dark:text-gray-400">
                 Acepto la{" "}
-                <Link href="/privacy-policy" target="_blank" className="text-green-600 dark:text-green-400 hover:underline">
+                <Link href="/privacy-policy" target="_blank" className="text-blue-600 dark:text-blue-400 hover:underline">
                   Política de Privacidad
                 </Link>
               </label>
@@ -127,7 +127,7 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-semibold py-3 rounded-xl text-sm transition-all shadow-md shadow-green-200 dark:shadow-green-900/30 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-1"
+              className="w-full bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white font-semibold py-3 rounded-xl text-sm transition-all shadow-md shadow-blue-200 dark:shadow-blue-900/30 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-1"
             >
               {isLoading ? (
                 <><div className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />Creando cuenta...</>
@@ -138,7 +138,7 @@ export default function RegisterPage() {
 
             <p className="text-center text-sm text-gray-500 dark:text-gray-400">
               ¿Ya tienes cuenta?{" "}
-              <Link href="/auth/login" className="font-semibold text-green-600 dark:text-green-400 hover:text-green-700 transition-colors">
+              <Link href="/auth/login" className="font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 transition-colors">
                 Inicia sesión
               </Link>
             </p>
