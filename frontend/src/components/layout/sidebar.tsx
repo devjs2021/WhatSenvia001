@@ -172,6 +172,11 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
           <Headphones className="h-3.5 w-3.5" />
           Soporte
         </a>
+        <div className="mt-1 flex justify-center">
+          <Link href="/privacy-policy" className="text-[10px] text-muted-foreground hover:text-primary transition-colors">
+            Política de Privacidad
+          </Link>
+        </div>
       </div>
 
       <div className="border-t px-3 py-3">

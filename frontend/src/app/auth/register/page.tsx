@@ -128,6 +128,13 @@ export default function RegisterPage() {
               </Link>
             </p>
           </form>
+
+          {/* Footer links */}
+          <div className="pt-8 border-t border-gray-100 dark:border-gray-900 flex justify-center">
+            <Link href="/privacy-policy" className="text-xs text-gray-400 hover:text-gray-600 transition-colors">
+              Política de Privacidad
+            </Link>
+          </div>
         </div>
       </div>
     </div>

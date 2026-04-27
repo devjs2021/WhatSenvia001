@@ -138,7 +138,6 @@ export default function LoginPage() {
               )}
             </button>
 
-            {/* Registro */}
             <p className="text-center text-sm text-gray-500 dark:text-gray-400 pt-1">
               ¿No tienes cuenta?{" "}
               <Link href="/auth/register" className="font-semibold text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 transition-colors">
@@ -146,6 +145,13 @@ export default function LoginPage() {
               </Link>
             </p>
           </form>
+
+          {/* Footer links */}
+          <div className="pt-8 border-t border-gray-100 dark:border-gray-900 flex justify-center">
+            <Link href="/privacy-policy" className="text-xs text-gray-400 hover:text-gray-600 transition-colors">
+              Política de Privacidad
+            </Link>
+          </div>
 
         </div>
       </div>
