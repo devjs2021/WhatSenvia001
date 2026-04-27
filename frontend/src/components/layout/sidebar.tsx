@@ -29,6 +29,7 @@ import {
   Headphones,
   Menu,
   X,
+  Zap,
 } from "lucide-react";
 
 const SUPPORT_PHONE = "573202101789";
@@ -50,6 +51,7 @@ const navigation = [
   { name: "Importar", href: "/import", icon: Upload, feature: "import" },
   { name: "Mensajes", href: "/messages", icon: MessageSquare, feature: null },
   { name: "Reportes", href: "/reports", icon: PieChart, feature: "reports" },
+  { name: "Test API Meta", href: "/test-whatsapp", icon: Zap, feature: null },
   { name: "Configuracion", href: "/settings", icon: Settings, feature: null },
 ];
 

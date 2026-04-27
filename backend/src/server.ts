@@ -24,6 +24,7 @@ import { chatRoutes } from "./modules/chat/routes/chat.routes.js";
 import { campaignControlRoutes } from "./modules/campaign-control/routes/campaign-control.routes.js";
 import { scheduledRoutes } from "./modules/scheduled/routes/scheduled.routes.js";
 import { adminRoutes } from "./modules/admin/routes/admin.routes.js";
+import { testWhatsappRoutes } from "./modules/test-whatsapp/routes/test-whatsapp.routes.js";
 import { startMessageWorker } from "./infrastructure/queue/message.queue.js";
 import { startCampaignWorker } from "./infrastructure/queue/campaign.queue.js";
 import { startScheduledChecker } from "./infrastructure/queue/scheduled-checker.js";
@@ -97,6 +98,7 @@ async function bootstrap() {
   await app.register(campaignControlRoutes, { prefix: "/api/campaign-control" });
   await app.register(scheduledRoutes, { prefix: "/api/scheduled" });
   await app.register(adminRoutes, { prefix: "/api/admin" });
+  await app.register(testWhatsappRoutes, { prefix: "/api/test-whatsapp" });
 
   // Global error handler
   app.setErrorHandler((error, _request, reply) => {
