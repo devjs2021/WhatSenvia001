@@ -109,6 +109,21 @@ export default function RegisterPage() {
               </div>
             </div>
 
+            <div className="flex items-center gap-2 px-1">
+              <input 
+                type="checkbox" 
+                id="privacy" 
+                required 
+                className="h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500"
+              />
+              <label htmlFor="privacy" className="text-xs text-gray-500 dark:text-gray-400">
+                Acepto la{" "}
+                <Link href="/privacy-policy" target="_blank" className="text-green-600 dark:text-green-400 hover:underline">
+                  Política de Privacidad
+                </Link>
+              </label>
+            </div>
+
             <button
               type="submit"
               disabled={isLoading}
