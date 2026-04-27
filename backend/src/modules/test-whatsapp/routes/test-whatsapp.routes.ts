@@ -16,7 +16,7 @@ export async function testWhatsappRoutes(app: FastifyInstance) {
     const phone = to.replace(/[^0-9]/g, "");
 
     const response = await fetch(
-      `https://graph.facebook.com/v21.0/${env.META_PHONE_NUMBER_ID}/messages`,
+      `https://graph.facebook.com/v25.0/${env.META_PHONE_NUMBER_ID}/messages`,
       {
         method: "POST",
         headers: {
