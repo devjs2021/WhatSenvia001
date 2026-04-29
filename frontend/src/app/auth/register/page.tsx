@@ -123,6 +123,10 @@ export default function RegisterPage() {
                 <Link href="/privacy-policy" target="_blank" className="text-blue-600 dark:text-blue-400 hover:underline">
                   {t('nav.privacyPolicy')}
                 </Link>
+                {" y "}
+                <Link href="/terms-of-service" target="_blank" className="text-blue-600 dark:text-blue-400 hover:underline">
+                  {t('nav.termsOfService')}
+                </Link>
               </label>
             </div>
 
@@ -148,9 +152,14 @@ export default function RegisterPage() {
 
           {/* Footer links */}
           <div className="pt-8 border-t border-gray-100 dark:border-gray-900 flex flex-col items-center gap-4">
-            <Link href="/privacy-policy" className="text-xs text-gray-400 hover:text-gray-600 transition-colors">
-              {t('nav.privacyPolicy')}
-            </Link>
+            <div className="flex gap-4">
+              <Link href="/privacy-policy" className="text-xs text-gray-400 hover:text-gray-600 transition-colors">
+                {t('nav.privacyPolicy')}
+              </Link>
+              <Link href="/terms-of-service" className="text-xs text-gray-400 hover:text-gray-600 transition-colors">
+                {t('nav.termsOfService')}
+              </Link>
+            </div>
 
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-gray-100 dark:bg-gray-800/50">
               <Globe className="h-3.5 w-3.5 text-gray-400" />

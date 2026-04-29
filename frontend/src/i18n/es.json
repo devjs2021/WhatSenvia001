@@ -79,7 +79,8 @@
     "settings": "Configuración",
     "adminPanel": "Panel de Admin",
     "support": "Soporte",
-    "privacyPolicy": "Política de Privacidad"
+    "privacyPolicy": "Política de Privacidad",
+    "termsOfService": "Términos de Servicio"
   },
   "license": {
     "noLicense": "Sin licencia activa",
@@ -345,5 +346,41 @@
     "sent": "Enviado",
     "error": "Error",
     "connectionError": "Error de conexión"
+  },
+  "terms": {
+    "title": "Términos de Servicio",
+    "backToLogin": "Volver al inicio",
+    "lastUpdate": "Última actualización: 28 de Abril, 2026",
+    "intro": "Bienvenido a CallMesd. Al acceder o utilizar nuestra plataforma, usted acepta cumplir con estos Términos de Servicio. Si no está de acuerdo con alguna parte de estos términos, no utilice nuestro servicio.",
+    "section1Title": "1. Introducción y Aceptación",
+    "section1Desc": "Bienvenido a CallMesd. Al acceder o utilizar nuestra plataforma, usted acepta cumplir con estos Términos de Servicio. Si no está de acuerdo con alguna parte de estos términos, no utilice nuestro servicio.",
+    "section2Title": "2. Descripción del Servicio",
+    "section2Desc": "CallMesd es un proveedor de tecnología (Tech Provider) que ofrece integración con la API de WhatsApp Business. Nuestro servicio permite a pequeñas y medianas empresas enviar mensajes transaccionales y conversacionales a sus clientes, gestionar plantillas de mensajes, números de teléfono y administrar su cuenta de WhatsApp Business (WABA) a través de nuestra plataforma.",
+    "section3Title": "3. Registro y Cuenta del Usuario",
+    "section3Desc": "Para utilizar CallMesd, debe registrarse y proporcionar información veraz, actualizada y completa. Usted es el único responsable de mantener la confidencialidad de sus credenciales de acceso (usuario y contraseña) y de todas las actividades que ocurran bajo su cuenta. Notifique inmediatamente a CallMesd cualquier uso no autorizado de su cuenta.",
+    "section4Title": "4. Uso Aceptable (Prohibiciones)",
+    "section4Intro": "Usted acepta NO utilizar CallMesd para:",
+    "prohibition1": "Enviar spam, mensajes no solicitados o mensajes masivos sin consentimiento de los destinatarios.",
+    "prohibition2": "Violar las políticas de WhatsApp Business API o los términos de servicio de Meta.",
+    "prohibition3": "Enviar contenido ilegal, abusivo, fraudulento, difamatorio, discriminatorio o que promueva la violencia.",
+    "prohibition4": "Suplantar identidades o tergiversar su afiliación con cualquier persona o entidad.",
+    "prohibition5": "Realizar cualquier actividad que pueda dañar, deshabilitar o afectar la reputación de CallMesd o sus usuarios.",
+    "section5Title": "5. Propiedad Intelectual",
+    "section5Desc": "El nombre CallMesd, su logotipo, el código fuente de la plataforma y todos los derechos de propiedad intelectual asociados son propiedad de Angel David Avendaño. Usted conserva todos los derechos sobre el contenido de sus mensajes, listas de contactos y datos de sus clientes. Ninguna parte de estos términos transfiere propiedad intelectual alguna.",
+    "section6Title": "6. Privacidad y Datos",
+    "section6Desc": "El procesamiento de sus datos personales y de sus clientes se rige por nuestra Política de Privacidad. Al utilizar CallMesd, usted acepta nuestras prácticas de privacidad y el tratamiento de datos conforme a la legislación aplicable.",
+    "section7Title": "7. Limitación de Responsabilidad",
+    "section7Intro": "CallMesd depende de la disponibilidad y correcto funcionamiento de la API de WhatsApp Business y los servicios de Meta. No garantizamos un servicio ininterrumpido, libre de errores o seguro. No seremos responsables por:",
+    "liability1": "Interrupciones, suspensiones o cancelaciones del servicio causadas por Meta o WhatsApp.",
+    "liability2": "Pérdida de datos, daños indirectos, incidentales o consecuentes derivados del uso o imposibilidad de uso de nuestra plataforma.",
+    "liability3": "Mal uso de su cuenta o de la plataforma por parte de usted, sus empleados o terceros con acceso a sus credenciales.",
+    "liabilityNote": "En ningún caso nuestra responsabilidad total excederá el monto pagado por usted a CallMesd en los últimos 12 meses.",
+    "section8Title": "8. Modificaciones de los Términos",
+    "section8Desc": "Podemos actualizar o modificar estos Términos de Servicio periódicamente para reflejar cambios en nuestro servicio, requisitos legales o regulatorios. Le notificaremos los cambios significativos a través del correo electrónico registrado o mediante un aviso destacado en nuestra plataforma. El uso continuado de CallMesd después de la fecha de entrada en vigor de los cambios constituye su aceptación de los términos modificados.",
+    "section9Title": "9. Ley Aplicable",
+    "section9Desc": "Estos Términos de Servicio se rigen e interpretan de conformidad con las leyes de la República de Colombia. Cualquier disputa que surja en relación con estos términos será resuelta exclusivamente ante los tribunales competentes de Colombia.",
+    "section10Title": "10. Contacto",
+    "section10Desc": "Si tiene preguntas, inquietudes o solicitudes relacionadas con estos Términos de Servicio, puede contactarnos en:",
+    "allRightsReserved": "CallMesd - Comunicación inteligente para tu negocio"
   }
 }
