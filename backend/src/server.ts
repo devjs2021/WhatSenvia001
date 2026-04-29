@@ -9,7 +9,8 @@ import formbody from "@fastify/formbody";
 import { env } from "./config/env.js";
 import { db } from "./config/database.js";
 import { redis } from "./config/redis.js";
-import { sql } from "drizzle-orm";
+import { sql, eq } from "drizzle-orm";
+import { users } from "./infrastructure/database/schema/users.js";
 
 import { authRoutes } from "./modules/auth/routes/auth.routes.js";
 import { contactRoutes } from "./modules/contacts/routes/contact.routes.js";
@@ -144,8 +145,27 @@ async function bootstrap() {
     app.log.info("Checking database schema for facebook_id column...");
     await db.execute(sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS facebook_id VARCHAR(255) UNIQUE`);
     app.log.info("Database schema is up to date.");
+
+    // Auto-seed reviewer for Meta
+    const reviewerEmail = "meta_reviewer@callmesd.com";
+    const [existingReviewer] = await db.select().from(users).where(eq(users.email, reviewerEmail)).limit(1);
+    
+    if (!existingReviewer) {
+      app.log.info("Seeding Meta reviewer account...");
+      const bcrypt = await import("bcryptjs");
+      const hashedPassword = await bcrypt.default.hash("MetaReview2026!", 12);
+      await db.insert(users).values({
+        email: reviewerEmail,
+        password: hashedPassword,
+        name: "Meta Reviewer",
+        role: "admin",
+        company: "Meta Review Team",
+        isActive: true
+      });
+      app.log.info("Meta reviewer account created.");
+    }
   } catch (err: any) {
-    app.log.warn(`Auto-migration note: ${err.message}`);
+    app.log.warn(`Auto-migration/seed note: ${err.message}`);
   }
 
   // Start queue workers
