@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { useI18n } from "@/i18n";
 import type { ApiResponse, WhatsAppSession, PaginatedResponse, Contact } from "@/types";
 import { toast } from "sonner";
 import {
@@ -38,15 +39,16 @@ type SendMode = "manual" | "lists";
 type ContentType = "text" | "poll";
 type SpeedPreset = "slow" | "normal" | "fast" | "turbo";
 
-const speedPresets: Record<SpeedPreset, { label: string; seconds: string; msgsPerMin: number; color: string }> = {
-  slow:   { label: "Lento",  seconds: "15s", msgsPerMin: 4,  color: "text-blue-500" },
-  normal: { label: "Normal", seconds: "8s",  msgsPerMin: 8,  color: "text-green-500" },
-  fast:   { label: "Rápido", seconds: "3s",  msgsPerMin: 20, color: "text-orange-500" },
-  turbo:  { label: "Turbo",  seconds: "1s",  msgsPerMin: 30, color: "text-red-500" },
-};
-
 export default function CampaignsPage() {
   const queryClient = useQueryClient();
+  const { locale, t } = useI18n();
+
+  const speedPresets: Record<SpeedPreset, { label: string; seconds: string; msgsPerMin: number; color: string }> = {
+    slow:   { label: t('campaigns.slow'),   seconds: "15s", msgsPerMin: 4,  color: "text-blue-500" },
+    normal: { label: t('campaigns.normal'), seconds: "8s",  msgsPerMin: 8,  color: "text-green-500" },
+    fast:   { label: t('campaigns.fast'),   seconds: "3s",  msgsPerMin: 20, color: "text-orange-500" },
+    turbo:  { label: t('campaigns.turbo'),  seconds: "1s",  msgsPerMin: 30, color: "text-red-500" },
+  };
 
   const [sessionId, setSessionId] = useState("");
   const [sendMode, setSendMode] = useState<SendMode>("manual");
@@ -134,7 +136,7 @@ export default function CampaignsPage() {
       const tempTag = `envio-${Date.now()}`;
       await api.post("/contacts/upsert-bulk", { phones: phonesToSend, tag: tempTag });
       const campaignRes = await api.post<ApiResponse<any>>("/campaigns", {
-        name: `Envio ${new Date().toLocaleString("es-CO")}`,
+        name: `Envio ${new Date().toLocaleString(locale === 'es' ? 'es-CO' : 'en-US')}`,
         sessionId,
         message,
         targetTags: [tempTag],
@@ -144,7 +146,7 @@ export default function CampaignsPage() {
       return campaignRes.data.id;
     },
     onSuccess: () => {
-      toast.success(`Enviando a ${totalRecipients} destinatarios`);
+      toast.success(t('campaigns.sendingTo', { count: totalRecipients }));
       setManualNumbers("");
       setMessage("");
       queryClient.invalidateQueries({ queryKey: ["contacts-all"] });
@@ -169,7 +171,7 @@ export default function CampaignsPage() {
       });
     },
     onSuccess: () => {
-      toast.success(`Encuesta enviada a ${totalRecipients} destinatarios`);
+      toast.success(t('campaigns.pollSentTo', { count: totalRecipients }));
       setPollQuestion("");
       setPollOptions(["", ""]);
       setManualNumbers("");
@@ -193,7 +195,7 @@ export default function CampaignsPage() {
           return existing ? `${existing}\n${phones.join("\n")}` : phones.join("\n");
         });
       }
-      toast.success(`${json.data.imported} contactos importados`);
+      toast.success(t('campaigns.importedCount', { count: json.data.imported }));
       queryClient.invalidateQueries({ queryKey: ["contacts-all"] });
       queryClient.invalidateQueries({ queryKey: ["tags"] });
       setShowExcelImport(false);
@@ -205,15 +207,15 @@ export default function CampaignsPage() {
   }
 
   function handleSend() {
-    if (!sessionId) return toast.error("Selecciona un dispositivo");
-    if (selectedSession?.status !== "connected") return toast.error("El dispositivo no está conectado");
-    if (totalRecipients === 0) return toast.error("No hay destinatarios");
+    if (!sessionId) return toast.error(t('campaigns.selectDeviceError'));
+    if (selectedSession?.status !== "connected") return toast.error(t('campaigns.deviceNotConnectedError'));
+    if (totalRecipients === 0) return toast.error(t('campaigns.noRecipientsError'));
     if (contentType === "poll") {
       const validOpts = pollOptions.filter((o) => o.trim());
-      if (!pollQuestion.trim() || validOpts.length < 2) return toast.error("Completa la encuesta");
+      if (!pollQuestion.trim() || validOpts.length < 2) return toast.error(t('campaigns.completePollError'));
       sendPollMutation.mutate();
     } else {
-      if (!message.trim()) return toast.error("Escribe un mensaje");
+      if (!message.trim()) return toast.error(t('campaigns.writeMessageError'));
       sendMutation.mutate();
     }
   }
@@ -226,8 +228,8 @@ export default function CampaignsPage() {
 
       {/* Header */}
       <div>
-        <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100 tracking-tight">Envío Masivo</h1>
-        <p className="text-xs text-gray-400 mt-0.5">Configura y envía mensajes a múltiples destinatarios</p>
+        <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100 tracking-tight">{t('campaigns.title')}</h1>
+        <p className="text-xs text-gray-400 mt-0.5">{t('campaigns.subtitle')}</p>
       </div>
 
       {/* Barra de configuración compacta */}
@@ -239,14 +241,14 @@ export default function CampaignsPage() {
             <Smartphone className="h-3.5 w-3.5 text-blue-500" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Dispositivo</p>
+            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">{t('campaigns.device')}</p>
             <div className="relative">
               <select
                 className="w-full appearance-none bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-1.5 text-xs text-gray-800 dark:text-gray-200 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/30 cursor-pointer pr-7"
                 value={sessionId}
                 onChange={(e) => setSessionId(e.target.value)}
               >
-                <option value="">Seleccionar...</option>
+                <option value="">{t('campaigns.selectDevice')}</option>
                 {sessions.map((s) => (
                   <option key={s.id} value={s.id}>
                     {s.name} {s.phone ? `· ${s.phone}` : ""}
@@ -272,9 +274,9 @@ export default function CampaignsPage() {
             <Zap className="h-3.5 w-3.5 text-violet-500" />
           </div>
           <div>
-            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Modo</p>
+            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">{t('campaigns.mode')}</p>
             <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 rounded-lg p-0.5">
-              {([["manual", "Manual", Users], ["lists", "Listas", List]] as const).map(([mode, label, Icon]) => (
+              {([["manual", t('campaigns.manual'), Users], ["lists", t('campaigns.lists'), List]] as const).map(([mode, label, Icon]) => (
                 <button
                   key={mode}
                   onClick={() => { setSendMode(mode); setSelectedListId(""); setListPhones([]); }}
@@ -298,9 +300,9 @@ export default function CampaignsPage() {
             <Gauge className="h-3.5 w-3.5 text-orange-500" />
           </div>
           <div>
-            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Velocidad</p>
+            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">{t('campaigns.speed')}</p>
             <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 rounded-lg p-0.5">
-              {(Object.entries(speedPresets) as [SpeedPreset, typeof speedPresets.slow][]).map(([key, preset]) => (
+              {(Object.entries(speedPresets) as [SpeedPreset, { label: string; seconds: string; color: string }][]).map(([key, preset]) => (
                 <button
                   key={key}
                   onClick={() => setSpeed(key)}
@@ -328,11 +330,11 @@ export default function CampaignsPage() {
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <span className="h-5 w-5 rounded-full bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-xs font-bold flex items-center justify-center">1</span>
-              <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">Destinatarios</p>
+              <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">{t('campaigns.recipients')}</p>
             </div>
             {detectedNumbers.length > 0 || totalRecipients > 0 ? (
               <span className="text-xs font-medium bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 px-2.5 py-1 rounded-full">
-                {totalRecipients} números
+                {totalRecipients} {t('campaigns.numbers')}
               </span>
             ) : null}
           </div>
@@ -340,7 +342,7 @@ export default function CampaignsPage() {
           {sendMode === "manual" ? (
             <div className="space-y-3">
               <textarea
-                placeholder={"Pega aquí los números (separados por coma o Enter)\nEj: 573001234567, 573112233445"}
+                placeholder={t('campaigns.pasteNumbers')}
                 rows={14}
                 value={manualNumbers}
                 onChange={(e) => setManualNumbers(e.target.value)}
@@ -349,26 +351,26 @@ export default function CampaignsPage() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5 text-xs text-gray-500">
                   <div className={`h-1.5 w-1.5 rounded-full ${detectedNumbers.length > 0 ? "bg-green-500" : "bg-gray-300"}`} />
-                  {detectedNumbers.length} números detectados
+                  {detectedNumbers.length} {t('campaigns.numbersDetected')}
                 </div>
                 <button
                   onClick={() => setShowExcelImport(!showExcelImport)}
                   className="flex items-center gap-1.5 text-xs font-medium text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 transition-colors px-3 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
                 >
                   <FileSpreadsheet className="h-3.5 w-3.5" />
-                  Desde Excel
+                  {t('campaigns.fromExcel')}
                 </button>
               </div>
               {showExcelImport && (
                 <div className="rounded-xl border border-dashed border-gray-200 dark:border-gray-700 p-4 bg-gray-50 dark:bg-gray-800/50 space-y-2">
-                  <p className="text-xs text-gray-400">Sube un Excel con columna de teléfonos.</p>
+                  <p className="text-xs text-gray-400">{t('campaigns.excelInstructions')}</p>
                   <input
                     type="file"
                     accept=".xlsx,.xls,.csv"
                     onChange={(e) => { const f = e.target.files?.[0]; if (f) handleExcelUpload(f); }}
                     className="text-xs text-gray-500 file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-gray-200 file:text-gray-700 hover:file:bg-gray-300 cursor-pointer"
                   />
-                  {uploading && <p className="text-xs text-gray-400 animate-pulse">Importando...</p>}
+                  {uploading && <p className="text-xs text-gray-400 animate-pulse">{t('campaigns.importing')}</p>}
                 </div>
               )}
             </div>
@@ -377,7 +379,7 @@ export default function CampaignsPage() {
               {contactLists.length > 0 && (
                 <div>
                   <label className="text-xs font-medium text-gray-400 mb-1.5 flex items-center gap-1">
-                    <List className="h-3 w-3" /> Listas guardadas
+                    <List className="h-3 w-3" /> {t('campaigns.savedLists')}
                   </label>
                   <div className="relative">
                     <select
@@ -385,10 +387,10 @@ export default function CampaignsPage() {
                       value={selectedListId}
                       onChange={(e) => handleSelectList(e.target.value)}
                     >
-                      <option value="">Seleccionar lista...</option>
+                      <option value="">{t('campaigns.selectList')}</option>
                       {contactLists.map((list) => (
                         <option key={list.id} value={list.id}>
-                          {list.name} ({list.contactCount} contactos)
+                          {list.name} ({list.contactCount} contacts)
                         </option>
                       ))}
                     </select>
@@ -399,7 +401,7 @@ export default function CampaignsPage() {
               {!selectedListId && (
                 <div>
                   <label className="text-xs font-medium text-gray-400 mb-1.5 flex items-center gap-1">
-                    <Users className="h-3 w-3" /> Filtrar por etiqueta
+                    <Users className="h-3 w-3" /> {t('campaigns.filterTag')}
                   </label>
                   <div className="relative">
                     <select
@@ -407,7 +409,7 @@ export default function CampaignsPage() {
                       value={selectedTag}
                       onChange={(e) => setSelectedTag(e.target.value)}
                     >
-                      <option value="">Todos los contactos</option>
+                      <option value="">{t('campaigns.allContacts')}</option>
                       {tags.map((tag) => (
                         <option key={tag} value={tag}>{tag}</option>
                       ))}
@@ -423,8 +425,8 @@ export default function CampaignsPage() {
                 <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{totalRecipients}</p>
                 <p className="text-xs text-gray-400 text-center">
                   {selectedListId
-                    ? `en "${contactLists.find((l) => l.id === selectedListId)?.name}"`
-                    : selectedTag ? `con etiqueta "${selectedTag}"` : "contactos en total"}
+                    ? t('campaigns.inList', { name: contactLists.find((l) => l.id === selectedListId)?.name })
+                    : selectedTag ? t('campaigns.withTag', { tag: selectedTag }) : t('campaigns.inTotal')}
                 </p>
               </div>
             </div>
@@ -436,7 +438,7 @@ export default function CampaignsPage() {
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <span className="h-5 w-5 rounded-full bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-xs font-bold flex items-center justify-center">2</span>
-              <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">Contenido</p>
+              <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">{t('campaigns.content')}</p>
             </div>
             <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 rounded-xl p-1">
               <button
@@ -448,7 +450,7 @@ export default function CampaignsPage() {
                 }`}
               >
                 <MessageSquare className="h-3.5 w-3.5" />
-                Texto
+                {t('campaigns.text')}
               </button>
               <button
                 onClick={() => setContentType("poll")}
@@ -459,7 +461,7 @@ export default function CampaignsPage() {
                 }`}
               >
                 <BarChart2 className="h-3.5 w-3.5" />
-                Encuesta
+                {t('campaigns.poll')}
               </button>
             </div>
           </div>
@@ -477,7 +479,7 @@ export default function CampaignsPage() {
                       if (t) setMessage(t.content);
                     }}
                   >
-                    <option value="">Usar plantilla...</option>
+                    <option value="">{t('campaigns.useTemplate')}</option>
                     {templates.map((t) => (
                       <option key={t.id} value={t.id}>
                         {t.name} {t.category ? `· ${t.category}` : ""}
@@ -491,10 +493,10 @@ export default function CampaignsPage() {
               {/* Format toolbar */}
               <div className="flex items-center gap-1 border-b border-gray-100 dark:border-gray-800 pb-2">
                 {[
-                  { label: <strong className="text-xs">B</strong>, insert: "*texto*", title: "Negrita" },
-                  { label: <em className="text-xs">I</em>, insert: "_texto_", title: "Cursiva" },
-                  { label: <span className="text-xs line-through">S</span>, insert: "~texto~", title: "Tachado" },
-                  { label: <span className="text-xs font-mono">&lt;/&gt;</span>, insert: "```codigo```", title: "Código" },
+                  { label: <strong className="text-xs">B</strong>, insert: "*texto*", title: t('campaigns.bold') },
+                  { label: <em className="text-xs">I</em>, insert: "_texto_", title: t('campaigns.italic') },
+                  { label: <span className="text-xs line-through">S</span>, insert: "~texto~", title: t('campaigns.strikethrough') },
+                  { label: <span className="text-xs font-mono">&lt;/&gt;</span>, insert: "```codigo```", title: t('campaigns.code') },
                 ].map((btn, i) => (
                   <button
                     key={i}
@@ -515,7 +517,7 @@ export default function CampaignsPage() {
               </div>
 
               <textarea
-                placeholder={"Escribe tu mensaje aquí...\n\nVariables: {{name}}, {{phone}}, {{email}}\nColumnas Excel: {{ciudad}}, {{empresa}}, etc."}
+                placeholder={t('campaigns.writeMessage')}
                 rows={9}
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
@@ -525,17 +527,17 @@ export default function CampaignsPage() {
           ) : (
             <div className="space-y-3">
               <input
-                placeholder="Pregunta de la encuesta"
+                placeholder={t('campaigns.pollQuestion')}
                 value={pollQuestion}
                 onChange={(e) => setPollQuestion(e.target.value)}
                 className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-2.5 text-sm text-gray-800 dark:text-gray-200 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
               />
-              <p className="text-xs font-medium text-gray-400">Opciones (mín. 2, máx. 12)</p>
+              <p className="text-xs font-medium text-gray-400">{t('campaigns.pollOptions')}</p>
               <div className="space-y-2">
                 {pollOptions.map((opt, i) => (
                   <div key={i} className="flex gap-2">
                     <input
-                      placeholder={`Opción ${i + 1}`}
+                      placeholder={`${t('campaigns.optionPlaceholder')} ${i + 1}`}
                       value={opt}
                       onChange={(e) => {
                         const newOpts = [...pollOptions];
@@ -561,7 +563,7 @@ export default function CampaignsPage() {
                   className="flex items-center gap-1.5 text-xs font-medium text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                 >
                   <Plus className="h-3.5 w-3.5" />
-                  Agregar opción
+                  {t('campaigns.addOption')}
                 </button>
               )}
               <label className="flex items-center gap-2.5 text-sm text-gray-600 dark:text-gray-400 cursor-pointer">
@@ -571,7 +573,7 @@ export default function CampaignsPage() {
                   onChange={(e) => setPollMultiSelect(e.target.checked)}
                   className="h-4 w-4 rounded-md accent-gray-900 dark:accent-white"
                 />
-                Permitir selección múltiple
+                {t('campaigns.multiSelect')}
               </label>
             </div>
           )}
@@ -581,11 +583,11 @@ export default function CampaignsPage() {
       {/* Send Bar */}
       <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm px-3 md:px-5 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-4 text-xs text-gray-500">
-          <span><span className="font-semibold text-gray-900 dark:text-gray-100">{totalRecipients}</span> destinatarios</span>
+          <span><span className="font-semibold text-gray-900 dark:text-gray-100">{totalRecipients}</span> {t('campaigns.numbers')}</span>
           <span className="text-gray-200 dark:text-gray-700">·</span>
           <span className={`font-semibold ${speedPresets[speed].color}`}>{speedPresets[speed].label} ({speedPresets[speed].seconds})</span>
           <span className="text-gray-200 dark:text-gray-700">·</span>
-          <span>{contentType === "text" ? "Texto" : "Encuesta"}</span>
+          <span>{contentType === "text" ? t('campaigns.text') : t('campaigns.poll')}</span>
         </div>
         <button
           onClick={handleSend}
@@ -595,12 +597,12 @@ export default function CampaignsPage() {
           {isSending ? (
             <>
               <div className="h-3.5 w-3.5 rounded-full border-2 border-white/30 dark:border-gray-900/30 border-t-white dark:border-t-gray-900 animate-spin" />
-              Enviando...
+              {t('campaigns.enviando')}
             </>
           ) : (
             <>
               <Send className="h-3.5 w-3.5" />
-              Enviar a {totalRecipients}
+              {t('campaigns.sendTo', { count: totalRecipients })}
             </>
           )}
         </button>

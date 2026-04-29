@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { useI18n } from "@/i18n";
 import type { ApiResponse, WhatsAppSession } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,6 +22,7 @@ const statusColors: Record<string, "default" | "secondary" | "destructive" | "su
 
 export default function WhatsAppPage() {
   const queryClient = useQueryClient();
+  const { t } = useI18n();
   const [sessionName, setSessionName] = useState("");
   const [connectingId, setConnectingId] = useState<string | null>(null);
   const [qrCode, setQrCode] = useState<string | null>(null);
@@ -39,7 +41,7 @@ export default function WhatsAppPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["sessions"] });
       setSessionName("");
-      toast.success("Sesion creada");
+      toast.success(t('whatsapp.sessionCreated'));
     },
     onError: (err: any) => toast.error(err.message),
   });
@@ -51,7 +53,7 @@ export default function WhatsAppPage() {
         setQrCode(data.data.qrDataUrl);
         setConnectingId(id);
       } else {
-        toast.success("Sesion conectada");
+        toast.success(t('whatsapp.sessionConnected'));
         setConnectingId(null);
         setQrCode(null);
       }
@@ -64,7 +66,7 @@ export default function WhatsAppPage() {
     mutationFn: (id: string) => api.post(`/whatsapp/sessions/${id}/disconnect`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["sessions"] });
-      toast.success("Sesion desconectada");
+      toast.success(t('whatsapp.sessionDisconnected'));
     },
   });
 
@@ -72,7 +74,7 @@ export default function WhatsAppPage() {
     mutationFn: (id: string) => api.delete(`/whatsapp/sessions/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["sessions"] });
-      toast.success("Sesion eliminada");
+      toast.success(t('whatsapp.sessionDeleted'));
     },
   });
 
@@ -80,7 +82,7 @@ export default function WhatsAppPage() {
     mutationFn: (payload: { sessionId: string; phone: string; content: string }) =>
       api.post("/messages/send-quick", payload),
     onSuccess: () => {
-      toast.success("Mensaje enviado!");
+      toast.success(t('whatsapp.messageSent'));
       setQuickPhone("");
       setQuickMessage("");
     },
@@ -98,7 +100,7 @@ export default function WhatsAppPage() {
     mutationFn: (payload: { sessionId: string; phone: string; question: string; options: string[]; multiSelect: boolean }) =>
       api.post("/messages/send-poll", payload),
     onSuccess: () => {
-      toast.success("Encuesta enviada!");
+      toast.success(t('whatsapp.pollSent'));
       setPollPhone("");
       setPollQuestion("");
       setPollOptions(["", ""]);
@@ -115,7 +117,7 @@ export default function WhatsAppPage() {
       if (session?.status === "connected") {
         setQrCode(null);
         setConnectingId(null);
-        toast.success("WhatsApp conectado!");
+        toast.success(t('whatsapp.whatsappConnected'));
       }
     }
   }, [sessions, connectingId]);
@@ -123,14 +125,14 @@ export default function WhatsAppPage() {
   return (
     <div className="space-y-4 md:space-y-6">
       <div>
-        <h1 className="text-lg md:text-xl font-semibold">WhatsApp</h1>
-        <p className="text-muted-foreground">Gestiona tus sesiones de WhatsApp</p>
+        <h1 className="text-lg md:text-xl font-semibold">{t('whatsapp.title')}</h1>
+        <p className="text-muted-foreground">{t('whatsapp.subtitle')}</p>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Nueva Sesion</CardTitle>
-          <CardDescription>Conecta un numero de WhatsApp para enviar mensajes</CardDescription>
+          <CardTitle className="text-lg">{t('whatsapp.newSession')}</CardTitle>
+          <CardDescription>{t('whatsapp.connectNumber')}</CardDescription>
         </CardHeader>
         <CardContent>
           <form
@@ -141,14 +143,14 @@ export default function WhatsAppPage() {
             className="flex flex-col sm:flex-row gap-2"
           >
             <Input
-              placeholder="Nombre de la sesion (ej: Marketing, Ventas)"
+              placeholder={t('whatsapp.sessionPlaceholder')}
               value={sessionName}
               onChange={(e) => setSessionName(e.target.value)}
               className="sm:max-w-md"
             />
             <Button type="submit" disabled={createMutation.isPending || !sessionName.trim()}>
               <Plus className="mr-2 h-4 w-4" />
-              Crear
+              {t('common.create')}
             </Button>
           </form>
         </CardContent>
@@ -157,9 +159,9 @@ export default function WhatsAppPage() {
       {qrCode && connectingId && (
         <Card className="border-whatsapp">
           <CardHeader>
-            <CardTitle className="text-lg">Escanea el codigo QR</CardTitle>
+            <CardTitle className="text-lg">{t('whatsapp.scanQr')}</CardTitle>
             <CardDescription>
-              Abre WhatsApp en tu telefono, ve a Dispositivos vinculados y escanea este codigo
+              {t('whatsapp.scanInstructions')}
             </CardDescription>
           </CardHeader>
           <CardContent className="flex justify-center">
@@ -171,8 +173,8 @@ export default function WhatsAppPage() {
       {connectedSessions.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Envio Rapido</CardTitle>
-            <CardDescription>Envia un mensaje directo a cualquier numero de WhatsApp</CardDescription>
+            <CardTitle className="text-lg">{t('whatsapp.quickSend')}</CardTitle>
+            <CardDescription>{t('whatsapp.quickSendDesc')}</CardDescription>
           </CardHeader>
           <CardContent>
             <form
@@ -187,7 +189,7 @@ export default function WhatsAppPage() {
             >
               {connectedSessions.length > 1 && (
                 <div>
-                  <label className="text-sm font-medium mb-1 block">Sesion</label>
+                  <label className="text-sm font-medium mb-1 block">{t('whatsapp.sessionLabel')}</label>
                   <select
                     className="flex h-9 w-full max-w-md rounded-md border border-input bg-transparent px-3 py-1 text-sm"
                     value={quickSessionId || connectedSessions[0]?.id}
@@ -203,14 +205,14 @@ export default function WhatsAppPage() {
               )}
               <div className="flex gap-2">
                 <Input
-                  placeholder="Numero de telefono (ej: 573001234567)"
+                  placeholder={t('whatsapp.phonePlaceholder')}
                   value={quickPhone}
                   onChange={(e) => setQuickPhone(e.target.value)}
                   className="max-w-xs"
                 />
               </div>
               <Textarea
-                placeholder="Escribe tu mensaje..."
+                placeholder={t('whatsapp.messagePlaceholder')}
                 value={quickMessage}
                 onChange={(e) => setQuickMessage(e.target.value)}
                 rows={3}
@@ -221,7 +223,7 @@ export default function WhatsAppPage() {
                 disabled={sendQuickMutation.isPending || !quickPhone.trim() || !quickMessage.trim()}
               >
                 <Send className="mr-2 h-4 w-4" />
-                {sendQuickMutation.isPending ? "Enviando..." : "Enviar mensaje"}
+                {sendQuickMutation.isPending ? t('whatsapp.enviando') : t('messages.sendMessage')}
               </Button>
             </form>
           </CardContent>
@@ -234,9 +236,9 @@ export default function WhatsAppPage() {
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
               <BarChart3 className="h-5 w-5" />
-              Enviar Encuesta
+              {t('whatsapp.sendPoll')}
             </CardTitle>
-            <CardDescription>Envia una encuesta nativa de WhatsApp a cualquier numero</CardDescription>
+            <CardDescription>{t('whatsapp.sendPollDesc')}</CardDescription>
           </CardHeader>
           <CardContent>
             <form
@@ -268,23 +270,23 @@ export default function WhatsAppPage() {
                 </select>
               )}
               <Input
-                placeholder="Numero de telefono (ej: 573001234567)"
+                placeholder={t('whatsapp.phonePlaceholder')}
                 value={pollPhone}
                 onChange={(e) => setPollPhone(e.target.value)}
                 className="max-w-xs"
               />
               <Input
-                placeholder="Pregunta de la encuesta"
+                placeholder={t('campaigns.pollQuestion')}
                 value={pollQuestion}
                 onChange={(e) => setPollQuestion(e.target.value)}
                 className="max-w-md"
               />
               <div className="space-y-2 max-w-md">
-                <label className="text-sm font-medium">Opciones (min 2, max 12)</label>
+                <label className="text-sm font-medium">{t('whatsapp.pollOptionsLabel')}</label>
                 {pollOptions.map((opt, i) => (
                   <div key={i} className="flex gap-2">
                     <Input
-                      placeholder={`Opcion ${i + 1}`}
+                      placeholder={`${t('whatsapp.optionPlaceholder')} ${i + 1}`}
                       value={opt}
                       onChange={(e) => {
                         const newOpts = [...pollOptions];
@@ -313,25 +315,25 @@ export default function WhatsAppPage() {
                     onClick={() => setPollOptions([...pollOptions, ""])}
                   >
                     <Plus className="mr-1 h-4 w-4" />
-                    Agregar opcion
+                    {t('whatsapp.addOption')}
                   </Button>
                 )}
               </div>
-              <label className="flex items-center gap-2 text-sm">
+              <label className="flex items-center gap-2 text-sm cursor-pointer">
                 <input
                   type="checkbox"
                   checked={pollMultiSelect}
                   onChange={(e) => setPollMultiSelect(e.target.checked)}
                   className="rounded"
                 />
-                Permitir seleccion multiple
+                {t('whatsapp.multiSelect')}
               </label>
               <Button
                 type="submit"
                 disabled={sendPollMutation.isPending || !pollPhone.trim() || !pollQuestion.trim() || pollOptions.filter((o) => o.trim()).length < 2}
               >
                 <BarChart3 className="mr-2 h-4 w-4" />
-                {sendPollMutation.isPending ? "Enviando..." : "Enviar encuesta"}
+                {sendPollMutation.isPending ? t('whatsapp.enviando') : t('whatsapp.sendPoll')}
               </Button>
             </form>
           </CardContent>
@@ -340,11 +342,11 @@ export default function WhatsAppPage() {
 
       <div className="grid gap-4">
         {isLoading ? (
-          <p className="text-center text-muted-foreground py-8">Cargando sesiones...</p>
+          <p className="text-center text-muted-foreground py-8">{t('whatsapp.loadingSessions')}</p>
         ) : sessions.length === 0 ? (
           <Card>
             <CardContent className="py-8 text-center text-muted-foreground">
-              No hay sesiones. Crea una para conectar WhatsApp.
+              {t('whatsapp.noSessions')}
             </CardContent>
           </Card>
         ) : (
@@ -354,7 +356,7 @@ export default function WhatsAppPage() {
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
                     <h3 className="font-semibold text-sm">{session.name}</h3>
-                    <Badge variant={statusColors[session.status]}>{session.status}</Badge>
+                    <Badge variant={statusColors[session.status]}>{t(`whatsapp.${session.status}`)}</Badge>
                   </div>
                   {session.phone && (
                     <p className="text-sm text-muted-foreground font-mono">+{session.phone}</p>
@@ -369,7 +371,7 @@ export default function WhatsAppPage() {
                       disabled={connectMutation.isPending}
                     >
                       <Plug className="mr-1 h-4 w-4" />
-                      Conectar
+                      {t('whatsapp.connect')}
                     </Button>
                   )}
                   {session.status === "connected" && (
@@ -379,7 +381,7 @@ export default function WhatsAppPage() {
                       onClick={() => disconnectMutation.mutate(session.id)}
                     >
                       <PlugZap className="mr-1 h-4 w-4" />
-                      Desconectar
+                      {t('whatsapp.disconnect')}
                     </Button>
                   )}
                   {session.status === "qr_pending" && (
@@ -389,7 +391,7 @@ export default function WhatsAppPage() {
                       onClick={() => connectMutation.mutate(session.id)}
                     >
                       <RefreshCw className="mr-1 h-4 w-4" />
-                      Nuevo QR
+                      {t('whatsapp.newQr')}
                     </Button>
                   )}
                   <Button

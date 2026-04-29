@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
-import { api } from "@/lib/api";
+import { useState, useEffect } from "react";
+import { useI18n } from "@/i18n";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Send, CheckCircle2, XCircle, Clock, Zap } from "lucide-react";
+import { Send, RefreshCcw, Info, CheckCircle2, XCircle } from "lucide-react";
+import { Label } from "@/components/ui/label";
 
 interface TestResult {
   success: boolean;
@@ -18,26 +19,62 @@ interface TestResult {
 }
 
 export default function TestWhatsAppPage() {
-  const [phone, setPhone] = useState("");
+  const { t } = useI18n();
+  const [token, setToken] = useState("");
+  const [phoneId, setPhoneId] = useState("");
+  const [targetPhone, setTargetPhone] = useState("");
   const [sending, setSending] = useState(false);
   const [results, setResults] = useState<TestResult[]>([]);
 
-  const handleSend = async () => {
-    if (!phone.trim()) return;
-    setSending(true);
+  useEffect(() => {
+    setToken(localStorage.getItem("test_whatsapp_token") || "");
+    setPhoneId(localStorage.getItem("test_whatsapp_phone_id") || "");
+    setTargetPhone(localStorage.getItem("test_whatsapp_target_phone") || "");
+  }, []);
 
-    const timestamp = new Date().toLocaleTimeString("es-CO", {
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-    });
+  const handleSend = async () => {
+    const cleanToken = token.trim();
+    const cleanPhoneId = phoneId.trim();
+    const cleanTarget = targetPhone.trim();
+
+    if (!cleanTarget || !cleanToken || !cleanPhoneId) return;
+    
+    localStorage.setItem("test_whatsapp_token", cleanToken);
+    localStorage.setItem("test_whatsapp_phone_id", cleanPhoneId);
+    localStorage.setItem("test_whatsapp_target_phone", cleanTarget);
+
+    setSending(true);
+    const timestamp = new Date().toLocaleTimeString();
 
     try {
-      const data: any = await api.post("/test-whatsapp/send", { to: phone.trim() });
+      // Usamos fetch directo para evitar interceptores de sesión del dashboard
+      const response = await fetch("/api/test-whatsapp/send", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ 
+          to: cleanTarget,
+          accessToken: cleanToken,
+          phoneNumberId: cleanPhoneId
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw { message: data.error || "Error", details: data };
+      }
+
       setResults((prev) => [{ ...data, timestamp }, ...prev]);
     } catch (err: any) {
       setResults((prev) => [
-        { success: false, error: err.message || "Error de conexion", timestamp },
+        { 
+          success: false, 
+          error: err.message || t('testWhatsapp.connectionError'), 
+          details: err.details || err,
+          timestamp 
+        },
         ...prev,
       ]);
     } finally {
@@ -46,96 +83,115 @@ export default function TestWhatsAppPage() {
   };
 
   return (
-    <div className="space-y-4 md:space-y-6">
-      <div>
-        <div className="flex items-center gap-2">
-          <h1 className="text-lg md:text-xl font-semibold">Panel de Prueba</h1>
-          <Badge variant="warning" className="text-[10px]">Meta Cloud API</Badge>
+    <div className="max-w-4xl mx-auto py-8 px-4 space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">{t('testWhatsapp.title')}</h1>
+          <p className="text-muted-foreground text-sm">{t('testWhatsapp.subtitle')}</p>
         </div>
-        <p className="text-muted-foreground text-sm">
-          Envia mensajes de prueba usando la API oficial de WhatsApp Business
-        </p>
+        <Badge variant="outline" className="h-6">v25.0</Badge>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Zap className="h-5 w-5 text-primary" />
-            Enviar Mensaje de Prueba
-          </CardTitle>
-          <CardDescription>
-            Envia la plantilla <code className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono">hello_world</code> a un numero de WhatsApp
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleSend();
-            }}
-            className="flex flex-col sm:flex-row gap-3"
-          >
-            <div className="flex-1 max-w-md">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card className="shadow-sm">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-base font-semibold">{t('testWhatsapp.metaConfig')}</CardTitle>
+            <CardDescription>{t('testWhatsapp.metaConfigDesc')}</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="token">{t('testWhatsapp.accessToken')}</Label>
               <Input
-                placeholder="Numero destino (ej: +573001234567)"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                className="h-10"
+                id="token"
+                type="password"
+                placeholder="EAA..."
+                value={token}
+                onChange={(e) => setToken(e.target.value)}
+                className="font-mono text-xs"
               />
             </div>
-            <Button type="submit" disabled={sending || !phone.trim()} className="h-10">
-              <Send className="mr-2 h-4 w-4" />
-              {sending ? "Enviando..." : "Enviar Mensaje"}
+            <div className="space-y-1.5">
+              <Label htmlFor="phoneId">{t('testWhatsapp.phoneNumberId')}</Label>
+              <Input
+                id="phoneId"
+                placeholder={t('testWhatsapp.phoneNumberIdPlaceholder')}
+                value={phoneId}
+                onChange={(e) => setPhoneId(e.target.value)}
+              />
+              <p className="text-[10px] text-muted-foreground flex items-center gap-1 mt-1">
+                <Info className="h-3 w-3" />
+                <span dangerouslySetInnerHTML={{ __html: t('testWhatsapp.findItIn') }} />
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-sm">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-base font-semibold">{t('testWhatsapp.recipient')}</CardTitle>
+            <CardDescription>{t('testWhatsapp.recipientDesc')}</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="target">{t('testWhatsapp.phoneNumber')}</Label>
+              <Input
+                id="target"
+                placeholder={t('testWhatsapp.phonePlaceholder')}
+                value={targetPhone}
+                onChange={(e) => setTargetPhone(e.target.value)}
+              />
+            </div>
+            <Button 
+              className="w-full" 
+              onClick={handleSend}
+              disabled={sending || !token || !phoneId || !targetPhone}
+            >
+              {sending ? (
+                <>
+                  <RefreshCcw className="mr-2 h-4 w-4 animate-spin" />
+                  {t('testWhatsapp.testing')}
+                </>
+              ) : (
+                <>
+                  <Send className="mr-2 h-4 w-4" />
+                  {t('testWhatsapp.testSend')}
+                </>
+              )}
             </Button>
-          </form>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
 
       {results.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Clock className="h-5 w-5" />
-              Resultados
-            </CardTitle>
-            <CardDescription>{results.length} envio{results.length > 1 ? "s" : ""} realizado{results.length > 1 ? "s" : ""}</CardDescription>
+        <Card className="shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-base font-semibold">{t('testWhatsapp.testHistory')}</CardTitle>
+            <Button variant="ghost" size="sm" onClick={() => setResults([])} className="h-8 text-xs">
+              {t('testWhatsapp.clear')}
+            </Button>
           </CardHeader>
           <CardContent className="space-y-3">
-            {results.map((result, i) => (
-              <div
-                key={i}
-                className={`rounded-lg border p-4 ${
-                  result.success
-                    ? "border-green-200 bg-green-50/50 dark:border-green-800 dark:bg-green-950/20"
-                    : "border-red-200 bg-red-50/50 dark:border-red-800 dark:bg-red-950/20"
-                }`}
-              >
-                <div className="flex items-center justify-between mb-2">
+            {results.map((res, i) => (
+              <div key={i} className="border rounded-md p-3 text-sm flex flex-col gap-2">
+                <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    {result.success ? (
-                      <CheckCircle2 className="h-4 w-4 text-green-600" />
+                    {res.success ? (
+                      <CheckCircle2 className="h-4 w-4 text-green-500" />
                     ) : (
-                      <XCircle className="h-4 w-4 text-red-600" />
+                      <XCircle className="h-4 w-4 text-red-500" />
                     )}
-                    <span className="font-medium text-sm">
-                      {result.success ? "Enviado correctamente" : "Error al enviar"}
-                    </span>
+                    <span className="font-medium">{res.success ? t('testWhatsapp.sent') : t('testWhatsapp.error')}</span>
                   </div>
-                  <span className="text-xs text-muted-foreground">{result.timestamp}</span>
+                  <span className="text-[10px] text-muted-foreground">{res.timestamp}</span>
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  {result.success ? result.message : result.error}
-                </p>
-                {result.data && (
-                  <pre className="mt-2 text-xs bg-muted/50 rounded p-2 overflow-x-auto">
-                    {JSON.stringify(result.data, null, 2)}
-                  </pre>
+                {res.success ? (
+                  <p className="text-muted-foreground text-xs">{res.message}</p>
+                ) : (
+                  <p className="text-red-500 text-xs">{res.error}</p>
                 )}
-                {result.details && !result.success && (
-                  <pre className="mt-2 text-xs bg-muted/50 rounded p-2 overflow-x-auto">
-                    {JSON.stringify(result.details, null, 2)}
-                  </pre>
-                )}
+                <pre className="bg-muted p-2 rounded text-[10px] overflow-x-auto max-h-32">
+                  {JSON.stringify(res.data || res.details, null, 2)}
+                </pre>
               </div>
             ))}
           </CardContent>

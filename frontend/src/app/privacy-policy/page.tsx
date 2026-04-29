@@ -1,7 +1,12 @@
+"use client";
+
 import Link from "next/link";
 import { Shield, Lock, Eye, Trash2, Mail, FileText, ChevronLeft } from "lucide-react";
+import { useI18n } from "@/i18n";
 
 export default function PrivacyPolicyPage() {
+  const t = useI18n((state) => state.t);
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 font-sans">
       {/* Header decorativo */}
@@ -15,16 +20,15 @@ export default function PrivacyPolicyPage() {
             className="inline-flex items-center text-blue-100 hover:text-white mb-8 transition-colors group"
           >
             <ChevronLeft className="h-5 w-5 mr-1 group-hover:-translate-x-1 transition-transform" />
-            Volver al inicio
+            {t('privacy.backToLogin')}
           </Link>
-          <h1 className="text-4xl md:text-5xl font-bold mb-4 tracking-tight">Política de Privacidad</h1>
+          <h1 className="text-4xl md:text-5xl font-bold mb-4 tracking-tight">{t('privacy.title')}</h1>
           <p className="text-blue-50 text-lg max-w-2xl opacity-90">
-            Bajo la responsabilidad de <strong>Angel David Avendaño</strong>, en CallMesd valoramos tu privacidad y nos comprometemos a proteger tus datos personales. 
-            Esta política explica cómo recopilamos, usamos y gestionamos tu información.
+            {t('privacy.intro')}
           </p>
           <div className="mt-8 flex items-center gap-2 text-sm bg-white/10 w-fit px-4 py-2 rounded-full backdrop-blur-sm border border-white/20">
             <Shield className="h-4 w-4 text-blue-300" />
-            <span>Última actualización: 26 de Abril, 2026</span>
+            <span>{t('privacy.lastUpdate')}</span>
           </div>
         </div>
       </div>
@@ -38,27 +42,27 @@ export default function PrivacyPolicyPage() {
               <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
                 <Eye className="h-6 w-6 text-blue-600 dark:text-blue-400" />
               </div>
-              <h2 className="text-2xl font-bold">1. Información que Recopilamos</h2>
+              <h2 className="text-2xl font-bold">{t('privacy.section1Title')}</h2>
             </div>
             <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
-              Para proporcionar nuestros servicios de mensajería masiva, recopilamos la siguiente información:
+              {t('privacy.section1Intro')}
             </p>
             <ul className="grid md:grid-cols-2 gap-4 mt-4">
               <li className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-2xl border border-gray-100 dark:border-gray-800">
-                <span className="font-bold block text-gray-900 dark:text-white mb-1">Datos de Cuenta</span>
-                Nombre, dirección de correo electrónico y nombre de la empresa proporcionados al registrarse.
+                <span className="font-bold block text-gray-900 dark:text-white mb-1">{t('privacy.dataAccountTitle')}</span>
+                {t('privacy.dataAccountDesc')}
               </li>
               <li className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-2xl border border-gray-100 dark:border-gray-800">
-                <span className="font-bold block text-gray-900 dark:text-white mb-1">Datos de WhatsApp</span>
-                Información de sesión necesaria para vincular tu cuenta de WhatsApp y permitir el envío de mensajes.
+                <span className="font-bold block text-gray-900 dark:text-white mb-1">{t('privacy.dataWhatsappTitle')}</span>
+                {t('privacy.dataWhatsappDesc')}
               </li>
               <li className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-2xl border border-gray-100 dark:border-gray-800">
-                <span className="font-bold block text-gray-900 dark:text-white mb-1">Listas de Contactos</span>
-                Números de teléfono y nombres que subes a nuestra plataforma para realizar tus campañas.
+                <span className="font-bold block text-gray-900 dark:text-white mb-1">{t('privacy.dataContactsTitle')}</span>
+                {t('privacy.dataContactsDesc')}
               </li>
               <li className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-2xl border border-gray-100 dark:border-gray-800">
-                <span className="font-bold block text-gray-900 dark:text-white mb-1">Registros de Actividad</span>
-                Historial de mensajes enviados, estados de entrega y métricas de interacción.
+                <span className="font-bold block text-gray-900 dark:text-white mb-1">{t('privacy.dataActivityTitle')}</span>
+                {t('privacy.dataActivityDesc')}
               </li>
             </ul>
           </section>
@@ -69,18 +73,18 @@ export default function PrivacyPolicyPage() {
               <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
                 <FileText className="h-6 w-6 text-blue-600 dark:text-blue-400" />
               </div>
-              <h2 className="text-2xl font-bold">2. Cómo Usamos tu Información</h2>
+              <h2 className="text-2xl font-bold">{t('privacy.section2Title')}</h2>
             </div>
             <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
-              Utilizamos los datos recopilados exclusivamente para fines operativos y de mejora del servicio:
+              {t('privacy.section2Intro')}
             </p>
             <div className="grid gap-3">
               {[
-                "Proporcionar, operar y mantener nuestra plataforma de mensajería.",
-                "Procesar y enviar tus campañas de mensajes de manera eficiente.",
-                "Generar reportes y analíticas para que puedas medir el éxito de tus envíos.",
-                "Enviar notificaciones administrativas y actualizaciones de seguridad.",
-                "Prevenir fraudes y asegurar el cumplimiento de nuestros términos de servicio."
+                t('privacy.useItem1'),
+                t('privacy.useItem2'),
+                t('privacy.useItem3'),
+                t('privacy.useItem4'),
+                t('privacy.useItem5')
               ].map((item, i) => (
                 <div key={i} className="flex gap-3 items-start">
                   <div className="mt-1.5 h-1.5 w-1.5 rounded-full bg-green-500 shrink-0" />
@@ -96,13 +100,12 @@ export default function PrivacyPolicyPage() {
               <div className="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-lg">
                 <Lock className="h-6 w-6 text-amber-600 dark:text-amber-400" />
               </div>
-              <h2 className="text-2xl font-bold">3. Protección de Datos</h2>
+              <h2 className="text-2xl font-bold">{t('privacy.section3Title')}</h2>
             </div>
             <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
-              Implementamos medidas de seguridad robustas para proteger tu información contra acceso no autorizado, 
-              alteración o divulgación. Esto incluye cifrado SSL/TLS, firewalls y controles de acceso restringido a nuestros servidores.
+              {t('privacy.section3Desc')}
               <br /><br />
-              <strong className="text-gray-900 dark:text-white">Nota importante:</strong> CallMesd NO vende, alquila ni comparte tus datos personales o los de tus contactos con terceros para fines comerciales o de marketing.
+              <strong className="text-gray-900 dark:text-white">{t('privacy.importantNote')}</strong>
             </p>
           </section>
 
@@ -112,14 +115,14 @@ export default function PrivacyPolicyPage() {
               <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-lg">
                 <Trash2 className="h-6 w-6 text-red-600 dark:text-red-400" />
               </div>
-              <h2 className="text-2xl font-bold">4. Instrucciones para la Eliminación de Datos</h2>
+              <h2 className="text-2xl font-bold">{t('privacy.section4Title')}</h2>
             </div>
             <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
-              De acuerdo con las políticas de Meta (Facebook), proporcionamos un método claro para que los usuarios soliciten la eliminación de sus datos:
+              {t('privacy.section4Intro')}
             </p>
             <div className="space-y-4 mt-4">
               <p className="text-gray-700 dark:text-gray-300">
-                Puedes solicitar la eliminación total de tu cuenta y todos los datos asociados de las siguientes maneras:
+                {t('privacy.deleteDesc')}
               </p>
               <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-red-100 dark:border-red-900/30 shadow-sm">
                 <div className="flex items-center gap-4">
@@ -127,42 +130,41 @@ export default function PrivacyPolicyPage() {
                     <Mail className="h-6 w-6 text-red-600 dark:text-red-400" />
                   </div>
                   <div>
-                    <span className="block font-bold text-lg">Contacto Directo</span>
+                    <span className="block font-bold text-lg">{t('privacy.directContact')}</span>
                     <p className="text-gray-500 dark:text-gray-400">
-                      Envía una solicitud a <span className="text-red-600 dark:text-red-400 font-medium">soporte@whatsenvia.com</span> o comunícate al <span className="text-red-600 dark:text-red-400 font-medium">+57 350 5193801</span>.
+                      {t('privacy.contactDesc')}
                     </p>
                   </div>
                 </div>
               </div>
               <p className="text-sm text-gray-500 dark:text-gray-400 italic">
-                Una vez recibida la solicitud, procesaremos la eliminación definitiva en un plazo máximo de 72 horas hábiles. 
-                Este proceso es irreversible y eliminará contactos, historial de mensajes y credenciales.
+                {t('privacy.deletionNote')}
               </p>
             </div>
           </section>
 
           {/* Sección 5: Responsable y Contacto */}
           <section className="space-y-6 border-t border-gray-100 dark:border-gray-800 pt-10 text-center">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Responsable del Tratamiento de Datos</h2>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">{t('privacy.responsibleTitle')}</h2>
             <div className="flex flex-col items-center gap-2 text-gray-600 dark:text-gray-400">
-              <p className="font-semibold text-gray-900 dark:text-white text-lg">Angel David Avendaño</p>
-              <p>Cll 133 #91-45, Bogotá, Colombia</p>
-              <p>Teléfono: +57 350 5193801</p>
-              <p>Email: soporte@whatsenvia.com</p>
+              <p className="font-semibold text-gray-900 dark:text-white text-lg">{t('privacy.responsibleName')}</p>
+              <p>{t('privacy.address')}</p>
+              <p>{t('privacy.phone')}</p>
+              <p>{t('privacy.email')}</p>
             </div>
             <div className="pt-4">
               <a 
                 href="mailto:soporte@whatsenvia.com" 
                 className="inline-flex items-center justify-center px-8 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold transition-all hover:scale-105"
               >
-                Contactar Soporte
+                {t('privacy.contactSupport')}
               </a>
             </div>
           </section>
         </div>
         
         <p className="text-center text-gray-400 dark:text-gray-600 text-sm mt-8">
-          © 2026 CallMesd. Todos los derechos reservados.
+          {t('privacy.allRightsReserved')}
         </p>
       </div>
     </div>
