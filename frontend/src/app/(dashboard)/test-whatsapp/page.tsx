@@ -26,12 +26,6 @@ export default function TestWhatsAppPage() {
   const [sending, setSending] = useState(false);
   const [results, setResults] = useState<TestResult[]>([]);
 
-  useEffect(() => {
-    setToken(localStorage.getItem("test_whatsapp_token") || "");
-    setPhoneId(localStorage.getItem("test_whatsapp_phone_id") || "");
-    setTargetPhone(localStorage.getItem("test_whatsapp_target_phone") || "");
-  }, []);
-
   const handleSend = async () => {
     const cleanToken = token.trim();
     const cleanPhoneId = phoneId.trim();
@@ -39,10 +33,6 @@ export default function TestWhatsAppPage() {
 
     if (!cleanTarget || !cleanToken || !cleanPhoneId) return;
     
-    localStorage.setItem("test_whatsapp_token", cleanToken);
-    localStorage.setItem("test_whatsapp_phone_id", cleanPhoneId);
-    localStorage.setItem("test_whatsapp_target_phone", cleanTarget);
-
     setSending(true);
     const timestamp = new Date().toLocaleTimeString();
 
