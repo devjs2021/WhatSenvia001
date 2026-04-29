@@ -1,11 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { Shield, Lock, Eye, Trash2, Mail, FileText, ChevronLeft } from "lucide-react";
+import { Shield, Lock, Eye, Trash2, Mail, FileText, ChevronLeft, Globe } from "lucide-react";
 import { useI18n } from "@/i18n";
 
 export default function PrivacyPolicyPage() {
-  const t = useI18n((state) => state.t);
+  const { locale, setLocale, t } = useI18n();
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 font-sans">
@@ -15,13 +15,24 @@ export default function PrivacyPolicyPage() {
         <div className="absolute bottom-[-50px] left-[-50px] h-64 w-64 rounded-full bg-cyan-400/10 blur-3xl" />
         
         <div className="max-w-4xl mx-auto relative z-10">
-          <Link 
-            href="/auth/login" 
-            className="inline-flex items-center text-blue-100 hover:text-white mb-8 transition-colors group"
-          >
-            <ChevronLeft className="h-5 w-5 mr-1 group-hover:-translate-x-1 transition-transform" />
-            {t('privacy.backToLogin')}
-          </Link>
+          <div className="flex items-center justify-between mb-8">
+            <Link 
+              href="/auth/login" 
+              className="inline-flex items-center text-blue-100 hover:text-white transition-colors group"
+            >
+              <ChevronLeft className="h-5 w-5 mr-1 group-hover:-translate-x-1 transition-transform" />
+              {t('privacy.backToLogin')}
+            </Link>
+
+            <button
+              onClick={() => setLocale(locale === 'es' ? 'en' : 'es')}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 transition-all text-sm font-medium"
+            >
+              <Globe className="h-4 w-4" />
+              {locale === 'es' ? 'English' : 'Español'}
+            </button>
+          </div>
+
           <h1 className="text-4xl md:text-5xl font-bold mb-4 tracking-tight">{t('privacy.title')}</h1>
           <p className="text-blue-50 text-lg max-w-2xl opacity-90">
             {t('privacy.intro')}
