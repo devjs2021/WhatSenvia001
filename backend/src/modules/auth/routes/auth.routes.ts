@@ -7,4 +7,7 @@ export async function authRoutes(app: FastifyInstance) {
   app.post("/login", loginController);
   app.get("/profile", { preHandler: [authGuard] }, profileController);
   app.post("/data-deletion", dataDeletionController);
+  app.get("/data-deletion", async (_request, reply) => {
+    return reply.send({ status: "ok", message: "Data deletion endpoint active" });
+  });
 }
