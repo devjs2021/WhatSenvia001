@@ -55,7 +55,19 @@ export default function RegisterPage() {
       </div>
 
       {/* Panel derecho */}
-      <div className="flex-1 flex items-center justify-center bg-gray-50 dark:bg-gray-950 p-8">
+      <div className="flex-1 flex items-center justify-center bg-gray-50 dark:bg-gray-950 p-8 relative">
+        {/* Selector de idioma superior */}
+        <div className="absolute top-8 right-8">
+          <button
+            type="button"
+            onClick={() => setLocale(locale === 'es' ? 'en' : 'es')}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-sm hover:shadow-md transition-all text-xs font-semibold text-gray-600 dark:text-gray-400"
+          >
+            <Globe className="h-3.5 w-3.5" />
+            {locale === 'es' ? 'English' : 'Español'}
+          </button>
+        </div>
+
         <div className="w-full max-w-sm space-y-7">
 
           {/* Logo mobile */}
@@ -159,17 +171,6 @@ export default function RegisterPage() {
               <Link href="/terms-of-service" className="text-xs text-gray-400 hover:text-gray-600 transition-colors">
                 {t('nav.termsOfService')}
               </Link>
-            </div>
-
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-gray-100 dark:bg-gray-800/50">
-              <Globe className="h-3.5 w-3.5 text-gray-400" />
-              <button
-                type="button"
-                onClick={() => setLocale(locale === 'es' ? 'en' : 'es')}
-                className="text-xs font-semibold text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-              >
-                {locale === 'es' ? 'English' : 'Español'}
-              </button>
             </div>
           </div>
         </div>
