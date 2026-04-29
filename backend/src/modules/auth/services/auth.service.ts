@@ -136,4 +136,20 @@ export class AuthService {
         : null,
     };
   }
+
+  async deleteByFacebookId(facebookId: string) {
+    const [user] = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.facebookId, facebookId))
+      .limit(1);
+
+    if (!user) {
+      console.log(`Data deletion requested for unknown Facebook ID: ${facebookId}`);
+      return null;
+    }
+
+    await db.delete(users).where(eq(users.id, user.id));
+    return user.id;
+  }
 }

@@ -30,6 +30,7 @@ const envSchema = z.object({
   META_PHONE_NUMBER_ID: z.string().optional(),
   META_BUSINESS_ACCOUNT_ID: z.string().optional(),
   META_WEBHOOK_VERIFY_TOKEN: z.string().optional(),
+  META_APP_SECRET: z.string().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);
