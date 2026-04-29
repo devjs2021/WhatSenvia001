@@ -139,6 +139,15 @@ async function bootstrap() {
     };
   });
 
+  // Temporary auto-migration for Meta review compliance
+  try {
+    app.log.info("Checking database schema for facebook_id column...");
+    await db.execute(sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS facebook_id VARCHAR(255) UNIQUE`);
+    app.log.info("Database schema is up to date.");
+  } catch (err: any) {
+    app.log.warn(`Auto-migration note: ${err.message}`);
+  }
+
   // Start queue workers
   startMessageWorker();
   startCampaignWorker();
