@@ -5,6 +5,7 @@ import rateLimit from "@fastify/rate-limit";
 import helmet from "@fastify/helmet";
 import websocket from "@fastify/websocket";
 import multipart from "@fastify/multipart";
+import formbody from "@fastify/formbody";
 import { env } from "./config/env.js";
 import { db } from "./config/database.js";
 import { redis } from "./config/redis.js";
@@ -73,6 +74,8 @@ async function bootstrap() {
   await app.register(websocket);
 
   await app.register(multipart, { limits: { fileSize: 10 * 1024 * 1024 } });
+
+  await app.register(formbody);
 
   // Auth decorator
   app.decorate("authenticate", async function (request: any, reply: any) {
