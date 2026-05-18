@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useCallback } from 'react'
+import { useEffect, useCallback, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 
 declare global {
@@ -15,28 +15,26 @@ interface MetaSignupButtonProps {
 }
 
 export function MetaSignupButton({ onSuccess }: MetaSignupButtonProps) {
+  const fbInitialized = useRef(false)
 
   useEffect(() => {
-    // Si el SDK ya está cargado, inicializar directamente
-    if (window.FB) {
+    const initFB = () => {
+      if (fbInitialized.current) return
       window.FB.init({
         appId: process.env.NEXT_PUBLIC_META_APP_ID,
         autoLogAppEvents: true,
         xfbml: true,
         version: 'v21.0'
       })
+      fbInitialized.current = true
+    }
+
+    if (window.FB) {
+      initFB()
       return
     }
 
-    // Cargar SDK y luego inicializar
-    window.fbAsyncInit = function () {
-      window.FB.init({
-        appId: process.env.NEXT_PUBLIC_META_APP_ID,
-        autoLogAppEvents: true,
-        xfbml: true,
-        version: 'v21.0'
-      })
-    }
+    window.fbAsyncInit = initFB
 
     if (!document.getElementById('facebook-jssdk')) {
       const script = document.createElement('script')
@@ -65,7 +63,7 @@ export function MetaSignupButton({ onSuccess }: MetaSignupButtonProps) {
   }, [])
 
   const handleClick = useCallback(() => {
-    if (!window.FB) {
+    if (!window.FB || !fbInitialized.current) {
       alert('SDK de Facebook aún cargando, intenta de nuevo en unos segundos')
       return
     }
