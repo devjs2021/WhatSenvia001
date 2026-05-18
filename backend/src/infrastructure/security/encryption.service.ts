@@ -6,11 +6,23 @@ const IV_LENGTH = 16;
 const AUTH_TAG_LENGTH = 16;
 
 /**
+ * Returns true if encryption is configured (ENCRYPTION_KEY is set).
+ */
+function isEncryptionEnabled(): boolean {
+  return !!env.ENCRYPTION_KEY;
+}
+
+/**
  * Encrypts a plaintext string using AES-256-GCM.
- * Returns a base64 string in the format: iv:authTag:ciphertext
+ * If ENCRYPTION_KEY is not configured, returns the plaintext as-is (no encryption).
+ * Returns a string in the format: iv:authTag:ciphertext
  */
 export function encrypt(plaintext: string): string {
-  const key = Buffer.from(env.ENCRYPTION_KEY, "hex");
+  if (!isEncryptionEnabled()) {
+    return plaintext;
+  }
+
+  const key = Buffer.from(env.ENCRYPTION_KEY!, "hex");
   const iv = crypto.randomBytes(IV_LENGTH);
   const cipher = crypto.createCipheriv(ALGORITHM, key, iv);
 
@@ -26,13 +38,19 @@ export function encrypt(plaintext: string): string {
 /**
  * Decrypts a string that was encrypted with encrypt().
  * Expects format: iv:authTag:ciphertext
+ * If the string doesn't have the encrypted format (no colons), returns it as-is (plain text).
  */
 export function decrypt(encryptedData: string): string {
-  const key = Buffer.from(env.ENCRYPTION_KEY, "hex");
+  if (!isEncryptionEnabled()) {
+    return encryptedData;
+  }
+
+  const key = Buffer.from(env.ENCRYPTION_KEY!, "hex");
   const parts = encryptedData.split(":");
 
   if (parts.length !== 3) {
-    throw new Error("Invalid encrypted data format");
+    // Not encrypted, return as-is (backward compatibility with existing plain text data)
+    return encryptedData;
   }
 
   const [ivHex, authTagHex, ciphertext] = parts;
