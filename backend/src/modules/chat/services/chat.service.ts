@@ -71,7 +71,7 @@ export class ChatService {
   }
 
   async sendMessage(sessionId: string, phone: string, text: string) {
-    const provider = getWhatsAppProvider();
+    const provider = await getWhatsAppProvider(sessionId);
 
     // Simulate typing for human agent messages
     try {

@@ -4,30 +4,28 @@ import type {
   SendMessageResult,
   WhatsAppConnectionEvents,
 } from "../interfaces/whatsapp-provider.interface.js";
-import { env } from "../../../config/env.js";
 import { logger } from "../../../config/logger.js";
 
 /**
- * Meta Cloud API Provider (Phase 2)
+ * Meta Cloud API Provider
  *
- * This provider will be used once the Meta Business API is approved.
- * It uses the official WhatsApp Cloud API via Meta's Graph API.
- *
- * Prerequisites:
- * - Meta Business Account approved
- * - WhatsApp Business API access
- * - Valid access token and phone number ID
+ * Uses the official WhatsApp Cloud API via Meta's Graph API.
+ * Each instance is configured with its own access token and phone number ID
+ * (per-session, not global env vars).
  */
 export class MetaCloudProvider implements IWhatsAppProvider {
   readonly providerName = "meta-cloud";
   private readonly baseUrl = "https://graph.facebook.com/v21.0";
+  private readonly accessToken: string;
+  private readonly phoneNumberId: string;
+
+  constructor(accessToken: string, phoneNumberId: string) {
+    this.accessToken = accessToken;
+    this.phoneNumberId = phoneNumberId;
+  }
 
   async connect(_sessionId: string, events: WhatsAppConnectionEvents): Promise<void> {
-    if (!env.META_ACCESS_TOKEN || !env.META_PHONE_NUMBER_ID) {
-      throw new Error("Meta Cloud API credentials not configured");
-    }
-    // Meta Cloud API doesn't need QR - it's always "connected" when credentials are valid
-    events.onConnected(env.META_PHONE_NUMBER_ID);
+    events.onConnected(this.phoneNumberId);
     logger.info("Meta Cloud API provider connected");
   }
 
@@ -36,12 +34,12 @@ export class MetaCloudProvider implements IWhatsAppProvider {
   }
 
   isConnected(_sessionId: string): boolean {
-    return !!env.META_ACCESS_TOKEN && !!env.META_PHONE_NUMBER_ID;
+    return !!this.accessToken && !!this.phoneNumberId;
   }
 
   async sendMessage(_sessionId: string, options: SendMessageOptions): Promise<SendMessageResult> {
     try {
-      const url = `${this.baseUrl}/${env.META_PHONE_NUMBER_ID}/messages`;
+      const url = `${this.baseUrl}/${this.phoneNumberId}/messages`;
 
       const body: Record<string, any> = {
         messaging_product: "whatsapp",
@@ -62,7 +60,7 @@ export class MetaCloudProvider implements IWhatsAppProvider {
       const response = await fetch(url, {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${env.META_ACCESS_TOKEN}`,
+          Authorization: `Bearer ${this.accessToken}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify(body),
@@ -86,7 +84,7 @@ export class MetaCloudProvider implements IWhatsAppProvider {
 
   getSessionInfo(_sessionId: string): { phone?: string; status: string } | null {
     return {
-      phone: env.META_PHONE_NUMBER_ID,
+      phone: this.phoneNumberId,
       status: this.isConnected("") ? "connected" : "disconnected",
     };
   }

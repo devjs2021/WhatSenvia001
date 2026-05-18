@@ -14,7 +14,6 @@ const pollService = new PollService();
 const DEV_USER_ID = "00000000-0000-0000-0000-000000000000";
 
 export class WhatsAppService {
-  private provider = getWhatsAppProvider();
 
   // Auto-reconnect sessions that were "connected" before server restart
   async restoreSessions() {
@@ -37,7 +36,8 @@ export class WhatsAppService {
           .set({ status: "connecting", updatedAt: new Date() })
           .where(eq(whatsappSessions.id, session.id));
 
-        this.provider.connect(session.id, {
+        const provider = await getWhatsAppProvider(session.id);
+        provider.connect(session.id, {
           onQR: async (qr) => {
             const qrDataUrl = await QRCode.toDataURL(qr, { width: 300, margin: 2 });
             await db
@@ -155,11 +155,13 @@ export class WhatsAppService {
 
     if (!session) throw new Error("Session not found");
 
+    const provider = await getWhatsAppProvider(sessionId);
+
     return new Promise((resolve) => {
       let resolved = false;
 
-      this.provider.connect(sessionId, {
-        onQR: async (qr) => {
+      provider.connect(sessionId, {
+        onQR: async (qr: string) => {
           const qrDataUrl = await QRCode.toDataURL(qr, { width: 300, margin: 2 });
 
           await db
@@ -173,7 +175,7 @@ export class WhatsAppService {
           }
         },
 
-        onConnected: async (phone) => {
+        onConnected: async (phone: string) => {
           await db
             .update(whatsappSessions)
             .set({
@@ -191,7 +193,7 @@ export class WhatsAppService {
           }
         },
 
-        onDisconnected: async (reason) => {
+        onDisconnected: async (reason: string) => {
           console.warn(`WhatsApp disconnected: ${sessionId} - ${reason}`);
           await db
             .update(whatsappSessions)
@@ -199,11 +201,11 @@ export class WhatsAppService {
             .where(eq(whatsappSessions.id, sessionId));
         },
 
-        onMessageStatus: async (messageId, status) => {
+        onMessageStatus: async (messageId: string, status: string) => {
           console.debug(`Message status: ${messageId} -> ${status}`);
         },
 
-        onMessage: async (msg) => {
+        onMessage: async (msg: any) => {
           // Save incoming message to chat and broadcast
           try {
             const chatMsg = await chatService.saveMessage({
@@ -228,7 +230,7 @@ export class WhatsAppService {
           }
         },
 
-        onPollResponse: async (vote) => {
+        onPollResponse: async (vote: any) => {
           try {
             const campaign = await pollService.findCampaignByMessageId(vote.pollMessageId)
               || await pollService.findCampaignByQuestion(DEV_USER_ID, vote.pollName);
@@ -247,7 +249,7 @@ export class WhatsAppService {
             console.error(`Poll vote error (session ${sessionId}):`, err.message);
           }
         },
-        onContactsSync: async (syncedContacts) => {
+        onContactsSync: async (syncedContacts: any[]) => {
           for (const c of syncedContacts) {
             const phone = c.jid.replace("@s.whatsapp.net", "");
             try {
@@ -286,7 +288,8 @@ export class WhatsAppService {
     if (!session) throw new Error("Session not found");
 
     try {
-      await this.provider.disconnect(sessionId);
+      const provider = await getWhatsAppProvider(sessionId);
+      await provider.disconnect(sessionId);
     } catch {
       // Provider may not have this session in memory
     }
@@ -308,7 +311,8 @@ export class WhatsAppService {
 
     if (!session) throw new Error("Session not found");
 
-    const providerInfo = this.provider.getSessionInfo(sessionId);
+    const provider = await getWhatsAppProvider(sessionId);
+    const providerInfo = provider.getSessionInfo(sessionId);
 
     return {
       ...session,
@@ -318,8 +322,9 @@ export class WhatsAppService {
 
   async deleteSession(sessionId: string) {
     try {
-      if (this.provider.isConnected(sessionId)) {
-        await this.provider.disconnect(sessionId);
+      const provider = await getWhatsAppProvider(sessionId);
+      if (provider.isConnected(sessionId)) {
+        await provider.disconnect(sessionId);
       }
     } catch {
       // Session may not exist in provider memory, safe to ignore

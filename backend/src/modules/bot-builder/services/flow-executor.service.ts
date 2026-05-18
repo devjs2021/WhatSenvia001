@@ -2,11 +2,9 @@ import { db } from "../../../config/database.js";
 import { botFlows, botSettings, botAiConfig } from "../../../infrastructure/database/schema/bot-flows.js";
 import { eq, and } from "drizzle-orm";
 import { getWhatsAppProvider } from "../../../infrastructure/whatsapp/whatsapp.factory.js";
-import type { IncomingMessage } from "../../../infrastructure/whatsapp/interfaces/whatsapp-provider.interface.js";
+import type { IWhatsAppProvider, IncomingMessage } from "../../../infrastructure/whatsapp/interfaces/whatsapp-provider.interface.js";
 import { chatService } from "../../chat/services/chat.service.js";
 import { chatBroadcast } from "../../chat/websocket/chat-broadcast.js";
-
-const provider = getWhatsAppProvider();
 
 // In-memory conversation state: phone -> { flowId, currentNodeId, variables, waitingForInput }
 interface ConversationState {
@@ -208,7 +206,8 @@ export class FlowExecutorService {
         const url = node.data.url || "";
         const mediaType = node.data.mediaType || "image";
         if (url) {
-          await provider.sendMessage(state.sessionId, {
+          const p = await getWhatsAppProvider(state.sessionId);
+          await p.sendMessage(state.sessionId, {
             phone: jid,
             message: caption,
             mediaUrl: url,
@@ -509,8 +508,9 @@ export class FlowExecutorService {
 
   private async sendMessage(sessionId: string, remoteJid: string, text: string) {
     try {
+      const p = await getWhatsAppProvider(sessionId);
       // Pass remoteJid directly as phone — formatJid will detect the "@" and use it as-is
-      const result = await provider.sendMessage(sessionId, { phone: remoteJid, message: text });
+      const result = await p.sendMessage(sessionId, { phone: remoteJid, message: text });
 
       // Save bot message to chat and broadcast
       try {

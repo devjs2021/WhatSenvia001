@@ -24,14 +24,14 @@ export async function whatsappRoutes(app: FastifyInstance) {
 
   app.get("/sessions/:id/groups", async (req) => {
     const { id } = req.params as { id: string };
-    const provider = getWhatsAppProvider();
+    const provider = await getWhatsAppProvider(id);
     return provider.getGroups(id);
   });
 
   app.post("/sessions/:id/group-contacts", async (req) => {
     const { id } = req.params as { id: string };
     const { groupIds } = req.body as { groupIds: string[] };
-    const provider = getWhatsAppProvider();
+    const provider = await getWhatsAppProvider(id);
     const allContacts = new Map<string, { phone: string; isAdmin: boolean }>();
     for (const groupId of groupIds) {
       const participants = await provider.getGroupParticipants(id, groupId);
@@ -47,14 +47,14 @@ export async function whatsappRoutes(app: FastifyInstance) {
   app.post("/sessions/:id/check-number", async (req) => {
     const { id } = req.params as { id: string };
     const { phone } = req.body as { phone: string };
-    const provider = getWhatsAppProvider();
+    const provider = await getWhatsAppProvider(id);
     return provider.checkNumberExists(id, phone);
   });
 
   app.post("/sessions/:id/check-numbers", async (req) => {
     const { id } = req.params as { id: string };
     const { phones } = req.body as { phones: string[] };
-    const provider = getWhatsAppProvider();
+    const provider = await getWhatsAppProvider(id);
     const results = [];
     for (const phone of phones) {
       try {

@@ -100,7 +100,7 @@ export async function sendPoll(request: FastifyRequest, reply: FastifyReply) {
 
   try {
     const { sessionId, phone, question, options, multiSelect } = parsed.data;
-    const provider = getWhatsAppProvider();
+    const provider = await getWhatsAppProvider(sessionId);
     const cleanPhone = phone.replace(/[^0-9]/g, "");
     const msgId = await provider.sendPoll(sessionId, cleanPhone, question, options, multiSelect ? options.length : 1);
     return success(reply, { messageId: msgId, phone: cleanPhone, type: "poll" }, 201);
@@ -123,7 +123,7 @@ export async function sendPollBulk(request: FastifyRequest, reply: FastifyReply)
 
   try {
     const { sessionId, phones, question, options, multiSelect } = parsed.data;
-    const provider = getWhatsAppProvider();
+    const provider = await getWhatsAppProvider(sessionId);
     const validOptions = options.filter((o) => o.trim());
     const userId = (request as any).user.id;
 

@@ -45,7 +45,7 @@ export function startMessageWorker() {
       // Update status to sending
       await db.update(messages).set({ status: "sending" }).where(eq(messages.id, messageId));
 
-      const provider = getWhatsAppProvider();
+      const provider = await getWhatsAppProvider(sessionId);
 
       // Simulate typing
       try {
