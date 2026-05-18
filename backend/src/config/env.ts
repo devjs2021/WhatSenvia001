@@ -26,6 +26,7 @@ const envSchema = z.object({
   API_RATE_LIMIT: z.coerce.number().default(100),
   ALLOWED_ORIGINS: z.string().default("http://localhost:3000"),
 
+  META_APP_ID: z.string().optional(),
   META_ACCESS_TOKEN: z.string().optional(),
   META_PHONE_NUMBER_ID: z.string().optional(),
   META_BUSINESS_ACCOUNT_ID: z.string().optional(),
