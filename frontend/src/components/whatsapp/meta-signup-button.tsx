@@ -17,7 +17,18 @@ interface MetaSignupButtonProps {
 export function MetaSignupButton({ onSuccess }: MetaSignupButtonProps) {
 
   useEffect(() => {
-    // Cargar SDK de Facebook
+    // Si el SDK ya está cargado, inicializar directamente
+    if (window.FB) {
+      window.FB.init({
+        appId: process.env.NEXT_PUBLIC_META_APP_ID,
+        autoLogAppEvents: true,
+        xfbml: true,
+        version: 'v21.0'
+      })
+      return
+    }
+
+    // Cargar SDK y luego inicializar
     window.fbAsyncInit = function () {
       window.FB.init({
         appId: process.env.NEXT_PUBLIC_META_APP_ID,
@@ -54,6 +65,11 @@ export function MetaSignupButton({ onSuccess }: MetaSignupButtonProps) {
   }, [])
 
   const handleClick = useCallback(() => {
+    if (!window.FB) {
+      alert('SDK de Facebook aún cargando, intenta de nuevo en unos segundos')
+      return
+    }
+
     const fbLoginCallback = (response: any) => {
       if (response.authResponse) {
         const code = response.authResponse.code
