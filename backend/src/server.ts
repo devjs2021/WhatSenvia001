@@ -156,8 +156,12 @@ async function bootstrap() {
     await migrate(db, { migrationsFolder: "./src/infrastructure/database/migrations" });
     app.log.info("Database migrations completed.");
   } catch (err: any) {
-    app.log.error({ error: err.message }, "Migration failed");
-    throw err;
+    if (err.code === "42P07") {
+      app.log.warn("Migration skipped: tables already exist (created via db:push)");
+    } else {
+      app.log.error({ error: err.message }, "Migration failed");
+      throw err;
+    }
   }
 
   // Temporary auto-migration for Meta review compliance
