@@ -4,6 +4,7 @@ import { authGuard } from '../../../shared/middleware/auth.middleware.js'
 import { db } from '../../../config/database.js'
 import { whatsappSessions } from '../../../infrastructure/database/schema/whatsapp-sessions.js'
 import { eq, and } from 'drizzle-orm'
+import { encrypt } from '../../../infrastructure/security/encryption.service.js'
 
 export async function metaExchangeRoutes(fastify: FastifyInstance) {
   fastify.addHook("preHandler", authGuard);
@@ -71,6 +72,9 @@ export async function metaExchangeRoutes(fastify: FastifyInstance) {
         )
         .limit(1)
 
+      // Encriptar token antes de guardarlo en BD
+      const encryptedToken = encrypt(accessToken)
+
       let session
       if (existingSession.length > 0) {
         // Actualizar sesión existente
@@ -79,7 +83,7 @@ export async function metaExchangeRoutes(fastify: FastifyInstance) {
           .set({
             connectionType: 'meta_cloud',
             metaPhoneNumberId: phone_number_id,
-            metaAccessToken: accessToken,
+            metaAccessToken: encryptedToken,
             metaBusinessId: businessId,
             phone: wabaDisplayPhone || phone_number_id,
             status: 'connected',
@@ -98,7 +102,7 @@ export async function metaExchangeRoutes(fastify: FastifyInstance) {
             connectionType: 'meta_cloud',
             wabaId: waba_id,
             metaPhoneNumberId: phone_number_id,
-            metaAccessToken: accessToken,
+            metaAccessToken: encryptedToken,
             metaBusinessId: businessId,
             phone: wabaDisplayPhone || phone_number_id,
             status: 'connected',

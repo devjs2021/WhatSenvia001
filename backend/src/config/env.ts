@@ -32,6 +32,8 @@ const envSchema = z.object({
   META_BUSINESS_ACCOUNT_ID: z.string().optional(),
   META_WEBHOOK_VERIFY_TOKEN: z.string().optional(),
   META_APP_SECRET: z.string().optional(),
+
+  ENCRYPTION_KEY: z.string().length(64, "ENCRYPTION_KEY must be exactly 64 hex characters (32 bytes)"),
 });
 
 const parsed = envSchema.safeParse(process.env);

@@ -2,6 +2,7 @@ import { db } from "../../../config/database.js";
 import { botAiConfig } from "../../../infrastructure/database/schema/bot-flows.js";
 import { eq } from "drizzle-orm";
 import type { UpdateAiConfigInput } from "../schemas/bot-builder.schema.js";
+import { encrypt, decrypt } from "../../../infrastructure/security/encryption.service.js";
 
 const AI_PROVIDERS: Record<string, { name: string; models: { id: string; name: string }[] }> = {
   google: {
@@ -44,14 +45,31 @@ export class AiConfigService {
         .returning();
       return created;
     }
+
+    // Desencriptar apiKey si está encriptada
+    if (config.apiKey && config.apiKey.includes(":")) {
+      try {
+        config.apiKey = decrypt(config.apiKey);
+      } catch {
+        // Si falla la desencriptación, asumimos que está en texto plano (migración)
+      }
+    }
+
     return config;
   }
 
   async updateConfig(userId: string, input: UpdateAiConfigInput) {
     const existing = await this.getConfig(userId);
+
+    // Encriptar apiKey si viene en el input
+    const dataToSave = { ...input };
+    if (dataToSave.apiKey) {
+      dataToSave.apiKey = encrypt(dataToSave.apiKey);
+    }
+
     const [updated] = await db
       .update(botAiConfig)
-      .set({ ...input, updatedAt: new Date() })
+      .set({ ...dataToSave, updatedAt: new Date() })
       .where(eq(botAiConfig.id, existing.id))
       .returning();
     return updated;

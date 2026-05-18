@@ -4,6 +4,7 @@ import { MetaCloudProvider } from "./providers/meta-cloud.provider.js";
 import { db } from "../../config/database.js";
 import { whatsappSessions } from "../database/schema/whatsapp-sessions.js";
 import { eq } from "drizzle-orm";
+import { decrypt } from "../security/encryption.service.js";
 
 export type ProviderType = "baileys" | "meta-cloud";
 
@@ -40,7 +41,9 @@ export async function getWhatsAppProvider(sessionId: string): Promise<IWhatsAppP
     if (!session.metaAccessToken || !session.metaPhoneNumberId) {
       throw new Error(`Meta Cloud session ${sessionId} is missing access token or phone number ID`);
     }
-    provider = new MetaCloudProvider(session.metaAccessToken, session.metaPhoneNumberId);
+    // Desencriptar token antes de usarlo
+    const decryptedToken = decrypt(session.metaAccessToken);
+    provider = new MetaCloudProvider(decryptedToken, session.metaPhoneNumberId);
   } else {
     // Baileys: use a single shared instance (handles multiple sessions internally)
     if (!baileysInstance) {
