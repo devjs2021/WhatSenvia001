@@ -15,6 +15,25 @@ const DEV_USER_ID = "00000000-0000-0000-0000-000000000000";
 
 export class WhatsAppService {
 
+  /**
+   * Verifies that a session belongs to the given userId.
+   * Throws 403 if not found or not owned by the user.
+   */
+  private async verifyOwnership(sessionId: string, userId: string): Promise<void> {
+    const [session] = await db
+      .select({ id: whatsappSessions.id, userId: whatsappSessions.userId })
+      .from(whatsappSessions)
+      .where(eq(whatsappSessions.id, sessionId))
+      .limit(1);
+
+    if (!session) {
+      throw new Error("Session not found");
+    }
+    if (session.userId !== userId) {
+      throw new Error("Forbidden: session does not belong to this user");
+    }
+  }
+
   // Auto-reconnect sessions that were "connected" before server restart
   async restoreSessions() {
     const sessions = await db
@@ -133,8 +152,11 @@ export class WhatsAppService {
     }
   }
 
-  async listSessions() {
-    return db.select().from(whatsappSessions);
+  async listSessions(userId: string) {
+    return db
+      .select()
+      .from(whatsappSessions)
+      .where(eq(whatsappSessions.userId, userId));
   }
 
   async createSession(userId: string, name: string) {
@@ -146,14 +168,8 @@ export class WhatsAppService {
     return session;
   }
 
-  async connectSession(sessionId: string): Promise<{ qrDataUrl?: string }> {
-    const [session] = await db
-      .select()
-      .from(whatsappSessions)
-      .where(eq(whatsappSessions.id, sessionId))
-      .limit(1);
-
-    if (!session) throw new Error("Session not found");
+  async connectSession(sessionId: string, userId: string): Promise<{ qrDataUrl?: string }> {
+    await this.verifyOwnership(sessionId, userId);
 
     const provider = await getWhatsAppProvider(sessionId);
 
@@ -278,14 +294,8 @@ export class WhatsAppService {
     });
   }
 
-  async disconnectSession(sessionId: string) {
-    const [session] = await db
-      .select()
-      .from(whatsappSessions)
-      .where(eq(whatsappSessions.id, sessionId))
-      .limit(1);
-
-    if (!session) throw new Error("Session not found");
+  async disconnectSession(sessionId: string, userId: string) {
+    await this.verifyOwnership(sessionId, userId);
 
     try {
       const provider = await getWhatsAppProvider(sessionId);
@@ -302,7 +312,9 @@ export class WhatsAppService {
     return { disconnected: true };
   }
 
-  async getSessionStatus(sessionId: string) {
+  async getSessionStatus(sessionId: string, userId: string) {
+    await this.verifyOwnership(sessionId, userId);
+
     const [session] = await db
       .select()
       .from(whatsappSessions)
@@ -320,7 +332,9 @@ export class WhatsAppService {
     };
   }
 
-  async deleteSession(sessionId: string) {
+  async deleteSession(sessionId: string, userId: string) {
+    await this.verifyOwnership(sessionId, userId);
+
     try {
       const provider = await getWhatsAppProvider(sessionId);
       if (provider.isConnected(sessionId)) {

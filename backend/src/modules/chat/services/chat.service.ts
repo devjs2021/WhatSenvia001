@@ -1,9 +1,29 @@
 import { db } from "../../../config/database.js";
 import { chatMessages } from "../../../infrastructure/database/schema/chat.js";
+import { whatsappSessions } from "../../../infrastructure/database/schema/whatsapp-sessions.js";
 import { eq, and, desc, sql, lt } from "drizzle-orm";
 import { getWhatsAppProvider } from "../../../infrastructure/whatsapp/whatsapp.factory.js";
 
 export class ChatService {
+
+  /**
+   * Verifies that a session belongs to the given userId.
+   * Throws 403 if not found or not owned by the user.
+   */
+  private async verifySessionOwnership(sessionId: string, userId: string): Promise<void> {
+    const [session] = await db
+      .select({ id: whatsappSessions.id, userId: whatsappSessions.userId })
+      .from(whatsappSessions)
+      .where(eq(whatsappSessions.id, sessionId))
+      .limit(1);
+
+    if (!session) {
+      throw new Error("Session not found");
+    }
+    if (session.userId !== userId) {
+      throw new Error("Forbidden: session does not belong to this user");
+    }
+  }
   async saveMessage(data: {
     sessionId: string;
     phone: string;
@@ -18,7 +38,8 @@ export class ChatService {
     return msg;
   }
 
-  async getConversations(sessionId: string) {
+  async getConversations(sessionId: string, userId: string) {
+    await this.verifySessionOwnership(sessionId, userId);
     // Get distinct conversations with last message using DISTINCT ON
     const result = await db.execute(sql`
       SELECT DISTINCT ON (phone)
@@ -48,9 +69,11 @@ export class ChatService {
   async getMessages(
     sessionId: string,
     phone: string,
+    userId: string,
     limit = 50,
     before?: string
   ) {
+    await this.verifySessionOwnership(sessionId, userId);
     const conditions = [
       eq(chatMessages.sessionId, sessionId),
       eq(chatMessages.phone, phone),
@@ -70,7 +93,8 @@ export class ChatService {
     return msgs.reverse(); // Return in chronological order
   }
 
-  async sendMessage(sessionId: string, phone: string, text: string) {
+  async sendMessage(sessionId: string, phone: string, text: string, userId: string) {
+    await this.verifySessionOwnership(sessionId, userId);
     const provider = await getWhatsAppProvider(sessionId);
 
     // Simulate typing for human agent messages

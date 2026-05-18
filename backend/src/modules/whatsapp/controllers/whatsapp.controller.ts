@@ -10,7 +10,7 @@ const createSessionSchema = z.object({
 });
 
 export async function listSessions(request: FastifyRequest, reply: FastifyReply) {
-  const sessions = await whatsappService.listSessions();
+  const sessions = await whatsappService.listSessions((request as any).user.id);
   return success(reply, sessions);
 }
 
@@ -27,7 +27,7 @@ export async function connectSession(
   reply: FastifyReply
 ) {
   try {
-    const result = await whatsappService.connectSession(request.params.id);
+    const result = await whatsappService.connectSession(request.params.id, (request as any).user.id);
     return success(reply, result);
   } catch (err: any) {
     return error(reply, err.message);
@@ -39,7 +39,7 @@ export async function disconnectSession(
   reply: FastifyReply
 ) {
   try {
-    const result = await whatsappService.disconnectSession(request.params.id);
+    const result = await whatsappService.disconnectSession(request.params.id, (request as any).user.id);
     return success(reply, result);
   } catch (err: any) {
     return error(reply, err.message);
@@ -51,7 +51,7 @@ export async function getSessionStatus(
   reply: FastifyReply
 ) {
   try {
-    const status = await whatsappService.getSessionStatus(request.params.id);
+    const status = await whatsappService.getSessionStatus(request.params.id, (request as any).user.id);
     return success(reply, status);
   } catch (err: any) {
     return error(reply, err.message, 404);
@@ -63,7 +63,7 @@ export async function deleteSession(
   reply: FastifyReply
 ) {
   try {
-    const deleted = await whatsappService.deleteSession(request.params.id);
+    const deleted = await whatsappService.deleteSession(request.params.id, (request as any).user.id);
     if (!deleted) return error(reply, "Session not found", 404);
     return success(reply, { deleted: true });
   } catch (err: any) {
