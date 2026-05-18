@@ -73,6 +73,7 @@ async function bootstrap() {
   await app.register(rateLimit, {
     max: env.API_RATE_LIMIT,
     timeWindow: "1 minute",
+    redis: redis,
   });
 
   await app.register(websocket);

@@ -4,7 +4,14 @@ import { authGuard } from "../../../shared/middleware/auth.middleware.js";
 
 export async function authRoutes(app: FastifyInstance) {
   app.post("/register", registerController);
-  app.post("/login", loginController);
+  app.post("/login", {
+    config: {
+      rateLimit: {
+        max: 5,
+        timeWindow: "15 minutes",
+      },
+    },
+  }, loginController);
   app.get("/profile", { preHandler: [authGuard] }, profileController);
   app.post("/data-deletion", dataDeletionController);
   app.get("/data-deletion", async (_request, reply) => {
