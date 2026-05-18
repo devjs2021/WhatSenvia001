@@ -37,7 +37,7 @@ export class WhatsAppService {
           .where(eq(whatsappSessions.id, session.id));
 
         const provider = await getWhatsAppProvider(session.id);
-        provider.connect(session.id, {
+        await provider.connect(session.id, {
           onQR: async (qr) => {
             const qrDataUrl = await QRCode.toDataURL(qr, { width: 300, margin: 2 });
             await db

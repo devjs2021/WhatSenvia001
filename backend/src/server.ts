@@ -32,6 +32,7 @@ import { metaExchangeRoutes } from "./modules/meta-webhook/routes/meta-exchange.
 import { startMessageWorker } from "./infrastructure/queue/message.queue.js";
 import { startCampaignWorker } from "./infrastructure/queue/campaign.queue.js";
 import { startScheduledChecker } from "./infrastructure/queue/scheduled-checker.js";
+import { migrate } from "drizzle-orm/node-postgres/migrator";
 import { seedTemplates } from "./modules/bot-builder/services/seed-templates.js";
 import { WhatsAppService } from "./modules/whatsapp/services/whatsapp.service.js";
 
@@ -147,6 +148,16 @@ async function bootstrap() {
       checks,
     };
   });
+
+  // Run Drizzle migrations on startup
+  try {
+    app.log.info("Running database migrations...");
+    await migrate(db, { migrationsFolder: "./src/infrastructure/database/migrations" });
+    app.log.info("Database migrations completed.");
+  } catch (err: any) {
+    app.log.error({ error: err.message }, "Migration failed");
+    throw err;
+  }
 
   // Temporary auto-migration for Meta review compliance
   try {
