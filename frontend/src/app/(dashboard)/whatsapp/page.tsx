@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, Plug, PlugZap, Trash2, RefreshCw, Send, BarChart3, X } from "lucide-react";
+import { MetaSignupButton } from "@/components/whatsapp/meta-signup-button";
 
 const statusColors: Record<string, "default" | "secondary" | "destructive" | "success" | "warning" | "outline"> = {
   disconnected: "secondary",
@@ -155,6 +156,29 @@ export default function WhatsAppPage() {
           </form>
         </CardContent>
       </Card>
+
+      {/* Meta Cloud API - Embedded Signup */}
+      <div className="mb-6 p-4 border rounded-lg border-blue-200 bg-blue-50">
+        <h3 className="font-semibold text-blue-900 mb-1">
+          🚀 Meta Cloud API (Oficial)
+        </h3>
+        <p className="text-sm text-blue-700 mb-3">
+          Conecta tu número de WhatsApp Business oficial sin usar QR
+        </p>
+        <MetaSignupButton
+          onSuccess={(code, wabaId, phoneNumberId) => {
+            console.log('✅ Cliente conectado:', { code, wabaId, phoneNumberId })
+            // Enviar al backend
+            fetch('/api/meta/exchange-token', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ code, waba_id: wabaId, phone_number_id: phoneNumberId })
+            })
+              .then(res => res.json())
+              .then(data => console.log('Backend response:', data))
+          }}
+        />
+      </div>
 
       {qrCode && connectingId && (
         <Card className="border-whatsapp">
