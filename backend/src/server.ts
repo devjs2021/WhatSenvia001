@@ -27,6 +27,7 @@ import { campaignControlRoutes } from "./modules/campaign-control/routes/campaig
 import { scheduledRoutes } from "./modules/scheduled/routes/scheduled.routes.js";
 import { adminRoutes } from "./modules/admin/routes/admin.routes.js";
 import { testWhatsappRoutes } from "./modules/test-whatsapp/routes/test-whatsapp.routes.js";
+import { metaWebhookRoutes } from "./modules/meta-webhook/routes/meta-webhook.routes.js";
 import { startMessageWorker } from "./infrastructure/queue/message.queue.js";
 import { startCampaignWorker } from "./infrastructure/queue/campaign.queue.js";
 import { startScheduledChecker } from "./infrastructure/queue/scheduled-checker.js";
@@ -103,6 +104,9 @@ async function bootstrap() {
   await app.register(scheduledRoutes, { prefix: "/api/scheduled" });
   await app.register(adminRoutes, { prefix: "/api/admin" });
   await app.register(testWhatsappRoutes, { prefix: "/api/test-whatsapp" });
+
+  // Meta Webhook (sin prefijo /api porque Meta llama directamente a /meta-webhook)
+  await app.register(metaWebhookRoutes);
 
   // Global error handler
   app.setErrorHandler((error, _request, reply) => {
