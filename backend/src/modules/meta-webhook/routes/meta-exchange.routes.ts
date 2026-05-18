@@ -1,7 +1,13 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
 import { env } from '../../../config/env.js'
+import { authGuard } from '../../../shared/middleware/auth.middleware.js'
+import { db } from '../../../config/database.js'
+import { whatsappSessions } from '../../../infrastructure/database/schema/whatsapp-sessions.js'
+import { eq, and } from 'drizzle-orm'
 
 export async function metaExchangeRoutes(fastify: FastifyInstance) {
+  fastify.addHook("preHandler", authGuard);
+
   fastify.post('/api/meta/exchange-token', async (
     request: FastifyRequest<{ 
       Body: { code: string; waba_id: string; phone_number_id: string } 
@@ -9,10 +15,11 @@ export async function metaExchangeRoutes(fastify: FastifyInstance) {
     reply: FastifyReply
   ) => {
     const { code, waba_id, phone_number_id } = request.body
+    const userId = (request as any).user.id
 
     try {
-      // Intercambiar código por token
-      const response = await fetch(
+      // 1. Intercambiar código por token de acceso
+      const tokenResponse = await fetch(
         `https://graph.facebook.com/v21.0/oauth/access_token?` +
         `client_id=${env.META_APP_ID}&` +
         `client_secret=${env.META_APP_SECRET}&` +
@@ -20,28 +27,99 @@ export async function metaExchangeRoutes(fastify: FastifyInstance) {
         { method: 'GET' }
       )
 
-      const data = await response.json() as any
+      const tokenData = await tokenResponse.json() as any
 
-      if (data.access_token) {
-        console.log('✅ Cliente conectado via Embedded Signup:', {
-          waba_id,
-          phone_number_id,
-          token_type: data.token_type
-        })
-
-        // TODO: guardar en BD - waba_id, phone_number_id, access_token
-        return reply.status(200).send({
-          success: true,
-          waba_id,
-          phone_number_id
-        })
+      if (!tokenData.access_token) {
+        return reply.status(400).send({ error: 'No se pudo obtener el token de acceso' })
       }
 
-      return reply.status(400).send({ error: 'No se pudo obtener el token' })
+      const accessToken = tokenData.access_token
+
+      console.log('✅ Token obtenido via Embedded Signup:', {
+        waba_id,
+        phone_number_id,
+        token_type: tokenData.token_type
+      })
+
+      // 2. Consultar la API de Meta para obtener datos actualizados de la WABA
+      let wabaDisplayPhone = ''
+      let businessId = ''
+      try {
+        const wabaResponse = await fetch(
+          `https://graph.facebook.com/v21.0/${waba_id}?fields=name,display_phone_number,phone_number_id,business_verification_status`,
+          {
+            headers: { Authorization: `Bearer ${accessToken}` }
+          }
+        )
+        const wabaData = await wabaResponse.json() as any
+        wabaDisplayPhone = wabaData.display_phone_number || ''
+        businessId = wabaData.id || waba_id
+      } catch (err) {
+        console.warn('⚠️ No se pudieron obtener datos adicionales de la WABA:', err)
+        businessId = waba_id
+      }
+
+      // 3. Guardar o actualizar sesión en BD
+      const existingSession = await db
+        .select()
+        .from(whatsappSessions)
+        .where(
+          and(
+            eq(whatsappSessions.userId, userId),
+            eq(whatsappSessions.wabaId, waba_id)
+          )
+        )
+        .limit(1)
+
+      let session
+      if (existingSession.length > 0) {
+        // Actualizar sesión existente
+        [session] = await db
+          .update(whatsappSessions)
+          .set({
+            connectionType: 'meta_cloud',
+            metaPhoneNumberId: phone_number_id,
+            metaAccessToken: accessToken,
+            metaBusinessId: businessId,
+            phone: wabaDisplayPhone || phone_number_id,
+            status: 'connected',
+            lastConnectedAt: new Date(),
+            updatedAt: new Date(),
+          })
+          .where(eq(whatsappSessions.id, existingSession[0].id))
+          .returning()
+      } else {
+        // Crear nueva sesión
+        [session] = await db
+          .insert(whatsappSessions)
+          .values({
+            userId,
+            name: `Meta-${wabaDisplayPhone || phone_number_id}`,
+            connectionType: 'meta_cloud',
+            wabaId: waba_id,
+            metaPhoneNumberId: phone_number_id,
+            metaAccessToken: accessToken,
+            metaBusinessId: businessId,
+            phone: wabaDisplayPhone || phone_number_id,
+            status: 'connected',
+            lastConnectedAt: new Date(),
+          })
+          .returning()
+      }
+
+      console.log('✅ Sesión Meta Cloud guardada en BD:', session.id)
+
+      return reply.status(200).send({
+        success: true,
+        sessionId: session.id,
+        waba_id,
+        phone_number_id,
+        phone: wabaDisplayPhone || phone_number_id,
+      })
 
     } catch (error) {
       console.error('❌ Error intercambiando token:', error)
-      return reply.status(500).send({ error: 'Error interno' })
+      return reply.status(500).send({ error: 'Error interno al conectar con Meta' })
     }
   })
 }
