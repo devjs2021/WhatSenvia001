@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useCallback, useRef } from 'react'
+import { useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 
 declare global {
@@ -14,27 +14,34 @@ interface MetaSignupButtonProps {
   onSuccess: (code: string, wabaId: string, phoneNumberId: string) => void
 }
 
-export function MetaSignupButton({ onSuccess }: MetaSignupButtonProps) {
-  const fbInitialized = useRef(false)
+let fbReadyPromise: Promise<void> | null = null
 
-  useEffect(() => {
-    const initFB = () => {
-      if (fbInitialized.current) return
+function loadFBSdk(): Promise<void> {
+  if (fbReadyPromise) return fbReadyPromise
+
+  fbReadyPromise = new Promise<void>((resolve, reject) => {
+    const appId = process.env.NEXT_PUBLIC_META_APP_ID
+    if (!appId) {
+      reject(new Error('NEXT_PUBLIC_META_APP_ID is not configured'))
+      return
+    }
+
+    const doInit = () => {
       window.FB.init({
-        appId: process.env.NEXT_PUBLIC_META_APP_ID,
+        appId,
         autoLogAppEvents: true,
         xfbml: true,
         version: 'v21.0'
       })
-      fbInitialized.current = true
+      resolve()
     }
 
     if (window.FB) {
-      initFB()
+      doInit()
       return
     }
 
-    window.fbAsyncInit = initFB
+    window.fbAsyncInit = doInit
 
     if (!document.getElementById('facebook-jssdk')) {
       const script = document.createElement('script')
@@ -42,18 +49,26 @@ export function MetaSignupButton({ onSuccess }: MetaSignupButtonProps) {
       script.src = 'https://connect.facebook.net/en_US/sdk.js'
       script.async = true
       script.defer = true
+      script.onerror = () => reject(new Error('Failed to load Facebook SDK'))
       document.body.appendChild(script)
     }
+  })
+
+  return fbReadyPromise
+}
+
+export function MetaSignupButton({ onSuccess }: MetaSignupButtonProps) {
+  useEffect(() => {
+    loadFBSdk().catch(console.error)
   }, [])
 
   useEffect(() => {
-    // Escuchar eventos del flujo de registro
     const handleMessage = (event: MessageEvent) => {
       if (event.origin !== 'https://www.facebook.com') return
       try {
         const data = JSON.parse(event.data)
         if (data.type === 'WA_EMBEDDED_SIGNUP') {
-          console.log('📱 Datos del registro:', data)
+          console.log('Datos del registro:', data)
         }
       } catch {}
     }
@@ -62,23 +77,23 @@ export function MetaSignupButton({ onSuccess }: MetaSignupButtonProps) {
     return () => window.removeEventListener('message', handleMessage)
   }, [])
 
-  const handleClick = useCallback(() => {
-    if (!window.FB || !fbInitialized.current) {
-      alert('SDK de Facebook aún cargando, intenta de nuevo en unos segundos')
+  const handleClick = useCallback(async () => {
+    try {
+      await loadFBSdk()
+    } catch (err) {
+      alert('No se pudo cargar el SDK de Facebook. Verifica la configuración.')
+      console.error(err)
       return
     }
 
-    const fbLoginCallback = (response: any) => {
+    window.FB.login((response: any) => {
       if (response.authResponse) {
         const code = response.authResponse.code
-        // Obtener WABA ID y Phone Number ID del sessionStorage
         const wabaId = sessionStorage.getItem('wabaId') || ''
         const phoneNumberId = sessionStorage.getItem('phoneNumberId') || ''
         onSuccess(code, wabaId, phoneNumberId)
       }
-    }
-
-    window.FB.login(fbLoginCallback, {
+    }, {
       config_id: '990741733486379',
       response_type: 'code',
       override_default_response_type: true,
