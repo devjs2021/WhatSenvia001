@@ -13,7 +13,7 @@ const envSchema = z.object({
   REDIS_URL: z.string().default("redis://localhost:6379"),
 
   JWT_SECRET: z.string().min(10, "JWT_SECRET must be at least 10 characters"),
-  JWT_EXPIRES_IN: z.string().default("7d"),
+  JWT_EXPIRES_IN: z.string().default("15m"),
 
   WHATSAPP_SESSION_PATH: z.string().default("./sessions"),
   WHATSAPP_MAX_RETRIES: z.coerce.number().default(3),

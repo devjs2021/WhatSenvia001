@@ -18,6 +18,39 @@ class ApiError extends Error {
   }
 }
 
+let isRefreshing = false;
+let refreshPromise: Promise<string | null> | null = null;
+
+async function tryRefreshToken(): Promise<string | null> {
+  const refreshToken = localStorage.getItem("refreshToken");
+  if (!refreshToken) return null;
+
+  try {
+    const response = await fetch(`${API_BASE}/auth/refresh`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refreshToken }),
+    });
+
+    if (!response.ok) {
+      localStorage.removeItem("token");
+      localStorage.removeItem("refreshToken");
+      return null;
+    }
+
+    const data = await response.json();
+    const newToken = data.data.token;
+    const newRefreshToken = data.data.refreshToken;
+    localStorage.setItem("token", newToken);
+    localStorage.setItem("refreshToken", newRefreshToken);
+    return newToken;
+  } catch {
+    localStorage.removeItem("token");
+    localStorage.removeItem("refreshToken");
+    return null;
+  }
+}
+
 async function request<T>(endpoint: string, options: ApiOptions = {}): Promise<T> {
   const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
@@ -39,11 +72,42 @@ async function request<T>(endpoint: string, options: ApiOptions = {}): Promise<T
     body: options.body ? JSON.stringify(options.body) : undefined,
   });
 
+  if (response.status === 401 && typeof window !== "undefined" && !endpoint.includes("/auth/")) {
+    if (!isRefreshing) {
+      isRefreshing = true;
+      refreshPromise = tryRefreshToken().finally(() => {
+        isRefreshing = false;
+        refreshPromise = null;
+      });
+    }
+
+    const newToken = await refreshPromise;
+    if (newToken) {
+      headers.Authorization = `Bearer ${newToken}`;
+      const retryResponse = await fetch(`${API_BASE}${endpoint}`, {
+        method: options.method || "GET",
+        headers,
+        body: options.body ? JSON.stringify(options.body) : undefined,
+      });
+      const retryData = await retryResponse.json();
+      if (!retryResponse.ok) {
+        throw new ApiError(retryResponse.status, retryData.error || "Something went wrong");
+      }
+      return retryData;
+    }
+
+    localStorage.removeItem("token");
+    localStorage.removeItem("refreshToken");
+    window.location.href = "/auth/login";
+    throw new ApiError(401, "Session expired");
+  }
+
   const data = await response.json();
 
   if (!response.ok) {
     if (response.status === 401) {
       localStorage.removeItem("token");
+      localStorage.removeItem("refreshToken");
     }
     throw new ApiError(response.status, data.error || "Something went wrong");
   }

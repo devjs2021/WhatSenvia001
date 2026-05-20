@@ -164,6 +164,24 @@ async function bootstrap() {
     }
   }
 
+  // Create refresh_tokens table if not exists
+  try {
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS refresh_tokens (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        token TEXT NOT NULL UNIQUE,
+        user_agent VARCHAR(500),
+        expires_at TIMESTAMP NOT NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT NOW()
+      )
+    `);
+    await db.execute(sql`CREATE INDEX IF NOT EXISTS refresh_tokens_user_id_idx ON refresh_tokens(user_id)`);
+    await db.execute(sql`CREATE INDEX IF NOT EXISTS refresh_tokens_token_idx ON refresh_tokens(token)`);
+  } catch (err: any) {
+    app.log.warn({ error: err.message }, "Refresh tokens table setup warning");
+  }
+
   // Temporary auto-migration for Meta review compliance
   try {
     app.log.info("Checking database schema for facebook_id column...");

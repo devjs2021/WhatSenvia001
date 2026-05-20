@@ -1,10 +1,14 @@
+import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import { db } from "../../../config/database.js";
 import { users } from "../../../infrastructure/database/schema/users.js";
 import { licenses } from "../../../infrastructure/database/schema/licenses.js";
 import { LICENSE_PLANS } from "../../../infrastructure/database/schema/licenses.js";
-import { eq, and } from "drizzle-orm";
+import { refreshTokens } from "../../../infrastructure/database/schema/refresh-tokens.js";
+import { eq, and, lt } from "drizzle-orm";
 import type { RegisterInput, LoginInput } from "../schemas/auth.schema.js";
+
+const REFRESH_TOKEN_EXPIRY_DAYS = 30;
 
 export class AuthService {
   async register(input: RegisterInput) {
@@ -135,6 +139,73 @@ export class AuthService {
           }
         : null,
     };
+  }
+
+  async createRefreshToken(userId: string, userAgent?: string): Promise<string> {
+    const token = crypto.randomBytes(40).toString("hex");
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + REFRESH_TOKEN_EXPIRY_DAYS);
+
+    await db.insert(refreshTokens).values({
+      userId,
+      token,
+      userAgent: userAgent?.substring(0, 500),
+      expiresAt,
+    });
+
+    return token;
+  }
+
+  async refreshAccessToken(token: string) {
+    const [record] = await db
+      .select()
+      .from(refreshTokens)
+      .where(eq(refreshTokens.token, token))
+      .limit(1);
+
+    if (!record) {
+      throw new Error("Invalid refresh token");
+    }
+
+    if (new Date() > record.expiresAt) {
+      await db.delete(refreshTokens).where(eq(refreshTokens.id, record.id));
+      throw new Error("Refresh token expired");
+    }
+
+    const [user] = await db
+      .select({
+        id: users.id,
+        email: users.email,
+        name: users.name,
+        role: users.role,
+        isActive: users.isActive,
+      })
+      .from(users)
+      .where(eq(users.id, record.userId))
+      .limit(1);
+
+    if (!user || !user.isActive) {
+      await db.delete(refreshTokens).where(eq(refreshTokens.userId, record.userId));
+      throw new Error("User not found or deactivated");
+    }
+
+    // Rotate: delete old token, create new one
+    await db.delete(refreshTokens).where(eq(refreshTokens.id, record.id));
+    const newToken = await this.createRefreshToken(user.id);
+
+    return { user, newRefreshToken: newToken };
+  }
+
+  async revokeRefreshToken(token: string) {
+    await db.delete(refreshTokens).where(eq(refreshTokens.token, token));
+  }
+
+  async revokeAllUserTokens(userId: string) {
+    await db.delete(refreshTokens).where(eq(refreshTokens.userId, userId));
+  }
+
+  async cleanupExpiredTokens() {
+    await db.delete(refreshTokens).where(lt(refreshTokens.expiresAt, new Date()));
   }
 
   async deleteByFacebookId(facebookId: string) {
