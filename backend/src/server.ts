@@ -26,6 +26,7 @@ import { chatRoutes } from "./modules/chat/routes/chat.routes.js";
 import { campaignControlRoutes } from "./modules/campaign-control/routes/campaign-control.routes.js";
 import { scheduledRoutes } from "./modules/scheduled/routes/scheduled.routes.js";
 import { adminRoutes } from "./modules/admin/routes/admin.routes.js";
+import { metaTemplateRoutes } from "./modules/meta-templates/routes/meta-template.routes.js";
 import { metaWebhookRoutes } from "./modules/meta-webhook/routes/meta-webhook.routes.js";
 import { metaExchangeRoutes } from "./modules/meta-webhook/routes/meta-exchange.routes.js";
 import { startMessageWorker } from "./infrastructure/queue/message.queue.js";
@@ -105,6 +106,7 @@ async function bootstrap() {
   await app.register(campaignControlRoutes, { prefix: "/api/campaign-control" });
   await app.register(scheduledRoutes, { prefix: "/api/scheduled" });
   await app.register(adminRoutes, { prefix: "/api/admin" });
+  await app.register(metaTemplateRoutes, { prefix: "/api/meta-templates" });
 
   // Meta Webhook (sin prefijo /api porque Meta llama directamente a /meta-webhook)
   await app.register(metaWebhookRoutes);
@@ -178,6 +180,33 @@ async function bootstrap() {
     await db.execute(sql`CREATE INDEX IF NOT EXISTS refresh_tokens_token_idx ON refresh_tokens(token)`);
   } catch (err: any) {
     app.log.warn({ error: err.message }, "Refresh tokens table setup warning");
+  }
+
+  // Create meta_templates table if not exists
+  try {
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS meta_templates (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        waba_id VARCHAR(100) NOT NULL,
+        meta_template_id VARCHAR(100) NOT NULL,
+        name VARCHAR(255) NOT NULL,
+        status VARCHAR(30) NOT NULL,
+        category VARCHAR(50) NOT NULL,
+        language VARCHAR(10) NOT NULL,
+        components JSONB DEFAULT '[]',
+        last_synced_at TIMESTAMP NOT NULL DEFAULT NOW(),
+        created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+        UNIQUE(waba_id, meta_template_id, language)
+      )
+    `);
+    await db.execute(sql`CREATE INDEX IF NOT EXISTS meta_templates_user_id_idx ON meta_templates(user_id)`);
+    await db.execute(sql`ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS is_template_campaign BOOLEAN DEFAULT FALSE`);
+    await db.execute(sql`ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS meta_template_id UUID REFERENCES meta_templates(id) ON DELETE SET NULL`);
+    await db.execute(sql`ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS template_params JSONB`);
+  } catch (err: any) {
+    app.log.warn({ error: err.message }, "Meta templates table setup warning");
   }
 
   // Auto-migration: ensure facebook_id column exists

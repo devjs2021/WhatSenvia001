@@ -17,6 +17,14 @@ export interface MessageJobData {
   mediaType?: "image" | "video" | "audio" | "document";
   campaignId?: string;
   messagesPerMinute?: number;
+  template?: {
+    name: string;
+    language: string;
+    components: Array<{
+      type: string;
+      parameters: Array<{ type: "text"; text: string }>;
+    }>;
+  };
 }
 
 export const messageQueue = new Queue<MessageJobData>("messages", {
@@ -33,7 +41,7 @@ export function startMessageWorker() {
   const worker = new Worker<MessageJobData>(
     "messages",
     async (job: Job<MessageJobData>) => {
-      const { messageId, sessionId, phone, content, mediaUrl, mediaType, campaignId, messagesPerMinute } = job.data;
+      const { messageId, sessionId, phone, content, mediaUrl, mediaType, campaignId, messagesPerMinute, template } = job.data;
 
       logger.info({ messageId, phone }, "Processing message");
 
@@ -47,21 +55,23 @@ export function startMessageWorker() {
 
       const provider = await getWhatsAppProvider(sessionId);
 
-      // Simulate typing
-      try {
-        const jid = `${phone.replace(/\D/g, "")}@s.whatsapp.net`;
-        await provider.sendPresenceUpdate(sessionId, "composing", jid);
-        // Wait proportional to message length (min 1s, max 4s)
-        const typingMs = Math.min(Math.max(content.length * 20, 1000), 4000);
-        await new Promise(r => setTimeout(r, typingMs));
-        await provider.sendPresenceUpdate(sessionId, "paused", jid);
-      } catch {}
+      // Simulate typing (skip for template messages — Meta doesn't support it)
+      if (!template) {
+        try {
+          const jid = `${phone.replace(/\D/g, "")}@s.whatsapp.net`;
+          await provider.sendPresenceUpdate(sessionId, "composing", jid);
+          const typingMs = Math.min(Math.max(content.length * 20, 1000), 4000);
+          await new Promise(r => setTimeout(r, typingMs));
+          await provider.sendPresenceUpdate(sessionId, "paused", jid);
+        } catch {}
+      }
 
       const result = await provider.sendMessage(sessionId, {
         phone,
         message: content,
         mediaUrl,
         mediaType,
+        template: template as any,
       });
 
       if (result.success) {

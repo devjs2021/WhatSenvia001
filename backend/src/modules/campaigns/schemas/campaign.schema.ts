@@ -10,6 +10,9 @@ export const createCampaignSchema = z.object({
   sessionId: z.string().uuid("Invalid session ID"),
   messagesPerMinute: z.number().int().min(1).max(30).optional().default(8),
   scheduledAt: z.string().datetime().optional(),
+  isTemplateCampaign: z.boolean().optional().default(false),
+  metaTemplateId: z.string().uuid().optional(),
+  templateParams: z.record(z.array(z.string())).optional(),
 });
 
 export const updateCampaignSchema = createCampaignSchema.partial().omit({ sessionId: true });

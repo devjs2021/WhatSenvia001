@@ -29,6 +29,20 @@ interface Template {
   category: string | null;
 }
 
+interface MetaTemplate {
+  id: string;
+  name: string;
+  status: string;
+  category: string;
+  language: string;
+  components: Array<{
+    type: string;
+    text?: string;
+    example?: { body_text?: string[][] };
+    parameters?: Array<{ type: string }>;
+  }>;
+}
+
 interface ContactList {
   id: string;
   name: string;
@@ -135,13 +149,22 @@ export default function CampaignsPage() {
 
       const tempTag = `envio-${Date.now()}`;
       await api.post("/contacts/upsert-bulk", { phones: phonesToSend, tag: tempTag });
-      const campaignRes = await api.post<ApiResponse<any>>("/campaigns", {
+
+      const campaignPayload: Record<string, any> = {
         name: `Envio ${new Date().toLocaleString(locale === 'es' ? 'es-CO' : 'en-US')}`,
         sessionId,
-        message,
+        message: isMetaCloud && selectedMetaTemplateId ? `[Template: ${selectedMetaTemplate?.name}]` : message,
         targetTags: [tempTag],
         messagesPerMinute: speedPresets[speed].msgsPerMin,
-      });
+      };
+
+      if (isMetaCloud && selectedMetaTemplateId) {
+        campaignPayload.isTemplateCampaign = true;
+        campaignPayload.metaTemplateId = selectedMetaTemplateId;
+        campaignPayload.templateParams = templateParamMapping;
+      }
+
+      const campaignRes = await api.post<ApiResponse<any>>("/campaigns", campaignPayload);
       await api.post(`/campaigns/${campaignRes.data.id}/start`);
       return campaignRes.data.id;
     },
@@ -179,6 +202,70 @@ export default function CampaignsPage() {
     onError: (err: any) => toast.error(err.message),
   });
 
+  // Meta template state
+  const [selectedMetaTemplateId, setSelectedMetaTemplateId] = useState("");
+  const [templateParamMapping, setTemplateParamMapping] = useState<Record<string, string[]>>({});
+  const [syncing, setSyncing] = useState(false);
+
+  const isMetaCloud = selectedSession?.connectionType === "meta_cloud";
+
+  const { data: metaTemplatesData, refetch: refetchMetaTemplates } = useQuery({
+    queryKey: ["meta-templates", sessionId],
+    queryFn: () => api.get<{ success: boolean; data: MetaTemplate[] }>(`/meta-templates?sessionId=${sessionId}`),
+    enabled: !!sessionId && isMetaCloud,
+  });
+  const metaTemplates = metaTemplatesData?.data || [];
+  const selectedMetaTemplate = metaTemplates.find((t) => t.id === selectedMetaTemplateId);
+
+  function getTemplateBodyParams(tpl: MetaTemplate): number {
+    const bodyComp = tpl.components.find((c) => c.type === "BODY");
+    if (!bodyComp?.text) return 0;
+    const matches = bodyComp.text.match(/\{\{\d+\}\}/g);
+    return matches ? matches.length : 0;
+  }
+
+  function getTemplateHeaderParams(tpl: MetaTemplate): number {
+    const headerComp = tpl.components.find((c) => c.type === "HEADER");
+    if (!headerComp?.text) return 0;
+    const matches = headerComp.text.match(/\{\{\d+\}\}/g);
+    return matches ? matches.length : 0;
+  }
+
+  function handleSelectMetaTemplate(templateId: string) {
+    setSelectedMetaTemplateId(templateId);
+    const tpl = metaTemplates.find((t) => t.id === templateId);
+    if (tpl) {
+      const mapping: Record<string, string[]> = {};
+      const headerCount = getTemplateHeaderParams(tpl);
+      if (headerCount > 0) mapping.header = Array(headerCount).fill("name");
+      const bodyCount = getTemplateBodyParams(tpl);
+      if (bodyCount > 0) mapping.body = Array(bodyCount).fill("name");
+      setTemplateParamMapping(mapping);
+    } else {
+      setTemplateParamMapping({});
+    }
+  }
+
+  async function handleSyncMetaTemplates() {
+    if (!sessionId) return;
+    setSyncing(true);
+    try {
+      await api.post("/meta-templates/sync", { sessionId });
+      await refetchMetaTemplates();
+      toast.success(t('campaigns.templatesSynced'));
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setSyncing(false);
+    }
+  }
+
+  const contactFieldOptions = [
+    { value: "name", label: t('campaigns.fieldName') },
+    { value: "phone", label: t('campaigns.fieldPhone') },
+    { value: "email", label: t('campaigns.fieldEmail') },
+  ];
+
   const [uploading, setUploading] = useState(false);
   async function handleExcelUpload(file: File) {
     setUploading(true);
@@ -215,7 +302,11 @@ export default function CampaignsPage() {
       if (!pollQuestion.trim() || validOpts.length < 2) return toast.error(t('campaigns.completePollError'));
       sendPollMutation.mutate();
     } else {
-      if (!message.trim()) return toast.error(t('campaigns.writeMessageError'));
+      if (isMetaCloud) {
+        if (!selectedMetaTemplateId) return toast.error(t('campaigns.selectTemplateError'));
+      } else {
+        if (!message.trim()) return toast.error(t('campaigns.writeMessageError'));
+      }
       sendMutation.mutate();
     }
   }
@@ -466,7 +557,94 @@ export default function CampaignsPage() {
             </div>
           </div>
 
-          {contentType === "text" ? (
+          {isMetaCloud && contentType === "text" ? (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <div className="relative flex-1">
+                  <FileText className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400 pointer-events-none" />
+                  <select
+                    className="w-full appearance-none bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl pl-9 pr-9 py-2.5 text-sm text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/30 cursor-pointer"
+                    value={selectedMetaTemplateId}
+                    onChange={(e) => handleSelectMetaTemplate(e.target.value)}
+                  >
+                    <option value="">{t('campaigns.selectMetaTemplate')}</option>
+                    {metaTemplates.map((mt) => (
+                      <option key={mt.id} value={mt.id}>
+                        {mt.name} · {mt.language} · {mt.category}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+                </div>
+                <button
+                  onClick={handleSyncMetaTemplates}
+                  disabled={syncing}
+                  className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-medium bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors disabled:opacity-50 shrink-0"
+                >
+                  {syncing ? (
+                    <div className="h-3.5 w-3.5 rounded-full border-2 border-blue-300 border-t-blue-600 animate-spin" />
+                  ) : (
+                    <Zap className="h-3.5 w-3.5" />
+                  )}
+                  {t('campaigns.syncTemplates')}
+                </button>
+              </div>
+
+              {selectedMetaTemplate && (
+                <div className="space-y-3">
+                  <div className="rounded-xl bg-gray-50 dark:bg-gray-800 p-4 space-y-2">
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{t('campaigns.templatePreview')}</p>
+                    {selectedMetaTemplate.components.map((comp, i) => (
+                      <div key={i} className="text-sm text-gray-700 dark:text-gray-300">
+                        {comp.type === "HEADER" && comp.text && (
+                          <p className="font-semibold">{comp.text}</p>
+                        )}
+                        {comp.type === "BODY" && comp.text && (
+                          <p className="whitespace-pre-wrap">{comp.text}</p>
+                        )}
+                        {comp.type === "FOOTER" && comp.text && (
+                          <p className="text-xs text-gray-400 mt-1">{comp.text}</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  {Object.entries(templateParamMapping).map(([compType, fields]) => (
+                    <div key={compType} className="space-y-2">
+                      <p className="text-xs font-semibold text-gray-500 uppercase">{compType} {t('campaigns.parameters')}</p>
+                      {fields.map((field, idx) => (
+                        <div key={idx} className="flex items-center gap-2">
+                          <span className="text-xs text-gray-400 font-mono shrink-0">{`{{${idx + 1}}}`}</span>
+                          <select
+                            className="flex-1 appearance-none bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-1.5 text-xs text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/30 cursor-pointer"
+                            value={field}
+                            onChange={(e) => {
+                              const newMapping = { ...templateParamMapping };
+                              newMapping[compType] = [...fields];
+                              newMapping[compType][idx] = e.target.value;
+                              setTemplateParamMapping(newMapping);
+                            }}
+                          >
+                            {contactFieldOptions.map((opt) => (
+                              <option key={opt.value} value={opt.value}>{opt.label}</option>
+                            ))}
+                          </select>
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {metaTemplates.length === 0 && (
+                <div className="rounded-xl bg-gray-50 dark:bg-gray-800 p-6 flex flex-col items-center justify-center gap-2">
+                  <FileText className="h-8 w-8 text-gray-300" />
+                  <p className="text-sm text-gray-400 text-center">{t('campaigns.noMetaTemplates')}</p>
+                  <p className="text-xs text-gray-400 text-center">{t('campaigns.syncToLoad')}</p>
+                </div>
+              )}
+            </div>
+          ) : contentType === "text" ? (
             <div className="space-y-3">
               {templates.length > 0 && (
                 <div className="relative">

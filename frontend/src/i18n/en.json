@@ -204,7 +204,18 @@
     "totalDelivered": "Total delivered",
     "totalFailed": "Total failed",
     "draft": "Draft",
-    "scheduled": "Scheduled"
+    "scheduled": "Scheduled",
+    "selectMetaTemplate": "Select Meta template",
+    "syncTemplates": "Sync",
+    "templatesSynced": "Templates synced successfully",
+    "templatePreview": "Template preview",
+    "parameters": "- Parameters",
+    "noMetaTemplates": "No approved templates",
+    "syncToLoad": "Sync templates from your Meta account",
+    "selectTemplateError": "Select a Meta template",
+    "fieldName": "Contact name",
+    "fieldPhone": "Phone",
+    "fieldEmail": "Email"
   },
   "contacts": {
     "addContact": "Add contact",

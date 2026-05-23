@@ -204,7 +204,18 @@
     "totalDelivered": "Total entregado",
     "totalFailed": "Total fallido",
     "draft": "Borrador",
-    "scheduled": "Programada"
+    "scheduled": "Programada",
+    "selectMetaTemplate": "Seleccionar plantilla de Meta",
+    "syncTemplates": "Sincronizar",
+    "templatesSynced": "Plantillas sincronizadas correctamente",
+    "templatePreview": "Vista previa de plantilla",
+    "parameters": "- Parámetros",
+    "noMetaTemplates": "No hay plantillas aprobadas",
+    "syncToLoad": "Sincroniza las plantillas desde tu cuenta de Meta",
+    "selectTemplateError": "Selecciona una plantilla de Meta",
+    "fieldName": "Nombre del contacto",
+    "fieldPhone": "Teléfono",
+    "fieldEmail": "Email"
   },
   "contacts": {
     "addContact": "Agregar contacto",

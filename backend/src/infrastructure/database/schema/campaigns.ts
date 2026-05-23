@@ -1,6 +1,7 @@
-import { pgTable, uuid, varchar, timestamp, text, integer, jsonb, index } from "drizzle-orm/pg-core";
+import { pgTable, uuid, varchar, timestamp, text, integer, jsonb, index, boolean } from "drizzle-orm/pg-core";
 import { users } from "./users";
 import { whatsappSessions } from "./whatsapp-sessions";
+import { metaTemplates } from "./meta-templates";
 
 export const campaignStatusEnum = ["draft", "scheduled", "running", "paused", "completed", "failed"] as const;
 export type CampaignStatus = (typeof campaignStatusEnum)[number];
@@ -23,6 +24,9 @@ export const campaigns = pgTable(
     deliveredCount: integer("delivered_count").default(0).notNull(),
     failedCount: integer("failed_count").default(0).notNull(),
     messagesPerMinute: integer("messages_per_minute").default(8).notNull(),
+    isTemplateCampaign: boolean("is_template_campaign").default(false).notNull(),
+    metaTemplateId: uuid("meta_template_id").references(() => metaTemplates.id, { onDelete: "set null" }),
+    templateParams: jsonb("template_params").$type<Record<string, string[]>>(),
     scheduledAt: timestamp("scheduled_at"),
     startedAt: timestamp("started_at"),
     completedAt: timestamp("completed_at"),

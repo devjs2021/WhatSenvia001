@@ -1,8 +1,18 @@
+export interface TemplateComponent {
+  type: "header" | "body" | "button";
+  parameters: Array<{ type: "text"; text: string }>;
+}
+
 export interface SendMessageOptions {
   phone: string;
   message: string;
   mediaUrl?: string;
   mediaType?: "image" | "video" | "audio" | "document";
+  template?: {
+    name: string;
+    language: string;
+    components: TemplateComponent[];
+  };
 }
 
 export interface SendMessageResult {

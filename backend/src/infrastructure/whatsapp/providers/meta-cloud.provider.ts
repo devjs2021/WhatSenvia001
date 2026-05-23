@@ -40,21 +40,42 @@ export class MetaCloudProvider implements IWhatsAppProvider {
   async sendMessage(_sessionId: string, options: SendMessageOptions): Promise<SendMessageResult> {
     try {
       const url = `${this.baseUrl}/${this.phoneNumberId}/messages`;
+      const to = options.phone.replace(/[^0-9]/g, "");
 
-      const body: Record<string, any> = {
-        messaging_product: "whatsapp",
-        to: options.phone.replace(/[^0-9]/g, ""),
-        type: "text",
-        text: { body: options.message },
-      };
+      let body: Record<string, any>;
 
-      if (options.mediaUrl && options.mediaType) {
-        body.type = options.mediaType;
-        body[options.mediaType] = {
-          link: options.mediaUrl,
-          caption: options.message,
+      if (options.template) {
+        body = {
+          messaging_product: "whatsapp",
+          to,
+          type: "template",
+          template: {
+            name: options.template.name,
+            language: { code: options.template.language },
+            components: options.template.components
+              .filter((c) => c.parameters.length > 0)
+              .map((c) => ({
+                type: c.type,
+                parameters: c.parameters,
+              })),
+          },
         };
-        delete body.text;
+      } else {
+        body = {
+          messaging_product: "whatsapp",
+          to,
+          type: "text",
+          text: { body: options.message },
+        };
+
+        if (options.mediaUrl && options.mediaType) {
+          body.type = options.mediaType;
+          body[options.mediaType] = {
+            link: options.mediaUrl,
+            caption: options.message,
+          };
+          delete body.text;
+        }
       }
 
       const response = await fetch(url, {

@@ -5,6 +5,7 @@ import { db } from "../../config/database.js";
 import { campaigns } from "../database/schema/campaigns.js";
 import { contacts } from "../database/schema/contacts.js";
 import { messages } from "../database/schema/messages.js";
+import { metaTemplates } from "../database/schema/meta-templates.js";
 import { messageQueue } from "./message.queue.js";
 import { eq, and, sql } from "drizzle-orm";
 
@@ -69,6 +70,23 @@ export function startCampaignWorker() {
         .set({ totalContacts: filteredContacts.length })
         .where(eq(campaigns.id, campaignId));
 
+      // Resolve meta template if this is a template campaign
+      let metaTemplate: { name: string; language: string; components: any[] } | null = null;
+      let paramMapping: Record<string, string[]> | null = null;
+
+      if (campaign.isTemplateCampaign && campaign.metaTemplateId) {
+        const [tpl] = await db
+          .select()
+          .from(metaTemplates)
+          .where(eq(metaTemplates.id, campaign.metaTemplateId))
+          .limit(1);
+
+        if (tpl) {
+          metaTemplate = { name: tpl.name, language: tpl.language, components: (tpl.components as any[]) || [] };
+          paramMapping = (campaign.templateParams as Record<string, string[]>) || null;
+        }
+      }
+
       // Create message records and queue jobs
       for (const contact of filteredContacts) {
         // Personalize message with contact fields and metadata variables
@@ -77,13 +95,36 @@ export function startCampaignWorker() {
           .replace(/\{\{phone\}\}/g, contact.phone)
           .replace(/\{\{email\}\}/g, contact.email || "");
 
-        // Replace metadata variables (extra Excel columns like {{ciudad}}, {{empresa}})
         const metadata = (contact.metadata as Record<string, string>) || {};
         for (const [key, value] of Object.entries(metadata)) {
           personalizedMessage = personalizedMessage.replace(
             new RegExp(`\\{\\{${key}\\}\\}`, "g"),
             value || ""
           );
+        }
+
+        // Build template data per contact if template campaign
+        let templateData: { name: string; language: string; components: Array<{ type: string; parameters: Array<{ type: "text"; text: string }> }> } | undefined;
+
+        if (metaTemplate && paramMapping) {
+          const resolveParam = (field: string): string => {
+            if (field === "name") return contact.name || "";
+            if (field === "phone") return contact.phone;
+            if (field === "email") return contact.email || "";
+            if (field.startsWith("metadata.")) return metadata[field.slice(9)] || "";
+            return metadata[field] || "";
+          };
+
+          const components: Array<{ type: string; parameters: Array<{ type: "text"; text: string }> }> = [];
+          for (const [componentType, fields] of Object.entries(paramMapping)) {
+            if (fields.length > 0) {
+              components.push({
+                type: componentType,
+                parameters: fields.map((f) => ({ type: "text" as const, text: resolveParam(f) })),
+              });
+            }
+          }
+          templateData = { name: metaTemplate.name, language: metaTemplate.language, components };
         }
 
         // Create message record
@@ -113,8 +154,9 @@ export function startCampaignWorker() {
             mediaType: (campaign.mediaType as any) || undefined,
             campaignId,
             messagesPerMinute: messagesPerMinute || 8,
+            template: templateData,
           },
-          { priority: 2 } // Lower priority than direct messages
+          { priority: 2 }
         );
       }
 

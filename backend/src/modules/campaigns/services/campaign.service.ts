@@ -48,6 +48,9 @@ export class CampaignService {
         targetTags: input.targetTags,
         messagesPerMinute: input.messagesPerMinute,
         scheduledAt: input.scheduledAt ? new Date(input.scheduledAt) : undefined,
+        isTemplateCampaign: input.isTemplateCampaign ?? false,
+        metaTemplateId: input.metaTemplateId,
+        templateParams: input.templateParams,
       })
       .returning();
 
