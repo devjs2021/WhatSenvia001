@@ -38,22 +38,20 @@ export async function metaExchangeRoutes(fastify: FastifyInstance) {
 
       fastify.log.info({ waba_id, phone_number_id }, 'Token obtained via Embedded Signup')
 
-      // 2. Consultar la API de Meta para obtener datos actualizados de la WABA
-      let wabaDisplayPhone = ''
-      let businessId = ''
+      // 2. Obtener el número de teléfono real desde el phone_number_id
+      let displayPhone = ''
+      let businessId = waba_id
       try {
-        const wabaResponse = await fetch(
-          `https://graph.facebook.com/v21.0/${waba_id}?fields=name,display_phone_number,phone_number_id,business_verification_status`,
-          {
-            headers: { Authorization: `Bearer ${accessToken}` }
-          }
-        )
-        const wabaData = await wabaResponse.json() as any
-        wabaDisplayPhone = wabaData.display_phone_number || ''
-        businessId = wabaData.id || waba_id
+        if (phone_number_id) {
+          const phoneRes = await fetch(
+            `https://graph.facebook.com/v21.0/${phone_number_id}?fields=display_phone_number,verified_name`,
+            { headers: { Authorization: `Bearer ${accessToken}` } }
+          )
+          const phoneData = await phoneRes.json() as any
+          displayPhone = phoneData.display_phone_number || ''
+        }
       } catch (err) {
-        fastify.log.warn('Could not fetch additional WABA data')
-        businessId = waba_id
+        fastify.log.warn('Could not fetch phone number data from Meta')
       }
 
       // 3. Guardar o actualizar sesión en BD
@@ -81,7 +79,7 @@ export async function metaExchangeRoutes(fastify: FastifyInstance) {
             metaPhoneNumberId: phone_number_id,
             metaAccessToken: encryptedToken,
             metaBusinessId: businessId,
-            phone: wabaDisplayPhone || phone_number_id,
+            phone: displayPhone || phone_number_id,
             status: 'connected',
             lastConnectedAt: new Date(),
             updatedAt: new Date(),
@@ -94,13 +92,13 @@ export async function metaExchangeRoutes(fastify: FastifyInstance) {
           .insert(whatsappSessions)
           .values({
             userId,
-            name: `Meta-${wabaDisplayPhone || phone_number_id}`,
+            name: `Meta-${displayPhone || phone_number_id}`,
             connectionType: 'meta_cloud',
             wabaId: waba_id,
             metaPhoneNumberId: phone_number_id,
             metaAccessToken: encryptedToken,
             metaBusinessId: businessId,
-            phone: wabaDisplayPhone || phone_number_id,
+            phone: displayPhone || phone_number_id,
             status: 'connected',
             lastConnectedAt: new Date(),
           })
@@ -114,7 +112,7 @@ export async function metaExchangeRoutes(fastify: FastifyInstance) {
         sessionId: session.id,
         waba_id,
         phone_number_id,
-        phone: wabaDisplayPhone || phone_number_id,
+        phone: displayPhone || phone_number_id,
       })
 
     } catch (error) {
