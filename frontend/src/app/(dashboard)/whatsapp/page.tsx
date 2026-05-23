@@ -111,6 +111,7 @@ export default function WhatsAppPage() {
 
   const sessions = data?.data || [];
   const connectedSessions = sessions.filter((s) => s.status === "connected");
+  const hasMetaCloudSession = sessions.some((s) => s.connectionType === "meta_cloud");
 
   useEffect(() => {
     if (connectingId) {
@@ -157,30 +158,32 @@ export default function WhatsAppPage() {
         </CardContent>
       </Card>
 
-      {/* Meta Cloud API - Embedded Signup */}
-      <div className="mb-6 p-4 border rounded-lg border-blue-200 bg-blue-50">
-        <h3 className="font-semibold text-blue-900 mb-1">
-          🚀 Meta Cloud API (Oficial)
-        </h3>
-        <p className="text-sm text-blue-700 mb-3">
-          Conecta tu número de WhatsApp Business oficial sin usar QR
-        </p>
-        <MetaSignupButton
-          onSuccess={async (code, wabaId, phoneNumberId) => {
-            try {
-              await api.post<ApiResponse<any>>('/meta/exchange-token', {
-                code,
-                waba_id: wabaId,
-                phone_number_id: phoneNumberId,
-              })
-              toast.success('WhatsApp Business conectado exitosamente')
-              queryClient.invalidateQueries({ queryKey: ['sessions'] })
-            } catch (err: any) {
-              toast.error(err.message || 'Error al conectar con Meta')
-            }
-          }}
-        />
-      </div>
+      {/* Meta Cloud API - Embedded Signup (hide when already connected) */}
+      {!hasMetaCloudSession && (
+        <div className="mb-6 p-4 border rounded-lg border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/30">
+          <h3 className="font-semibold text-blue-900 dark:text-blue-200 mb-1">
+            Meta Cloud API (Oficial)
+          </h3>
+          <p className="text-sm text-blue-700 dark:text-blue-400 mb-3">
+            Conecta tu número de WhatsApp Business oficial sin usar QR
+          </p>
+          <MetaSignupButton
+            onSuccess={async (code, wabaId, phoneNumberId) => {
+              try {
+                await api.post<ApiResponse<any>>('/meta/exchange-token', {
+                  code,
+                  waba_id: wabaId,
+                  phone_number_id: phoneNumberId,
+                })
+                toast.success('WhatsApp Business conectado exitosamente')
+                queryClient.invalidateQueries({ queryKey: ['sessions'] })
+              } catch (err: any) {
+                toast.error(err.message || 'Error al conectar con Meta')
+              }
+            }}
+          />
+        </div>
+      )}
 
       {qrCode && connectingId && (
         <Card className="border-whatsapp">
@@ -376,62 +379,66 @@ export default function WhatsAppPage() {
             </CardContent>
           </Card>
         ) : (
-          sessions.map((session) => (
-            <Card key={session.id}>
-              <CardContent className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-semibold text-sm">{session.name}</h3>
-                    <Badge variant={statusColors[session.status]}>{t(`whatsapp.${session.status}`)}</Badge>
+          sessions.map((session) => {
+            const isMeta = session.connectionType === "meta_cloud";
+            return (
+              <Card key={session.id} className={isMeta ? "border-blue-200 dark:border-blue-800" : ""}>
+                <CardContent className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-semibold text-sm">{session.name}</h3>
+                      <Badge variant={statusColors[session.status]}>{t(`whatsapp.${session.status}`)}</Badge>
+                      {isMeta && <Badge variant="outline" className="text-blue-600 border-blue-300 dark:text-blue-400 dark:border-blue-700">Meta Cloud</Badge>}
+                    </div>
+                    {session.phone && (
+                      <p className="text-sm text-muted-foreground font-mono">+{session.phone}</p>
+                    )}
                   </div>
-                  {session.phone && (
-                    <p className="text-sm text-muted-foreground font-mono">+{session.phone}</p>
-                  )}
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {session.status === "disconnected" && (
+                  <div className="flex flex-wrap gap-2">
+                    {session.status === "disconnected" && !isMeta && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => connectMutation.mutate(session.id)}
+                        disabled={connectMutation.isPending}
+                      >
+                        <Plug className="mr-1 h-4 w-4" />
+                        {t('whatsapp.connect')}
+                      </Button>
+                    )}
+                    {session.status === "connected" && !isMeta && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => disconnectMutation.mutate(session.id)}
+                      >
+                        <PlugZap className="mr-1 h-4 w-4" />
+                        {t('whatsapp.disconnect')}
+                      </Button>
+                    )}
+                    {session.status === "qr_pending" && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => connectMutation.mutate(session.id)}
+                      >
+                        <RefreshCw className="mr-1 h-4 w-4" />
+                        {t('whatsapp.newQr')}
+                      </Button>
+                    )}
                     <Button
                       size="sm"
-                      variant="outline"
-                      onClick={() => connectMutation.mutate(session.id)}
-                      disabled={connectMutation.isPending}
+                      variant="ghost"
+                      className="text-destructive"
+                      onClick={() => deleteMutation.mutate(session.id)}
                     >
-                      <Plug className="mr-1 h-4 w-4" />
-                      {t('whatsapp.connect')}
+                      <Trash2 className="h-4 w-4" />
                     </Button>
-                  )}
-                  {session.status === "connected" && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => disconnectMutation.mutate(session.id)}
-                    >
-                      <PlugZap className="mr-1 h-4 w-4" />
-                      {t('whatsapp.disconnect')}
-                    </Button>
-                  )}
-                  {session.status === "qr_pending" && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => connectMutation.mutate(session.id)}
-                    >
-                      <RefreshCw className="mr-1 h-4 w-4" />
-                      {t('whatsapp.newQr')}
-                    </Button>
-                  )}
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="text-destructive"
-                    onClick={() => deleteMutation.mutate(session.id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })
         )}
       </div>
     </div>
