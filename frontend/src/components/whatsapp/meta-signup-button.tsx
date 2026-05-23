@@ -21,25 +21,18 @@ function loadFBSdk(): Promise<void> {
 
   fbReadyPromise = new Promise<void>((resolve, reject) => {
     const appId = process.env.NEXT_PUBLIC_META_APP_ID
-    console.log('[FB SDK] App ID:', appId)
     if (!appId) {
-      console.error('[FB SDK] NEXT_PUBLIC_META_APP_ID is not configured')
       reject(new Error('NEXT_PUBLIC_META_APP_ID is not configured'))
       return
     }
 
-    console.log('[FB SDK] window.FB exists:', !!window.FB)
-    console.log('[FB SDK] Script tag exists:', !!document.getElementById('facebook-jssdk'))
-
     const doInit = () => {
-      console.log('[FB SDK] fbAsyncInit fired, calling FB.init()...')
       window.FB.init({
         appId,
         autoLogAppEvents: true,
         xfbml: true,
         version: 'v21.0'
       })
-      console.log('[FB SDK] FB.init() completed successfully')
       resolve()
     }
 
@@ -51,20 +44,13 @@ function loadFBSdk(): Promise<void> {
     window.fbAsyncInit = doInit
 
     if (!document.getElementById('facebook-jssdk')) {
-      console.log('[FB SDK] Loading script from connect.facebook.net...')
       const script = document.createElement('script')
       script.id = 'facebook-jssdk'
       script.src = 'https://connect.facebook.net/en_US/sdk.js'
       script.async = true
       script.defer = true
-      script.onload = () => console.log('[FB SDK] Script loaded, waiting for fbAsyncInit...')
-      script.onerror = (e) => {
-        console.error('[FB SDK] Script failed to load:', e)
-        reject(new Error('Failed to load Facebook SDK'))
-      }
+      script.onerror = () => reject(new Error('Failed to load Facebook SDK'))
       document.body.appendChild(script)
-    } else {
-      console.warn('[FB SDK] Script tag exists but window.FB is undefined — SDK may have failed to load')
     }
   })
 
