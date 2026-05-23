@@ -3,7 +3,7 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm ci
+RUN npm ci --ignore-scripts
 
 COPY . .
 
@@ -13,13 +13,15 @@ ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ARG NEXT_PUBLIC_META_APP_ID
 ENV NEXT_PUBLIC_META_APP_ID=$NEXT_PUBLIC_META_APP_ID
 
-RUN npm run build
+ENV NEXT_TELEMETRY_DISABLED=1
+RUN npm run build && rm -rf .next/cache
 
 FROM node:20-alpine AS runner
 
 WORKDIR /app
 
 ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
 
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
