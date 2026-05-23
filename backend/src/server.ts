@@ -216,6 +216,17 @@ async function bootstrap() {
     app.log.warn(`Auto-migration note: ${err.message}`);
   }
 
+  // Auto-migration: ensure Meta Cloud columns exist on whatsapp_sessions
+  try {
+    await db.execute(sql`ALTER TABLE whatsapp_sessions ADD COLUMN IF NOT EXISTS connection_type VARCHAR(20) NOT NULL DEFAULT 'baileys'`);
+    await db.execute(sql`ALTER TABLE whatsapp_sessions ADD COLUMN IF NOT EXISTS waba_id VARCHAR(100)`);
+    await db.execute(sql`ALTER TABLE whatsapp_sessions ADD COLUMN IF NOT EXISTS meta_phone_number_id VARCHAR(100)`);
+    await db.execute(sql`ALTER TABLE whatsapp_sessions ADD COLUMN IF NOT EXISTS meta_access_token TEXT`);
+    await db.execute(sql`ALTER TABLE whatsapp_sessions ADD COLUMN IF NOT EXISTS meta_business_id VARCHAR(100)`);
+  } catch (err: any) {
+    app.log.warn(`Auto-migration (whatsapp_sessions) note: ${err.message}`);
+  }
+
   // Start queue workers
   startMessageWorker();
   startCampaignWorker();
