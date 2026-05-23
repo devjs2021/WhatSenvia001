@@ -5,9 +5,14 @@ import { licenses } from "../infrastructure/database/schema/licenses.js";
 import { LICENSE_PLANS } from "../infrastructure/database/schema/licenses.js";
 import { eq } from "drizzle-orm";
 
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "admin@whatsenvia.com";
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin123456";
-const ADMIN_NAME = process.env.ADMIN_NAME || "Administrador";
+if (!process.env.ADMIN_EMAIL || !process.env.ADMIN_PASSWORD) {
+  console.error("ADMIN_EMAIL and ADMIN_PASSWORD env vars are required");
+  process.exit(1);
+}
+
+const ADMIN_EMAIL: string = process.env.ADMIN_EMAIL;
+const ADMIN_PASSWORD: string = process.env.ADMIN_PASSWORD;
+const ADMIN_NAME: string = process.env.ADMIN_NAME || "Administrador";
 
 async function seedAdmin() {
   console.log("Checking for existing admin...");

@@ -36,11 +36,7 @@ export async function metaExchangeRoutes(fastify: FastifyInstance) {
 
       const accessToken = tokenData.access_token
 
-      console.log('✅ Token obtenido via Embedded Signup:', {
-        waba_id,
-        phone_number_id,
-        token_type: tokenData.token_type
-      })
+      fastify.log.info({ waba_id, phone_number_id }, 'Token obtained via Embedded Signup')
 
       // 2. Consultar la API de Meta para obtener datos actualizados de la WABA
       let wabaDisplayPhone = ''
@@ -56,7 +52,7 @@ export async function metaExchangeRoutes(fastify: FastifyInstance) {
         wabaDisplayPhone = wabaData.display_phone_number || ''
         businessId = wabaData.id || waba_id
       } catch (err) {
-        console.warn('⚠️ No se pudieron obtener datos adicionales de la WABA:', err)
+        fastify.log.warn('Could not fetch additional WABA data')
         businessId = waba_id
       }
 
@@ -111,7 +107,7 @@ export async function metaExchangeRoutes(fastify: FastifyInstance) {
           .returning()
       }
 
-      console.log('✅ Sesión Meta Cloud guardada en BD:', session.id)
+      fastify.log.info({ sessionId: session.id }, 'Meta Cloud session saved')
 
       return reply.status(200).send({
         success: true,
@@ -122,7 +118,7 @@ export async function metaExchangeRoutes(fastify: FastifyInstance) {
       })
 
     } catch (error) {
-      console.error('❌ Error intercambiando token:', error)
+      fastify.log.error('Error exchanging Meta token')
       return reply.status(500).send({ error: 'Error interno al conectar con Meta' })
     }
   })

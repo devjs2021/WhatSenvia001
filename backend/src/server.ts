@@ -26,7 +26,6 @@ import { chatRoutes } from "./modules/chat/routes/chat.routes.js";
 import { campaignControlRoutes } from "./modules/campaign-control/routes/campaign-control.routes.js";
 import { scheduledRoutes } from "./modules/scheduled/routes/scheduled.routes.js";
 import { adminRoutes } from "./modules/admin/routes/admin.routes.js";
-import { testWhatsappRoutes } from "./modules/test-whatsapp/routes/test-whatsapp.routes.js";
 import { metaWebhookRoutes } from "./modules/meta-webhook/routes/meta-webhook.routes.js";
 import { metaExchangeRoutes } from "./modules/meta-webhook/routes/meta-exchange.routes.js";
 import { startMessageWorker } from "./infrastructure/queue/message.queue.js";
@@ -106,7 +105,6 @@ async function bootstrap() {
   await app.register(campaignControlRoutes, { prefix: "/api/campaign-control" });
   await app.register(scheduledRoutes, { prefix: "/api/scheduled" });
   await app.register(adminRoutes, { prefix: "/api/admin" });
-  await app.register(testWhatsappRoutes, { prefix: "/api/test-whatsapp" });
 
   // Meta Webhook (sin prefijo /api porque Meta llama directamente a /meta-webhook)
   await app.register(metaWebhookRoutes);
@@ -182,32 +180,11 @@ async function bootstrap() {
     app.log.warn({ error: err.message }, "Refresh tokens table setup warning");
   }
 
-  // Temporary auto-migration for Meta review compliance
+  // Auto-migration: ensure facebook_id column exists
   try {
-    app.log.info("Checking database schema for facebook_id column...");
     await db.execute(sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS facebook_id VARCHAR(255) UNIQUE`);
-    app.log.info("Database schema is up to date.");
-
-    // Auto-seed reviewer for Meta
-    const reviewerEmail = "meta_reviewer@callmesd.com";
-    const [existingReviewer] = await db.select().from(users).where(eq(users.email, reviewerEmail)).limit(1);
-    
-    if (!existingReviewer) {
-      app.log.info("Seeding Meta reviewer account...");
-      const bcrypt = await import("bcryptjs");
-      const hashedPassword = await bcrypt.default.hash("MetaReview2026!", 12);
-      await db.insert(users).values({
-        email: reviewerEmail,
-        password: hashedPassword,
-        name: "Meta Reviewer",
-        role: "admin",
-        company: "Meta Review Team",
-        isActive: true
-      });
-      app.log.info("Meta reviewer account created.");
-    }
   } catch (err: any) {
-    app.log.warn(`Auto-migration/seed note: ${err.message}`);
+    app.log.warn(`Auto-migration note: ${err.message}`);
   }
 
   // Start queue workers

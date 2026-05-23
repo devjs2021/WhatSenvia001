@@ -6,9 +6,14 @@ import { LICENSE_PLANS } from "../infrastructure/database/schema/licenses.js";
 import { eq, sql } from "drizzle-orm";
 
 async function seedReviewer() {
-  const email = "meta_reviewer@callmesd.com";
-  const password = "MetaReview2026!";
+  const email = process.env.REVIEWER_EMAIL;
+  const password = process.env.REVIEWER_PASSWORD;
   const name = "Meta Reviewer";
+
+  if (!email || !password) {
+    console.error("REVIEWER_EMAIL and REVIEWER_PASSWORD env vars are required");
+    process.exit(1);
+  }
 
   console.log(`Checking if reviewer exists: ${email}...`);
 
