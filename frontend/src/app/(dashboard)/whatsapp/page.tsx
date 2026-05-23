@@ -379,7 +379,10 @@ export default function WhatsAppPage() {
             </CardContent>
           </Card>
         ) : (
-          sessions.map((session) => {
+          [...sessions].sort((a, b) => {
+            const order = { connected: 0, connecting: 1, qr_pending: 2, disconnected: 3 };
+            return (order[a.status] ?? 9) - (order[b.status] ?? 9);
+          }).map((session) => {
             const isMeta = session.connectionType === "meta_cloud";
             return (
               <Card key={session.id} className={isMeta ? "border-blue-200 dark:border-blue-800" : ""}>
