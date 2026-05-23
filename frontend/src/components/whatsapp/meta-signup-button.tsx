@@ -64,11 +64,12 @@ export function MetaSignupButton({ onSuccess }: MetaSignupButtonProps) {
 
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
-      if (event.origin !== 'https://www.facebook.com') return
+      if (event.origin !== 'https://www.facebook.com' && event.origin !== 'https://web.facebook.com') return
       try {
-        const data = JSON.parse(event.data)
+        const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data
         if (data.type === 'WA_EMBEDDED_SIGNUP') {
-          console.log('Datos del registro:', data)
+          if (data.data?.waba_id) sessionStorage.setItem('wabaId', data.data.waba_id)
+          if (data.data?.phone_number_id) sessionStorage.setItem('phoneNumberId', data.data.phone_number_id)
         }
       } catch {}
     }

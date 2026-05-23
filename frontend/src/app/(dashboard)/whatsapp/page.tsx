@@ -166,16 +166,18 @@ export default function WhatsAppPage() {
           Conecta tu número de WhatsApp Business oficial sin usar QR
         </p>
         <MetaSignupButton
-          onSuccess={(code, wabaId, phoneNumberId) => {
-            console.log('✅ Cliente conectado:', { code, wabaId, phoneNumberId })
-            // Enviar al backend
-            fetch('/api/meta/exchange-token', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ code, waba_id: wabaId, phone_number_id: phoneNumberId })
-            })
-              .then(res => res.json())
-              .then(data => console.log('Backend response:', data))
+          onSuccess={async (code, wabaId, phoneNumberId) => {
+            try {
+              await api.post<ApiResponse<any>>('/meta/exchange-token', {
+                code,
+                waba_id: wabaId,
+                phone_number_id: phoneNumberId,
+              })
+              toast.success('WhatsApp Business conectado exitosamente')
+              queryClient.invalidateQueries({ queryKey: ['sessions'] })
+            } catch (err: any) {
+              toast.error(err.message || 'Error al conectar con Meta')
+            }
           }}
         />
       </div>
