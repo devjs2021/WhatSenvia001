@@ -5,6 +5,7 @@ import { whatsappSessions } from '../../../infrastructure/database/schema/whatsa
 import { chatMessages } from '../../../infrastructure/database/schema/chat.js'
 import { messages } from '../../../infrastructure/database/schema/messages.js'
 import { eq } from 'drizzle-orm'
+import { chatBroadcast } from '../../chat/websocket/chat-broadcast.js'
 
 interface WebhookQuery {
   'hub.mode': string
@@ -115,7 +116,7 @@ export async function metaWebhookRoutes(app: FastifyInstance) {
 
                 // Guardar en chat_messages
                 try {
-                  await db.insert(chatMessages).values({
+                  const [saved] = await db.insert(chatMessages).values({
                     sessionId: session.id,
                     phone: message.from,
                     content: messageContent,
@@ -124,8 +125,10 @@ export async function metaWebhookRoutes(app: FastifyInstance) {
                     whatsappMessageId: message.id,
                     pushName: contactName,
                     createdAt: timestamp,
-                  })
+                  }).returning()
                   console.log(`✅ Mensaje guardado en chat_messages (session: ${session.id})`)
+
+                  chatBroadcast.broadcast(session.id, 'new_message', saved)
                 } catch (err: any) {
                   console.error('❌ Error guardando mensaje en chat_messages:', err.message)
                 }
