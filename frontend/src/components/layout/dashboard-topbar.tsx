@@ -77,6 +77,11 @@ export function DashboardTopbar({ onMobileMenuToggle }: DashboardTopbarProps) {
           <h2 className="font-display text-lg font-bold text-slate-900 mt-0.5">
             {currentTitle}
           </h2>
+          {pathname === "/dashboard" && (
+            <p className="text-[11px] text-slate-400 mt-0.5 max-w-[320px] leading-tight">
+              Cuidamos de <span className="text-emerald-500 font-bold">ti</span> y de tu <span className="text-emerald-500 font-bold">tiempo</span>. Aquí tienes un resumen de la actividad y la salud de tus envíos hoy.
+            </p>
+          )}
         </div>
 
         {/* Sub-nav centrado */}

@@ -14,8 +14,8 @@ export function DashboardShell({ children }: DashboardShellProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
-    <div className="flex min-h-screen bg-[#F8FAFC]">
-      {/* Sidebar desktop */}
+    <div className="flex h-screen bg-[#F8FAFC] overflow-hidden">
+      {/* Sidebar desktop - fijo */}
       <DashboardSidebar />
 
       {/* Mobile sidebar overlay */}
@@ -24,15 +24,15 @@ export function DashboardShell({ children }: DashboardShellProps) {
         onClose={() => setMobileMenuOpen(false)}
       />
 
-      {/* Área principal */}
+      {/* Área principal - scroll solo aquí */}
       <main className="flex-1 flex flex-col min-w-0">
-        {/* Topbar con sub-nav integrado */}
+        {/* Topbar - fijo */}
         <DashboardTopbar
           onMobileMenuToggle={() => setMobileMenuOpen(true)}
         />
 
-        {/* Contenido */}
-        <div className="flex-1 p-6 md:p-10 max-w-6xl w-full mx-auto space-y-8 2xl:max-w-7xl">
+        {/* Contenido con scroll */}
+        <div className="flex-1 overflow-y-auto p-6 md:p-10 max-w-6xl w-full mx-auto space-y-8 2xl:max-w-7xl">
           {children}
         </div>
       </main>
