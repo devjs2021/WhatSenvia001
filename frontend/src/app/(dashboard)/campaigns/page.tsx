@@ -17,13 +17,18 @@ import {
   FileText,
   List,
   ChevronDown,
-  Gauge,
   MessageSquare,
   BarChart2,
   Loader2,
+  Shield,
+  Radio,
+  CalendarClock,
 } from "lucide-react";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { DashboardCard, DashboardCardHeader, DashboardCardTitle, DashboardCardDescription } from "@/components/ui/dashboard-card";
+import CampaignControlTab from "./campaign-control-tab";
+import CampaignMonitorTab from "./campaign-monitor-tab";
+import ScheduledTab from "./scheduled-tab";
 
 interface Template {
   id: string;
@@ -56,9 +61,19 @@ type SendMode = "manual" | "lists";
 type ContentType = "text" | "poll";
 type SpeedPreset = "slow" | "normal" | "fast" | "turbo";
 
+type CampaignTab = "campaigns" | "control" | "monitor" | "scheduled";
+
+const tabConfig: Record<CampaignTab, { label: string; icon: any }> = {
+  campaigns: { label: "Campanas", icon: Send },
+  control: { label: "Control", icon: Shield },
+  monitor: { label: "Monitor", icon: Radio },
+  scheduled: { label: "Programados", icon: CalendarClock },
+};
+
 export default function CampaignsPage() {
   const queryClient = useQueryClient();
   const { locale, t } = useI18n();
+  const [activeTab, setActiveTab] = useState<CampaignTab>("campaigns");
 
   const speedPresets: Record<SpeedPreset, { label: string; seconds: string; msgsPerMin: number; color: string }> = {
     slow:   { label: t('campaigns.slow'),   seconds: "15s", msgsPerMin: 4,  color: "text-blue-500" },
@@ -319,450 +334,472 @@ export default function CampaignsPage() {
 
   return (
     <div className="space-y-4 md:space-y-6">
-      <DashboardHeader
-        title={t('campaigns.title')}
-        description={t('campaigns.subtitle')}
-      />
+      {/* Tabs */}
+      <div className="flex gap-1 bg-slate-100 rounded-xl p-1 w-fit">
+        {(Object.entries(tabConfig) as [CampaignTab, { label: string; icon: any }][]).map(([key, tab]) => (
+          <button
+            key={key}
+            onClick={() => setActiveTab(key)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+              activeTab === key
+                ? "bg-white text-slate-800 shadow-sm"
+                : "text-slate-400 hover:text-slate-600"
+            }`}
+          >
+            <tab.icon className="h-3.5 w-3.5" />
+            {tab.label}
+          </button>
+        ))}
+      </div>
 
-      {/* Config bar */}
-      <DashboardCard>
-        <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-6">
-          {/* Device */}
-          <div className="flex-1">
-            <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5 block">{t('campaigns.device')}</label>
-            <div className="relative">
-              <Smartphone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
-              <select
-                className="appearance-none bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-9 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 cursor-pointer w-full"
-                value={sessionId}
-                onChange={(e) => setSessionId(e.target.value)}
-              >
-                <option value="">{t('campaigns.selectDevice')}</option>
-                {sessions.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name} {s.phone ? `· ${s.phone}` : ""}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
-            </div>
-          </div>
-
-          {/* Mode */}
-          <div>
-            <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5 block">{t('campaigns.mode')}</label>
-            <div className="flex gap-1 bg-slate-100 rounded-xl p-1">
-              {([["manual", t('campaigns.manual'), Users], ["lists", t('campaigns.lists'), List]] as const).map(([mode, label, Icon]) => (
-                <button
-                  key={mode}
-                  onClick={() => { setSendMode(mode); setSelectedListId(""); setListPhones([]); }}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                    sendMode === mode
-                      ? "bg-white text-slate-800 shadow-sm"
-                      : "text-slate-400 hover:text-slate-600"
-                  }`}
-                >
-                  <Icon className="h-3.5 w-3.5" />
-                  {label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Speed */}
-          <div>
-            <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5 block">{t('campaigns.speed')}</label>
-            <div className="flex gap-1 bg-slate-100 rounded-xl p-1">
-              {(Object.entries(speedPresets) as [SpeedPreset, { label: string; seconds: string; color: string }][]).map(([key, preset]) => (
-                <button
-                  key={key}
-                  onClick={() => setSpeed(key)}
-                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                    speed === key
-                      ? "bg-white text-slate-800 shadow-sm"
-                      : "text-slate-400 hover:text-slate-600"
-                  }`}
-                >
-                  <span>{preset.label}</span>
-                  <span className={`text-[10px] ${preset.color}`}>({preset.seconds})</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      </DashboardCard>
-
-      {/* Main two-column section */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-        {/* Recipients */}
-        <DashboardCard>
-          <DashboardCardHeader>
-            <div className="flex items-center justify-between w-full">
-              <div>
-                <DashboardCardTitle>{t('campaigns.recipients')}</DashboardCardTitle>
-                <DashboardCardDescription>
-                  {totalRecipients > 0 && `${totalRecipients} ${t('campaigns.numbers')}`}
-                </DashboardCardDescription>
-              </div>
-              {totalRecipients > 0 && (
-                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-600">
-                  {totalRecipients} {t('campaigns.numbers')}
-                </span>
-              )}
-            </div>
-          </DashboardCardHeader>
-
-          {sendMode === "manual" ? (
-            <div className="space-y-3">
-              <textarea
-                placeholder={t('campaigns.pasteNumbers')}
-                rows={12}
-                value={manualNumbers}
-                onChange={(e) => setManualNumbers(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-mono text-slate-800 placeholder:text-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
-              />
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-slate-400">
-                  {detectedNumbers.length} {t('campaigns.numbersDetected')}
-                </span>
-                <button
-                  onClick={() => setShowExcelImport(!showExcelImport)}
-                  className="flex items-center gap-1.5 text-xs font-medium text-slate-500 hover:text-slate-700 transition-colors"
-                >
-                  <FileSpreadsheet className="h-3.5 w-3.5" />
-                  {t('campaigns.fromExcel')}
-                </button>
-              </div>
-              {showExcelImport && (
-                <div className="rounded-2xl border border-dashed border-slate-200 p-4 bg-slate-50 space-y-2">
-                  <p className="text-xs text-slate-400">{t('campaigns.excelInstructions')}</p>
-                  <input
-                    type="file"
-                    accept=".xlsx,.xls,.csv"
-                    onChange={(e) => { const f = e.target.files?.[0]; if (f) handleExcelUpload(f); }}
-                    className="text-xs text-slate-500 file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-slate-200 file:text-slate-700 hover:file:bg-slate-300 cursor-pointer"
-                  />
-                  {uploading && <p className="text-xs text-slate-400 animate-pulse">{t('campaigns.importing')}</p>}
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {contactLists.length > 0 && (
-                <div>
-                  <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5 flex items-center gap-1">
-                    <List className="h-3 w-3" /> {t('campaigns.savedLists')}
-                  </label>
-                  <div className="relative">
-                    <select
-                      className="appearance-none bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 cursor-pointer w-full pr-9"
-                      value={selectedListId}
-                      onChange={(e) => handleSelectList(e.target.value)}
-                    >
-                      <option value="">{t('campaigns.selectList')}</option>
-                      {contactLists.map((list) => (
-                        <option key={list.id} value={list.id}>
-                          {list.name} ({list.contactCount} contacts)
-                        </option>
-                      ))}
-                    </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
-                  </div>
-                </div>
-              )}
-              {!selectedListId && (
-                <div>
-                  <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5 flex items-center gap-1">
-                    <Users className="h-3 w-3" /> {t('campaigns.filterTag')}
-                  </label>
-                  <div className="relative">
-                    <select
-                      className="appearance-none bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 cursor-pointer w-full pr-9"
-                      value={selectedTag}
-                      onChange={(e) => setSelectedTag(e.target.value)}
-                    >
-                      <option value="">{t('campaigns.allContacts')}</option>
-                      {tags.map((tag) => (
-                        <option key={tag} value={tag}>{tag}</option>
-                      ))}
-                    </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
-                  </div>
-                </div>
-              )}
-              <div className="rounded-2xl bg-slate-50 p-6 flex flex-col items-center justify-center gap-2">
-                <div className="h-12 w-12 rounded-full bg-white shadow-sm flex items-center justify-center">
-                  {selectedListId ? <List className="h-6 w-6 text-slate-400" /> : <Users className="h-6 w-6 text-slate-400" />}
-                </div>
-                <p className="font-display text-3xl font-bold text-slate-900">{totalRecipients}</p>
-                <p className="text-xs text-slate-400 text-center">
-                  {selectedListId
-                    ? t('campaigns.inList', { name: contactLists.find((l) => l.id === selectedListId)?.name })
-                    : selectedTag ? t('campaigns.withTag', { tag: selectedTag }) : t('campaigns.inTotal')}
-                </p>
-              </div>
-            </div>
-          )}
-        </DashboardCard>
-
-        {/* Content */}
-        <DashboardCard>
-          <DashboardCardHeader>
-            <div className="flex items-center justify-between w-full">
-              <div>
-                <DashboardCardTitle>{t('campaigns.content')}</DashboardCardTitle>
-              </div>
-              <div className="flex gap-1 bg-slate-100 rounded-xl p-1">
-                <button
-                  onClick={() => setContentType("text")}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                    contentType === "text"
-                      ? "bg-white text-slate-800 shadow-sm"
-                      : "text-slate-400 hover:text-slate-600"
-                  }`}
-                >
-                  <MessageSquare className="h-3.5 w-3.5" />
-                  {t('campaigns.text')}
-                </button>
-                <button
-                  onClick={() => setContentType("poll")}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                    contentType === "poll"
-                      ? "bg-white text-slate-800 shadow-sm"
-                      : "text-slate-400 hover:text-slate-600"
-                  }`}
-                >
-                  <BarChart2 className="h-3.5 w-3.5" />
-                  {t('campaigns.poll')}
-                </button>
-              </div>
-            </div>
-          </DashboardCardHeader>
-
-          {isMetaCloud && contentType === "text" ? (
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <div className="relative flex-1">
-                  <FileText className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+      {/* Tab Content */}
+      {activeTab === "campaigns" && (
+        <>
+          {/* Config bar */}
+          <DashboardCard>
+            <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-6">
+              {/* Device */}
+              <div className="flex-1">
+                <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5 block">{t('campaigns.device')}</label>
+                <div className="relative">
+                  <Smartphone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
                   <select
                     className="appearance-none bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-9 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 cursor-pointer w-full"
-                    value={selectedMetaTemplateId}
-                    onChange={(e) => handleSelectMetaTemplate(e.target.value)}
+                    value={sessionId}
+                    onChange={(e) => setSessionId(e.target.value)}
                   >
-                    <option value="">{t('campaigns.selectMetaTemplate')}</option>
-                    {metaTemplates.map((mt) => (
-                      <option key={mt.id} value={mt.id}>
-                        {mt.name} · {mt.language} · {mt.category}
+                    <option value="">{t('campaigns.selectDevice')}</option>
+                    {sessions.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name} {s.phone ? `· ${s.phone}` : ""}
                       </option>
                     ))}
                   </select>
                   <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
                 </div>
-                <button
-                  onClick={handleSyncMetaTemplates}
-                  disabled={syncing}
-                  className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors disabled:opacity-50 shrink-0"
-                >
-                  {syncing ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    <Zap className="h-3.5 w-3.5" />
-                  )}
-                  {t('campaigns.syncTemplates')}
-                </button>
               </div>
 
-              {selectedMetaTemplate && (
+              {/* Mode */}
+              <div>
+                <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5 block">{t('campaigns.mode')}</label>
+                <div className="flex gap-1 bg-slate-100 rounded-xl p-1">
+                  {([["manual", t('campaigns.manual'), Users], ["lists", t('campaigns.lists'), List]] as const).map(([mode, label, Icon]) => (
+                    <button
+                      key={mode}
+                      onClick={() => { setSendMode(mode); setSelectedListId(""); setListPhones([]); }}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                        sendMode === mode
+                          ? "bg-white text-slate-800 shadow-sm"
+                          : "text-slate-400 hover:text-slate-600"
+                      }`}
+                    >
+                      <Icon className="h-3.5 w-3.5" />
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Speed */}
+              <div>
+                <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5 block">{t('campaigns.speed')}</label>
+                <div className="flex gap-1 bg-slate-100 rounded-xl p-1">
+                  {(Object.entries(speedPresets) as [SpeedPreset, { label: string; seconds: string; color: string }][]).map(([key, preset]) => (
+                    <button
+                      key={key}
+                      onClick={() => setSpeed(key)}
+                      className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                        speed === key
+                          ? "bg-white text-slate-800 shadow-sm"
+                          : "text-slate-400 hover:text-slate-600"
+                      }`}
+                    >
+                      <span>{preset.label}</span>
+                      <span className={`text-[10px] ${preset.color}`}>({preset.seconds})</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </DashboardCard>
+
+          {/* Main two-column section */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+            {/* Recipients */}
+            <DashboardCard>
+              <DashboardCardHeader>
+                <div className="flex items-center justify-between w-full">
+                  <div>
+                    <DashboardCardTitle>{t('campaigns.recipients')}</DashboardCardTitle>
+                    <DashboardCardDescription>
+                      {totalRecipients > 0 && `${totalRecipients} ${t('campaigns.numbers')}`}
+                    </DashboardCardDescription>
+                  </div>
+                  {totalRecipients > 0 && (
+                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-600">
+                      {totalRecipients} {t('campaigns.numbers')}
+                    </span>
+                  )}
+                </div>
+              </DashboardCardHeader>
+
+              {sendMode === "manual" ? (
                 <div className="space-y-3">
-                  <div className="rounded-2xl bg-slate-50 p-4 space-y-2">
-                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{t('campaigns.templatePreview')}</p>
-                    {selectedMetaTemplate.components.map((comp, i) => (
-                      <div key={i} className="text-sm text-slate-700">
-                        {comp.type === "HEADER" && comp.text && <p className="font-semibold">{comp.text}</p>}
-                        {comp.type === "BODY" && comp.text && <p className="whitespace-pre-wrap">{comp.text}</p>}
-                        {comp.type === "FOOTER" && comp.text && <p className="text-xs text-slate-400 mt-1">{comp.text}</p>}
+                  <textarea
+                    placeholder={t('campaigns.pasteNumbers')}
+                    rows={12}
+                    value={manualNumbers}
+                    onChange={(e) => setManualNumbers(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-mono text-slate-800 placeholder:text-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+                  />
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-slate-400">
+                      {detectedNumbers.length} {t('campaigns.numbersDetected')}
+                    </span>
+                    <button
+                      onClick={() => setShowExcelImport(!showExcelImport)}
+                      className="flex items-center gap-1.5 text-xs font-medium text-slate-500 hover:text-slate-700 transition-colors"
+                    >
+                      <FileSpreadsheet className="h-3.5 w-3.5" />
+                      {t('campaigns.fromExcel')}
+                    </button>
+                  </div>
+                  {showExcelImport && (
+                    <div className="rounded-2xl border border-dashed border-slate-200 p-4 bg-slate-50 space-y-2">
+                      <p className="text-xs text-slate-400">{t('campaigns.excelInstructions')}</p>
+                      <input
+                        type="file"
+                        accept=".xlsx,.xls,.csv"
+                        onChange={(e) => { const f = e.target.files?.[0]; if (f) handleExcelUpload(f); }}
+                        className="text-xs text-slate-500 file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-slate-200 file:text-slate-700 hover:file:bg-slate-300 cursor-pointer"
+                      />
+                      {uploading && <p className="text-xs text-slate-400 animate-pulse">{t('campaigns.importing')}</p>}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {contactLists.length > 0 && (
+                    <div>
+                      <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5 flex items-center gap-1">
+                        <List className="h-3 w-3" /> {t('campaigns.savedLists')}
+                      </label>
+                      <div className="relative">
+                        <select
+                          className="appearance-none bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 cursor-pointer w-full pr-9"
+                          value={selectedListId}
+                          onChange={(e) => handleSelectList(e.target.value)}
+                        >
+                          <option value="">{t('campaigns.selectList')}</option>
+                          {contactLists.map((list) => (
+                            <option key={list.id} value={list.id}>
+                              {list.name} ({list.contactCount} contacts)
+                            </option>
+                          ))}
+                        </select>
+                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
                       </div>
-                    ))}
+                    </div>
+                  )}
+                  {!selectedListId && (
+                    <div>
+                      <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5 flex items-center gap-1">
+                        <Users className="h-3 w-3" /> {t('campaigns.filterTag')}
+                      </label>
+                      <div className="relative">
+                        <select
+                          className="appearance-none bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 cursor-pointer w-full pr-9"
+                          value={selectedTag}
+                          onChange={(e) => setSelectedTag(e.target.value)}
+                        >
+                          <option value="">{t('campaigns.allContacts')}</option>
+                          {tags.map((tag) => (
+                            <option key={tag} value={tag}>{tag}</option>
+                          ))}
+                        </select>
+                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+                      </div>
+                    </div>
+                  )}
+                  <div className="rounded-2xl bg-slate-50 p-6 flex flex-col items-center justify-center gap-2">
+                    <div className="h-12 w-12 rounded-full bg-white shadow-sm flex items-center justify-center">
+                      {selectedListId ? <List className="h-6 w-6 text-slate-400" /> : <Users className="h-6 w-6 text-slate-400" />}
+                    </div>
+                    <p className="font-display text-3xl font-bold text-slate-900">{totalRecipients}</p>
+                    <p className="text-xs text-slate-400 text-center">
+                      {selectedListId
+                        ? t('campaigns.inList', { name: contactLists.find((l) => l.id === selectedListId)?.name })
+                        : selectedTag ? t('campaigns.withTag', { tag: selectedTag }) : t('campaigns.inTotal')}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </DashboardCard>
+
+            {/* Content */}
+            <DashboardCard>
+              <DashboardCardHeader>
+                <div className="flex items-center justify-between w-full">
+                  <div>
+                    <DashboardCardTitle>{t('campaigns.content')}</DashboardCardTitle>
+                  </div>
+                  <div className="flex gap-1 bg-slate-100 rounded-xl p-1">
+                    <button
+                      onClick={() => setContentType("text")}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                        contentType === "text"
+                          ? "bg-white text-slate-800 shadow-sm"
+                          : "text-slate-400 hover:text-slate-600"
+                      }`}
+                    >
+                      <MessageSquare className="h-3.5 w-3.5" />
+                      {t('campaigns.text')}
+                    </button>
+                    <button
+                      onClick={() => setContentType("poll")}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                        contentType === "poll"
+                          ? "bg-white text-slate-800 shadow-sm"
+                          : "text-slate-400 hover:text-slate-600"
+                      }`}
+                    >
+                      <BarChart2 className="h-3.5 w-3.5" />
+                      {t('campaigns.poll')}
+                    </button>
+                  </div>
+                </div>
+              </DashboardCardHeader>
+
+              {isMetaCloud && contentType === "text" ? (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <div className="relative flex-1">
+                      <FileText className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+                      <select
+                        className="appearance-none bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-9 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 cursor-pointer w-full"
+                        value={selectedMetaTemplateId}
+                        onChange={(e) => handleSelectMetaTemplate(e.target.value)}
+                      >
+                        <option value="">{t('campaigns.selectMetaTemplate')}</option>
+                        {metaTemplates.map((mt) => (
+                          <option key={mt.id} value={mt.id}>
+                            {mt.name} · {mt.language} · {mt.category}
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+                    </div>
+                    <button
+                      onClick={handleSyncMetaTemplates}
+                      disabled={syncing}
+                      className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors disabled:opacity-50 shrink-0"
+                    >
+                      {syncing ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Zap className="h-3.5 w-3.5" />
+                      )}
+                      {t('campaigns.syncTemplates')}
+                    </button>
                   </div>
 
-                  {Object.entries(templateParamMapping).map(([compType, fields]) => (
-                    <div key={compType} className="space-y-2">
-                      <p className="text-xs font-semibold text-slate-500 uppercase">{compType} {t('campaigns.parameters')}</p>
-                      {fields.map((field, idx) => (
-                        <div key={idx} className="flex items-center gap-2">
-                          <span className="text-xs text-slate-400 font-mono shrink-0">{`{{${idx + 1}}}`}</span>
-                          <select
-                            className="flex-1 appearance-none bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 cursor-pointer"
-                            value={field}
-                            onChange={(e) => {
-                              const newMapping = { ...templateParamMapping };
-                              newMapping[compType] = [...fields];
-                              newMapping[compType][idx] = e.target.value;
-                              setTemplateParamMapping(newMapping);
-                            }}
-                          >
-                            {contactFieldOptions.map((opt) => (
-                              <option key={opt.value} value={opt.value}>{opt.label}</option>
-                            ))}
-                          </select>
+                  {selectedMetaTemplate && (
+                    <div className="space-y-3">
+                      <div className="rounded-2xl bg-slate-50 p-4 space-y-2">
+                        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{t('campaigns.templatePreview')}</p>
+                        {selectedMetaTemplate.components.map((comp, i) => (
+                          <div key={i} className="text-sm text-slate-700">
+                            {comp.type === "HEADER" && comp.text && <p className="font-semibold">{comp.text}</p>}
+                            {comp.type === "BODY" && comp.text && <p className="whitespace-pre-wrap">{comp.text}</p>}
+                            {comp.type === "FOOTER" && comp.text && <p className="text-xs text-slate-400 mt-1">{comp.text}</p>}
+                          </div>
+                        ))}
+                      </div>
+
+                      {Object.entries(templateParamMapping).map(([compType, fields]) => (
+                        <div key={compType} className="space-y-2">
+                          <p className="text-xs font-semibold text-slate-500 uppercase">{compType} {t('campaigns.parameters')}</p>
+                          {fields.map((field, idx) => (
+                            <div key={idx} className="flex items-center gap-2">
+                              <span className="text-xs text-slate-400 font-mono shrink-0">{`{{${idx + 1}}}`}</span>
+                              <select
+                                className="flex-1 appearance-none bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 cursor-pointer"
+                                value={field}
+                                onChange={(e) => {
+                                  const newMapping = { ...templateParamMapping };
+                                  newMapping[compType] = [...fields];
+                                  newMapping[compType][idx] = e.target.value;
+                                  setTemplateParamMapping(newMapping);
+                                }}
+                              >
+                                {contactFieldOptions.map((opt) => (
+                                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                ))}
+                              </select>
+                            </div>
+                          ))}
                         </div>
                       ))}
                     </div>
-                  ))}
-                </div>
-              )}
+                  )}
 
-              {metaTemplates.length === 0 && (
-                <div className="rounded-2xl bg-slate-50 p-6 flex flex-col items-center justify-center gap-2">
-                  <FileText className="h-8 w-8 text-slate-300" />
-                  <p className="text-sm text-slate-400 text-center">{t('campaigns.noMetaTemplates')}</p>
-                  <p className="text-xs text-slate-400 text-center">{t('campaigns.syncToLoad')}</p>
+                  {metaTemplates.length === 0 && (
+                    <div className="rounded-2xl bg-slate-50 p-6 flex flex-col items-center justify-center gap-2">
+                      <FileText className="h-8 w-8 text-slate-300" />
+                      <p className="text-sm text-slate-400 text-center">{t('campaigns.noMetaTemplates')}</p>
+                      <p className="text-xs text-slate-400 text-center">{t('campaigns.syncToLoad')}</p>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          ) : contentType === "text" ? (
-            <div className="space-y-3">
-              {templates.length > 0 && (
-                <div className="relative">
-                  <FileText className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
-                  <select
-                    className="appearance-none bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-9 py-2.5 text-sm text-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 cursor-pointer w-full"
-                    value=""
-                    onChange={(e) => {
-                      const t = templates.find((t) => t.id === e.target.value);
-                      if (t) setMessage(t.content);
-                    }}
-                  >
-                    <option value="">{t('campaigns.useTemplate')}</option>
-                    {templates.map((t) => (
-                      <option key={t.id} value={t.id}>
-                        {t.name} {t.category ? `· ${t.category}` : ""}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
-                </div>
-              )}
-
-              {/* Format toolbar */}
-              <div className="flex items-center gap-1 border-b border-slate-100 pb-2">
-                {[
-                  { label: <strong className="text-xs">B</strong>, insert: "*texto*", title: t('campaigns.bold') },
-                  { label: <em className="text-xs">I</em>, insert: "_texto_", title: t('campaigns.italic') },
-                  { label: <span className="text-xs line-through">S</span>, insert: "~texto~", title: t('campaigns.strikethrough') },
-                  { label: <span className="text-xs font-mono">{'</>'}</span>, insert: "```codigo```", title: t('campaigns.code') },
-                ].map((btn, i) => (
-                  <button
-                    key={i}
-                    title={btn.title}
-                    onClick={() => setMessage((m) => m + btn.insert)}
-                    className="h-7 w-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
-                  >
-                    {btn.label}
-                  </button>
-                ))}
-                {message && (
-                  <div className="ml-auto flex gap-1 flex-wrap">
-                    {message.match(/\{\{(\w+)\}\}/g)?.map((v, i) => (
-                      <span key={i} className="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full font-mono">{v}</span>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <textarea
-                placeholder={t('campaigns.writeMessage')}
-                rows={9}
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
-              />
-            </div>
-          ) : (
-            <div className="space-y-3">
-              <input
-                placeholder={t('campaigns.pollQuestion')}
-                value={pollQuestion}
-                onChange={(e) => setPollQuestion(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
-              />
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{t('campaigns.pollOptions')}</p>
-              <div className="space-y-2">
-                {pollOptions.map((opt, i) => (
-                  <div key={i} className="flex gap-2">
-                    <input
-                      placeholder={`${t('campaigns.optionPlaceholder')} ${i + 1}`}
-                      value={opt}
-                      onChange={(e) => {
-                        const newOpts = [...pollOptions];
-                        newOpts[i] = e.target.value;
-                        setPollOptions(newOpts);
-                      }}
-                      className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
-                    />
-                    {pollOptions.length > 2 && (
-                      <button
-                        onClick={() => setPollOptions(pollOptions.filter((_, j) => j !== i))}
-                        className="h-10 w-10 rounded-xl bg-red-50 text-red-400 hover:bg-red-100 flex items-center justify-center transition-colors"
+              ) : contentType === "text" ? (
+                <div className="space-y-3">
+                  {templates.length > 0 && (
+                    <div className="relative">
+                      <FileText className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+                      <select
+                        className="appearance-none bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-9 py-2.5 text-sm text-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 cursor-pointer w-full"
+                        value=""
+                        onChange={(e) => {
+                          const t = templates.find((t) => t.id === e.target.value);
+                          if (t) setMessage(t.content);
+                        }}
                       >
-                        <X className="h-4 w-4" />
+                        <option value="">{t('campaigns.useTemplate')}</option>
+                        {templates.map((t) => (
+                          <option key={t.id} value={t.id}>
+                            {t.name} {t.category ? `· ${t.category}` : ""}
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+                    </div>
+                  )}
+
+                  {/* Format toolbar */}
+                  <div className="flex items-center gap-1 border-b border-slate-100 pb-2">
+                    {[
+                      { label: <strong className="text-xs">B</strong>, insert: "*texto*", title: t('campaigns.bold') },
+                      { label: <em className="text-xs">I</em>, insert: "_texto_", title: t('campaigns.italic') },
+                      { label: <span className="text-xs line-through">S</span>, insert: "~texto~", title: t('campaigns.strikethrough') },
+                      { label: <span className="text-xs font-mono">{'</>'}</span>, insert: "```codigo```", title: t('campaigns.code') },
+                    ].map((btn, i) => (
+                      <button
+                        key={i}
+                        title={btn.title}
+                        onClick={() => setMessage((m) => m + btn.insert)}
+                        className="h-7 w-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+                      >
+                        {btn.label}
                       </button>
+                    ))}
+                    {message && (
+                      <div className="ml-auto flex gap-1 flex-wrap">
+                        {message.match(/\{\{(\w+)\}\}/g)?.map((v, i) => (
+                          <span key={i} className="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full font-mono">{v}</span>
+                        ))}
+                      </div>
                     )}
                   </div>
-                ))}
-              </div>
-              {pollOptions.length < 12 && (
-                <button
-                  onClick={() => setPollOptions([...pollOptions, ""])}
-                  className="flex items-center gap-1.5 text-xs font-medium text-slate-400 hover:text-slate-700 transition-colors"
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                  {t('campaigns.addOption')}
-                </button>
+
+                  <textarea
+                    placeholder={t('campaigns.writeMessage')}
+                    rows={9}
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+                  />
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <input
+                    placeholder={t('campaigns.pollQuestion')}
+                    value={pollQuestion}
+                    onChange={(e) => setPollQuestion(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+                  />
+                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{t('campaigns.pollOptions')}</p>
+                  <div className="space-y-2">
+                    {pollOptions.map((opt, i) => (
+                      <div key={i} className="flex gap-2">
+                        <input
+                          placeholder={`${t('campaigns.optionPlaceholder')} ${i + 1}`}
+                          value={opt}
+                          onChange={(e) => {
+                            const newOpts = [...pollOptions];
+                            newOpts[i] = e.target.value;
+                            setPollOptions(newOpts);
+                          }}
+                          className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+                        />
+                        {pollOptions.length > 2 && (
+                          <button
+                            onClick={() => setPollOptions(pollOptions.filter((_, j) => j !== i))}
+                            className="h-10 w-10 rounded-xl bg-red-50 text-red-400 hover:bg-red-100 flex items-center justify-center transition-colors"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  {pollOptions.length < 12 && (
+                    <button
+                      onClick={() => setPollOptions([...pollOptions, ""])}
+                      className="flex items-center gap-1.5 text-xs font-medium text-slate-400 hover:text-slate-700 transition-colors"
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                      {t('campaigns.addOption')}
+                    </button>
+                  )}
+
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={pollMultiSelect}
+                      onChange={(e) => setPollMultiSelect(e.target.checked)}
+                      className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500/30"
+                    />
+                    <span className="text-xs text-slate-500">{t('campaigns.multiSelect')}</span>
+                  </label>
+                </div>
               )}
+            </DashboardCard>
+          </div>
 
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={pollMultiSelect}
-                  onChange={(e) => setPollMultiSelect(e.target.checked)}
-                  className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500/30"
-                />
-                <span className="text-xs text-slate-500">{t('campaigns.multiSelect')}</span>
-              </label>
+          {/* Send button */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              {totalRecipients > 0 && (
+                <span className="text-sm text-slate-500">
+                  <strong className="text-slate-800">{totalRecipients}</strong> {t('campaigns.recipientsLower')}
+                </span>
+              )}
+              {selectedSession && (
+                <span className={`text-xs flex items-center gap-1 ${isConnected ? "text-emerald-500" : "text-red-400"}`}>
+                  <span className={`h-1.5 w-1.5 rounded-full ${isConnected ? "bg-emerald-500" : "bg-red-400"}`} />
+                  {isConnected ? t('campaigns.connected') : t('campaigns.disconnected')}
+                </span>
+              )}
             </div>
-          )}
-        </DashboardCard>
-      </div>
+            <button
+              onClick={handleSend}
+              disabled={isSending || !isConnected || totalRecipients === 0}
+              className="bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl px-6 py-3 text-sm font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              {isSending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Send className="h-4 w-4" />
+              )}
+              {isSending ? t('campaigns.sending') : t('campaigns.sendCampaign')}
+            </button>
+          </div>
+        </>
+      )}
 
-      {/* Send button */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          {totalRecipients > 0 && (
-            <span className="text-sm text-slate-500">
-              <strong className="text-slate-800">{totalRecipients}</strong> {t('campaigns.recipientsLower')}
-            </span>
-          )}
-          {selectedSession && (
-            <span className={`text-xs flex items-center gap-1 ${isConnected ? "text-emerald-500" : "text-red-400"}`}>
-              <span className={`h-1.5 w-1.5 rounded-full ${isConnected ? "bg-emerald-500" : "bg-red-400"}`} />
-              {isConnected ? t('campaigns.connected') : t('campaigns.disconnected')}
-            </span>
-          )}
-        </div>
-        <button
-          onClick={handleSend}
-          disabled={isSending || !isConnected || totalRecipients === 0}
-          className="bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl px-6 py-3 text-sm font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-        >
-          {isSending ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Send className="h-4 w-4" />
-          )}
-          {isSending ? t('campaigns.sending') : t('campaigns.sendCampaign')}
-        </button>
-      </div>
+      {activeTab === "control" && <CampaignControlTab />}
+      {activeTab === "monitor" && <CampaignMonitorTab />}
+      {activeTab === "scheduled" && <ScheduledTab />}
     </div>
   );
 }

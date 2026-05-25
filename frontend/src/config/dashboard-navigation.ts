@@ -8,14 +8,9 @@ import {
   Upload,
   UserPlus,
   BarChart3,
-  Activity,
-  PieChart,
   Settings,
   Crown,
   FileText,
-  FileCheck,
-  Shield,
-  Clock,
   MessageSquare,
   type LucideIcon,
 } from "lucide-react";
@@ -55,6 +50,7 @@ export const dashboardNavGroups: NavEntry[] = [
       { nameKey: "Connection", href: "/whatsapp", icon: Smartphone, feature: null },
       { nameKey: "Bot Builder", href: "/bot-builder", icon: Bot, feature: "botBuilder" },
       { nameKey: "Chat Live", href: "/chat-live", icon: MessageCircle, feature: "chatLive" },
+      { nameKey: "Messages", href: "/messages", icon: MessageSquare, feature: null },
     ],
   },
   {
@@ -68,27 +64,28 @@ export const dashboardNavGroups: NavEntry[] = [
     ],
   },
   {
+    nameKey: "Campaigns",
+    icon: Send,
+    href: "/campaigns",
+    children: [
+      { nameKey: "Campaigns", href: "/campaigns", icon: Send, feature: "campaigns" },
+    ],
+  },
+  {
     nameKey: "Analytics",
     icon: BarChart3,
     href: "/poll-results",
     children: [
       { nameKey: "Polls", href: "/poll-results", icon: BarChart3, feature: "polls" },
-      { nameKey: "Monitor", href: "/campaign-monitor", icon: Activity, feature: null },
-      { nameKey: "Reports", href: "/reports", icon: PieChart, feature: "reports" },
     ],
   },
   {
     nameKey: "Settings",
     icon: Settings,
-    href: "/admin",
+    href: "/settings",
     children: [
-      { nameKey: "Admin Panel", href: "/admin", icon: Crown, feature: null },
+      { nameKey: "Settings", href: "/settings", icon: Crown, feature: null },
       { nameKey: "Templates", href: "/templates", icon: FileText, feature: "templates" },
-      { nameKey: "Meta Templates", href: "/meta-templates", icon: FileCheck, feature: null },
-      { nameKey: "Campaign Control", href: "/campaign-control", icon: Shield, feature: "campaignControl" },
-      { nameKey: "Scheduled", href: "/scheduled", icon: Clock, feature: "scheduledCampaigns" },
-      { nameKey: "Messages", href: "/messages", icon: MessageSquare, feature: null },
-      { nameKey: "Settings", href: "/settings", icon: Settings, feature: null },
     ],
   },
 ];

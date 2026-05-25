@@ -25,19 +25,13 @@ const breadcrumbTitles: Record<string, string> = {
   "/bot-builder": "Bot Builder",
   "/chat-live": "Chat en Vivo",
   "/campaigns": "Campañas",
-  "/campaign-control": "Control de Campañas",
-  "/campaign-monitor": "Monitor de Campañas",
-  "/scheduled": "Programados",
   "/templates": "Plantillas",
-  "/meta-templates": "Plantillas de Meta",
   "/poll-results": "Encuestas",
   "/contacts": "Contactos",
   "/extract-contacts": "Extraer Contactos",
   "/import": "Importar",
   "/messages": "Mensajes",
-  "/reports": "Reportes",
   "/settings": "Configuración",
-  "/admin": "Panel de Administración",
 };
 
 interface DashboardTopbarProps {

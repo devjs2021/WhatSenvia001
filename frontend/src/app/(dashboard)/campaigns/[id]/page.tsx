@@ -16,8 +16,7 @@ import {
   Tags,
   Loader2,
 } from "lucide-react";
-import { DashboardHeader } from "@/components/dashboard/dashboard-header";
-import { DashboardCard, DashboardCardHeader, DashboardCardTitle, DashboardCardDescription } from "@/components/ui/dashboard-card";
+import { DashboardCard, DashboardCardHeader, DashboardCardTitle } from "@/components/ui/dashboard-card";
 
 export default function CampaignDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -64,14 +63,13 @@ export default function CampaignDetailPage() {
         >
           <ArrowLeft className="h-4 w-4" />
         </Link>
-        <DashboardHeader
-          title={campaign.name}
-          description={campaign.description || "Sin descripcion"}
-        >
-          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${statusColors[campaign.status] || "bg-slate-50 text-slate-500"}`}>
-            {campaign.status}
-          </span>
-        </DashboardHeader>
+        <div>
+          <h1 className="text-lg md:text-xl font-bold text-slate-900">{campaign.name}</h1>
+          <p className="text-sm text-slate-400">{campaign.description || "Sin descripcion"}</p>
+        </div>
+        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${statusColors[campaign.status] || "bg-slate-50 text-slate-500"}`}>
+          {campaign.status}
+        </span>
       </div>
 
       {/* Stats */}
