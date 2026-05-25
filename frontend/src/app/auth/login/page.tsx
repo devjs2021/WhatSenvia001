@@ -88,13 +88,23 @@ export default function LoginPage() {
           {/* Left: Illustration */}
           <section className="w-full lg:w-[55%] flex justify-center items-center relative">
             <div className="absolute w-80 h-80 bg-emerald-100/50 rounded-full blur-3xl -z-10 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
-            <div className="w-full max-w-[500px] aspect-square overflow-hidden rounded-3xl">
+            <div
+              className="w-full max-w-[500px] aspect-square overflow-hidden"
+              style={{
+                WebkitMaskImage:
+                  "radial-gradient(ellipse 80% 80% at center, black 55%, transparent 100%)",
+                maskImage:
+                  "radial-gradient(ellipse 80% 80% at center, black 55%, transparent 100%)",
+              }}
+            >
               <Image
                 src="/illustrations/login-character.png"
                 alt="CallMesd"
                 width={800}
                 height={800}
                 className="w-full h-full object-cover scale-[1.6] translate-y-[5%]"
+                quality={100}
+                unoptimized
                 priority
               />
             </div>
