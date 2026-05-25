@@ -1,0 +1,105 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" fill="none">
+  <!-- Background blob -->
+  <path d="M250 450c-110 0-200-60-200-170s50-230 200-230 200 120 200 230-90 170-200 170z" fill="#dcfce7" opacity="0.5"/>
+
+  <!-- Woman body -->
+  <g transform="translate(140, 80)">
+    <!-- Hair -->
+    <ellipse cx="110" cy="65" rx="55" ry="60" fill="#1a1a1a"/>
+    <!-- Face -->
+    <ellipse cx="110" cy="75" rx="40" ry="42" fill="#fcd9b6"/>
+    <!-- Hair front -->
+    <path d="M70 55c0-30 18-50 40-50s40 15 40 45c0 0-5-25-40-25s-40 30-40 30z" fill="#1a1a1a"/>
+    <!-- Eyes -->
+    <ellipse cx="95" cy="78" rx="4" ry="4.5" fill="#1a1a1a"/>
+    <ellipse cx="125" cy="78" rx="4" ry="4.5" fill="#1a1a1a"/>
+    <!-- Eye shine -->
+    <circle cx="96.5" cy="76.5" r="1.5" fill="white"/>
+    <circle cx="126.5" cy="76.5" r="1.5" fill="white"/>
+    <!-- Smile -->
+    <path d="M100 92c5 8 15 8 20 0" stroke="#1a1a1a" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+    <!-- Blush -->
+    <ellipse cx="85" cy="90" rx="8" ry="5" fill="#f9a8a8" opacity="0.3"/>
+    <ellipse cx="135" cy="90" rx="8" ry="5" fill="#f9a8a8" opacity="0.3"/>
+    <!-- Eyebrows -->
+    <path d="M88 68c3-4 8-5 12-3" stroke="#1a1a1a" stroke-width="2" stroke-linecap="round" fill="none"/>
+    <path d="M120 65c4-2 9-1 12 3" stroke="#1a1a1a" stroke-width="2" stroke-linecap="round" fill="none"/>
+
+    <!-- Neck -->
+    <rect x="100" y="115" width="20" height="20" rx="4" fill="#fcd9b6"/>
+
+    <!-- Shirt -->
+    <path d="M60 135c0 0 15-5 50-5s50 5 50 5v120H60z" fill="#22c55e" rx="10"/>
+    <!-- Shirt collar -->
+    <path d="M95 130l15 20 15-20" stroke="#16a34a" stroke-width="2" fill="none"/>
+    <!-- Shirt folds -->
+    <path d="M85 180c10 5 30 5 50 0" stroke="#16a34a" stroke-width="1.5" fill="none" opacity="0.5"/>
+
+    <!-- Left arm (on hip) -->
+    <path d="M60 145c-15 10-25 30-20 55 3 15 15 20 20 15" stroke="#fcd9b6" stroke-width="18" stroke-linecap="round" fill="none"/>
+    <!-- Left sleeve -->
+    <path d="M60 140c-8 5-14 12-16 20" stroke="#22c55e" stroke-width="20" stroke-linecap="round" fill="none"/>
+
+    <!-- Right arm (holding phone up) -->
+    <path d="M160 145c15-10 30-30 35-60" stroke="#fcd9b6" stroke-width="18" stroke-linecap="round" fill="none"/>
+    <!-- Right sleeve -->
+    <path d="M160 140c8-5 14-15 16-22" stroke="#22c55e" stroke-width="20" stroke-linecap="round" fill="none"/>
+
+    <!-- Phone -->
+    <g transform="translate(180, 55)">
+      <rect x="0" y="0" width="40" height="70" rx="8" fill="#1a1a1a"/>
+      <rect x="3" y="8" width="34" height="50" rx="4" fill="white"/>
+      <!-- Screen content - WhatsApp style -->
+      <rect x="3" y="8" width="34" height="12" rx="2" fill="#22c55e"/>
+      <circle cx="12" cy="14" r="3" fill="white" opacity="0.8"/>
+      <!-- Chat bubbles -->
+      <rect x="6" y="24" width="20" height="6" rx="3" fill="#dcfce7"/>
+      <rect x="14" y="33" width="20" height="6" rx="3" fill="#e5e7eb"/>
+      <rect x="6" y="42" width="16" height="6" rx="3" fill="#dcfce7"/>
+      <!-- Home indicator -->
+      <rect x="14" y="62" width="12" height="2" rx="1" fill="#666"/>
+    </g>
+  </g>
+
+  <!-- Floating icons -->
+  <!-- Bell/notification icon -->
+  <g transform="translate(350, 100)">
+    <circle cx="25" cy="25" r="25" fill="white" stroke="#e5e7eb" stroke-width="1.5"/>
+    <path d="M25 14c-5 0-9 4-9 9v5l-2 2v1h22v-1l-2-2v-5c0-5-4-9-9-9z" fill="#22c55e"/>
+    <circle cx="25" cy="35" r="2.5" fill="#22c55e"/>
+  </g>
+
+  <!-- Message icon -->
+  <g transform="translate(80, 130)">
+    <circle cx="22" cy="22" r="22" fill="white" stroke="#e5e7eb" stroke-width="1.5"/>
+    <path d="M12 15h20c1.5 0 3 1.5 3 3v10c0 1.5-1.5 3-3 3h-5l-5 4v-4h-10c-1.5 0-3-1.5-3-3V18c0-1.5 1.5-3 3-3z" fill="#22c55e"/>
+    <line x1="16" y1="21" x2="28" y2="21" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="16" y1="25" x2="24" y2="25" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+  </g>
+
+  <!-- Megaphone icon -->
+  <g transform="translate(370, 250)">
+    <circle cx="22" cy="22" r="22" fill="white" stroke="#e5e7eb" stroke-width="1.5"/>
+    <path d="M30 15l-10 5H14c-1 0-2 1-2 2v2c0 1 1 2 2 2h6l10 5V15z" fill="#22c55e"/>
+    <path d="M14 29l-2 6h4l2-6" fill="#16a34a"/>
+  </g>
+
+  <!-- Check/success icon -->
+  <g transform="translate(100, 310)">
+    <circle cx="20" cy="20" r="20" fill="white" stroke="#e5e7eb" stroke-width="1.5"/>
+    <circle cx="20" cy="20" r="12" fill="#22c55e"/>
+    <path d="M15 20l4 4 6-8" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </g>
+
+  <!-- Sparkles -->
+  <circle cx="340" cy="180" r="4" fill="#22c55e" opacity="0.4"/>
+  <circle cx="120" cy="250" r="3" fill="#22c55e" opacity="0.3"/>
+  <circle cx="380" cy="350" r="5" fill="#22c55e" opacity="0.2"/>
+  <circle cx="360" cy="200" r="2.5" fill="#fbbf24" opacity="0.5"/>
+  <circle cx="90" cy="180" r="2" fill="#fbbf24" opacity="0.4"/>
+
+  <!-- Small dots decoration -->
+  <circle cx="330" cy="140" r="2" fill="#22c55e" opacity="0.6"/>
+  <circle cx="400" cy="300" r="2" fill="#22c55e" opacity="0.4"/>
+  <circle cx="70" cy="370" r="2.5" fill="#22c55e" opacity="0.3"/>
+</svg>
