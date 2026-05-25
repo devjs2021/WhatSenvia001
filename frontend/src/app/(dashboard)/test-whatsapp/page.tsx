@@ -1,192 +1,251 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useI18n } from "@/i18n";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Send, RefreshCcw, Info, CheckCircle2, XCircle } from "lucide-react";
-import { Label } from "@/components/ui/label";
+import { useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { api } from "@/lib/api";
+import type { ApiResponse, WhatsAppSession } from "@/types";
+import { toast } from "sonner";
+import {
+  Send,
+  MessageSquare,
+  Phone,
+  Loader2,
+  CheckCircle2,
+  XCircle,
+  Clock,
+} from "lucide-react";
+import { DashboardHeader } from "@/components/dashboard/dashboard-header";
+import { DashboardCard, DashboardCardHeader, DashboardCardTitle, DashboardCardDescription } from "@/components/ui/dashboard-card";
 
 interface TestResult {
   success: boolean;
-  message?: string;
-  error?: string;
-  data?: any;
-  details?: any;
-  timestamp: string;
+  message: string;
+  messageId?: string;
+  timestamp?: string;
+  details?: string;
 }
 
 export default function TestWhatsAppPage() {
-  const { t } = useI18n();
-  const [token, setToken] = useState("");
-  const [phoneId, setPhoneId] = useState("");
-  const [targetPhone, setTargetPhone] = useState("");
-  const [sending, setSending] = useState(false);
+  const [sessionId, setSessionId] = useState("");
+  const [phone, setPhone] = useState("");
+  const [message, setMessage] = useState("");
   const [results, setResults] = useState<TestResult[]>([]);
 
-  const handleSend = async () => {
-    const cleanToken = token.trim();
-    const cleanPhoneId = phoneId.trim();
-    const cleanTarget = targetPhone.trim();
+  const { data: sessionsData } = useQuery({
+    queryKey: ["whatsapp-sessions"],
+    queryFn: () => api.get<ApiResponse<WhatsAppSession[]>>("/whatsapp/sessions"),
+  });
 
-    if (!cleanTarget || !cleanToken || !cleanPhoneId) return;
-    
-    setSending(true);
-    const timestamp = new Date().toLocaleTimeString();
+  const sessions = (sessionsData?.data || []).filter((s) => s.status === "connected");
 
-    try {
-      // Usamos fetch directo para evitar interceptores de sesión del dashboard
-      const response = await fetch("/api/test-whatsapp/send", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ 
-          to: cleanTarget,
-          accessToken: cleanToken,
-          phoneNumberId: cleanPhoneId
-        })
+  const testMutation = useMutation({
+    mutationFn: async () => {
+      const res = await api.post<ApiResponse<TestResult>>("/whatsapp/test-send", {
+        sessionId,
+        phone: phone.trim(),
+        message: message.trim(),
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw { message: data.error || "Error", details: data };
+      return res.data;
+    },
+    onSuccess: (data) => {
+      setResults((prev) => [data, ...prev]);
+      if (data.success) {
+        toast.success("Mensaje enviado exitosamente");
+      } else {
+        toast.error(data.message);
       }
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
 
-      setResults((prev) => [{ ...data, timestamp }, ...prev]);
-    } catch (err: any) {
-      setResults((prev) => [
-        { 
-          success: false, 
-          error: err.message || t('testWhatsapp.connectionError'), 
-          details: err.details || err,
-          timestamp 
-        },
-        ...prev,
-      ]);
-    } finally {
-      setSending(false);
-    }
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!sessionId) { toast.error("Selecciona una sesion"); return; }
+    if (!phone.trim()) { toast.error("Ingresa un numero de telefono"); return; }
+    if (!message.trim()) { toast.error("Ingresa un mensaje"); return; }
+    testMutation.mutate();
   };
 
   return (
-    <div className="max-w-4xl mx-auto py-8 px-4 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">{t('testWhatsapp.title')}</h1>
-          <p className="text-muted-foreground text-sm">{t('testWhatsapp.subtitle')}</p>
-        </div>
-        <Badge variant="outline" className="h-6">v25.0</Badge>
-      </div>
+    <div className="space-y-4 md:space-y-6">
+      <DashboardHeader
+        title={
+          <div className="flex items-center gap-2">
+            <MessageSquare className="h-5 w-5" />
+            Probar WhatsApp
+          </div>
+        }
+        description="Envia mensajes de prueba para verificar la conexion de tus sesiones"
+      />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card className="shadow-sm">
-          <CardHeader className="pb-4">
-            <CardTitle className="text-base font-semibold">{t('testWhatsapp.metaConfig')}</CardTitle>
-            <CardDescription>{t('testWhatsapp.metaConfigDesc')}</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="token">{t('testWhatsapp.accessToken')}</Label>
-              <Input
-                id="token"
-                type="password"
-                placeholder="EAA..."
-                value={token}
-                onChange={(e) => setToken(e.target.value)}
-                className="font-mono text-xs"
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+        {/* Send form */}
+        <DashboardCard>
+          <DashboardCardHeader>
+            <DashboardCardTitle>Enviar Mensaje de Prueba</DashboardCardTitle>
+            <DashboardCardDescription>
+              Verifica que tu sesion de WhatsApp esta funcionando correctamente
+            </DashboardCardDescription>
+          </DashboardCardHeader>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5 block">
+                Sesion de WhatsApp
+              </label>
+              <select
+                value={sessionId}
+                onChange={(e) => setSessionId(e.target.value)}
+                className="appearance-none bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 cursor-pointer w-full"
+              >
+                <option value="">Selecciona una sesion...</option>
+                {sessions.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name} ({s.phone || "sin numero"})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5 block">
+                Numero de destino
+              </label>
+              <input
+                placeholder="Ej: 573001234567"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 w-full"
               />
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="phoneId">{t('testWhatsapp.phoneNumberId')}</Label>
-              <Input
-                id="phoneId"
-                placeholder={t('testWhatsapp.phoneNumberIdPlaceholder')}
-                value={phoneId}
-                onChange={(e) => setPhoneId(e.target.value)}
+
+            <div>
+              <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5 block">
+                Mensaje
+              </label>
+              <textarea
+                placeholder="Escribe tu mensaje de prueba..."
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                rows={4}
+                className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-emerald-500/30 w-full"
               />
-              <p className="text-[10px] text-muted-foreground flex items-center gap-1 mt-1">
-                <Info className="h-3 w-3" />
-                <span dangerouslySetInnerHTML={{ __html: t('testWhatsapp.findItIn') }} />
+            </div>
+
+            <button
+              type="submit"
+              disabled={testMutation.isPending || !sessionId || !phone.trim() || !message.trim()}
+              className="w-full bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl px-5 py-2.5 text-sm font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              {testMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Send className="h-4 w-4" />
+              )}
+              {testMutation.isPending ? "Enviando..." : "Enviar Mensaje de Prueba"}
+            </button>
+          </form>
+        </DashboardCard>
+
+        {/* Results */}
+        <DashboardCard>
+          <DashboardCardHeader>
+            <DashboardCardTitle>
+              Historial de Pruebas
+              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-500 ml-2">
+                {results.length}
+              </span>
+            </DashboardCardTitle>
+            <DashboardCardDescription>
+              Resultados de los ultimos mensajes de prueba enviados
+            </DashboardCardDescription>
+          </DashboardCardHeader>
+
+          {results.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <Send className="h-8 w-8 text-slate-300 mb-2" />
+              <p className="text-sm text-slate-400">Aun no has enviado mensajes de prueba</p>
+              <p className="text-xs text-slate-300 mt-1">
+                Usa el formulario para enviar tu primer mensaje
               </p>
             </div>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-sm">
-          <CardHeader className="pb-4">
-            <CardTitle className="text-base font-semibold">{t('testWhatsapp.recipient')}</CardTitle>
-            <CardDescription>{t('testWhatsapp.recipientDesc')}</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="target">{t('testWhatsapp.phoneNumber')}</Label>
-              <Input
-                id="target"
-                placeholder={t('testWhatsapp.phonePlaceholder')}
-                value={targetPhone}
-                onChange={(e) => setTargetPhone(e.target.value)}
-              />
+          ) : (
+            <div className="space-y-2 max-h-96 overflow-y-auto">
+              {results.map((result, i) => (
+                <div
+                  key={i}
+                  className={`rounded-2xl border p-3 ${
+                    result.success
+                      ? "border-emerald-200 bg-emerald-50"
+                      : "border-red-200 bg-red-50"
+                  }`}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start gap-2">
+                      {result.success ? (
+                        <CheckCircle2 className="h-4 w-4 text-emerald-500 mt-0.5" />
+                      ) : (
+                        <XCircle className="h-4 w-4 text-red-500 mt-0.5" />
+                      )}
+                      <div>
+                        <p className={`text-sm font-medium ${result.success ? "text-emerald-800" : "text-red-800"}`}>
+                          {result.success ? "Enviado exitosamente" : "Error al enviar"}
+                        </p>
+                        <p className="text-xs text-slate-500 mt-0.5">{result.message}</p>
+                        {result.messageId && (
+                          <p className="text-xs text-slate-400 mt-0.5 font-mono">
+                            ID: {result.messageId}
+                          </p>
+                        )}
+                        {result.details && (
+                          <p className="text-xs text-slate-400 mt-0.5">{result.details}</p>
+                        )}
+                      </div>
+                    </div>
+                    {result.timestamp && (
+                      <span className="text-xs text-slate-400 flex items-center gap-1 shrink-0">
+                        <Clock className="h-3 w-3" />
+                        {new Date(result.timestamp).toLocaleTimeString("es-CO", {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
             </div>
-            <Button 
-              className="w-full" 
-              onClick={handleSend}
-              disabled={sending || !token || !phoneId || !targetPhone}
-            >
-              {sending ? (
-                <>
-                  <RefreshCcw className="mr-2 h-4 w-4 animate-spin" />
-                  {t('testWhatsapp.testing')}
-                </>
-              ) : (
-                <>
-                  <Send className="mr-2 h-4 w-4" />
-                  {t('testWhatsapp.testSend')}
-                </>
-              )}
-            </Button>
-          </CardContent>
-        </Card>
+          )}
+        </DashboardCard>
       </div>
 
-      {results.length > 0 && (
-        <Card className="shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-base font-semibold">{t('testWhatsapp.testHistory')}</CardTitle>
-            <Button variant="ghost" size="sm" onClick={() => setResults([])} className="h-8 text-xs">
-              {t('testWhatsapp.clear')}
-            </Button>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {results.map((res, i) => (
-              <div key={i} className="border rounded-md p-3 text-sm flex flex-col gap-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    {res.success ? (
-                      <CheckCircle2 className="h-4 w-4 text-green-500" />
-                    ) : (
-                      <XCircle className="h-4 w-4 text-red-500" />
-                    )}
-                    <span className="font-medium">{res.success ? t('testWhatsapp.sent') : t('testWhatsapp.error')}</span>
-                  </div>
-                  <span className="text-[10px] text-muted-foreground">{res.timestamp}</span>
+      {/* Connected sessions info */}
+      <DashboardCard>
+        <DashboardCardHeader>
+          <DashboardCardTitle className="flex items-center gap-2">
+            <Phone className="h-4 w-4" />
+            Sesiones Conectadas
+          </DashboardCardTitle>
+        </DashboardCardHeader>
+        {sessions.length === 0 ? (
+          <p className="text-sm text-slate-400 py-4 text-center">
+            No hay sesiones de WhatsApp conectadas. Conecta una desde la pestana WhatsApp.
+          </p>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {sessions.map((s) => (
+              <div key={s.id} className="rounded-2xl border border-slate-100 p-3 flex items-center gap-3">
+                <div className="h-8 w-8 rounded-full bg-emerald-50 flex items-center justify-center">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-500" />
                 </div>
-                {res.success ? (
-                  <p className="text-muted-foreground text-xs">{res.message}</p>
-                ) : (
-                  <p className="text-red-500 text-xs">{res.error}</p>
-                )}
-                <pre className="bg-muted p-2 rounded text-[10px] overflow-x-auto max-h-32">
-                  {JSON.stringify(res.data || res.details, null, 2)}
-                </pre>
+                <div>
+                  <p className="text-sm font-medium text-slate-800">{s.name}</p>
+                  {s.phone && <p className="text-xs text-slate-400">{s.phone}</p>}
+                </div>
               </div>
             ))}
-          </CardContent>
-        </Card>
-      )}
+          </div>
+        )}
+      </DashboardCard>
     </div>
   );
 }

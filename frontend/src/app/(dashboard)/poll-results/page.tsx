@@ -4,9 +4,6 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import type { ApiResponse, PollCampaign, PollResults } from "@/types";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import {
   BarChart3,
@@ -18,6 +15,8 @@ import {
   Copy,
   Trash2,
 } from "lucide-react";
+import { DashboardHeader } from "@/components/dashboard/dashboard-header";
+import { DashboardCard, DashboardCardHeader, DashboardCardTitle, DashboardCardDescription } from "@/components/ui/dashboard-card";
 
 export default function PollResultsPage() {
   const queryClient = useQueryClient();
@@ -67,7 +66,6 @@ export default function PollResultsPage() {
     let csv = "Telefono,Opcion Seleccionada,Fecha Respuesta\n";
 
     if (option) {
-      // Download phones for specific option
       const phones = results.optionPhones[option] || [];
       for (const phone of phones) {
         const resp = results.responses.find(
@@ -76,7 +74,6 @@ export default function PollResultsPage() {
         csv += `${phone},"${option}",${resp?.respondedAt || ""}\n`;
       }
     } else {
-      // Download all responses
       for (const resp of results.responses) {
         csv += `${resp.phone},"${resp.selectedOptions.join(", ")}",${resp.respondedAt}\n`;
       }
@@ -123,37 +120,34 @@ export default function PollResultsPage() {
 
   return (
     <div className="space-y-4 md:space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-lg md:text-xl font-semibold">Resultados de Encuestas</h1>
-          <p className="text-muted-foreground">Analiza las respuestas y segmenta tu audiencia</p>
-        </div>
-        <Button
-          variant="outline"
-          size="icon"
+      <DashboardHeader
+        title="Resultados de Encuestas"
+        description="Analiza las respuestas y segmenta tu audiencia"
+      >
+        <button
           onClick={() => {
             queryClient.invalidateQueries({ queryKey: ["poll-campaigns"] });
             if (selectedCampaignId) {
               queryClient.invalidateQueries({ queryKey: ["poll-results", selectedCampaignId] });
             }
           }}
+          className="h-8 w-8 rounded-xl flex items-center justify-center hover:bg-slate-50 text-slate-400 hover:text-slate-600 transition-all"
         >
           <RefreshCw className="h-4 w-4" />
-        </Button>
-      </div>
+        </button>
+      </DashboardHeader>
 
       <div className="flex flex-col md:flex-row gap-4 md:gap-6">
         {/* Left sidebar - Campaign list */}
         <div className="w-full md:w-72 space-y-2">
-          <h3 className="text-sm font-semibold text-primary uppercase tracking-wide mb-2">
+          <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
             Campanas Recientes
           </h3>
 
-          {isLoading && <p className="text-sm text-muted-foreground p-2">Cargando...</p>}
+          {isLoading && <p className="text-sm text-slate-400 p-2">Cargando...</p>}
 
           {!isLoading && campaigns.length === 0 && (
-            <p className="text-sm text-muted-foreground p-2">
+            <p className="text-sm text-slate-400 p-2">
               No hay campanas de encuestas registradas.
             </p>
           )}
@@ -165,25 +159,26 @@ export default function PollResultsPage() {
                 setSelectedCampaignId(campaign.id);
                 setSelectedOption(null);
               }}
-              className={`w-full text-left rounded-lg border p-3 transition-colors ${
+              className={`w-full text-left rounded-2xl border p-3 transition-colors ${
                 selectedCampaignId === campaign.id
-                  ? "border-primary bg-primary/5"
-                  : "hover:bg-muted"
+                  ? "border-emerald-500 bg-emerald-50"
+                  : "border-slate-100 hover:bg-slate-50"
               }`}
             >
-              <p className="text-sm font-medium line-clamp-2">{campaign.question}</p>
+              <p className="text-sm font-medium text-slate-800 line-clamp-2">{campaign.question}</p>
               <div className="flex items-center gap-2 mt-1">
-                <Badge variant="secondary" className="text-xs">
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-500">
                   {campaign.totalSent} enviadas
-                </Badge>
-                <Badge
-                  variant="outline"
-                  className={`text-xs ${campaign.totalResponses > 0 ? "text-emerald-600 border-emerald-300" : ""}`}
+                </span>
+                <span
+                  className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                    campaign.totalResponses > 0 ? "bg-emerald-50 text-emerald-600" : "bg-slate-100 text-slate-500"
+                  }`}
                 >
                   {campaign.totalResponses} respuestas
-                </Badge>
+                </span>
               </div>
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className="text-xs text-slate-400 mt-1">
                 {new Date(campaign.createdAt).toLocaleDateString("es-CO", {
                   day: "numeric",
                   month: "short",
@@ -198,7 +193,7 @@ export default function PollResultsPage() {
         {/* Right content - Results */}
         <div className="flex-1 min-w-0">
           {!selectedCampaignId && (
-            <div className="flex items-center justify-center h-96 text-muted-foreground">
+            <div className="flex items-center justify-center h-96 text-slate-400">
               Selecciona una campana para ver los resultados
             </div>
           )}
@@ -206,176 +201,175 @@ export default function PollResultsPage() {
           {selectedCampaignId && results && (
             <div className="space-y-6">
               {/* Question header */}
-              <Card>
-                <CardContent className="py-4">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h2 className="text-lg font-semibold">{results.question}</h2>
-                      <div className="flex gap-4 mt-1 text-sm text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <Users className="h-3.5 w-3.5" />
-                          {results.totalSent} enviadas
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <CheckCircle2 className="h-3.5 w-3.5" />
-                          {results.totalResponses} respuestas
-                        </span>
-                        <span>
-                          {results.totalSent > 0
-                            ? `${Math.round((results.totalResponses / results.totalSent) * 100)}% tasa de respuesta`
-                            : "0%"}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button variant="outline" size="sm" onClick={() => downloadCSV()}>
-                        <Download className="h-4 w-4 mr-1" />
-                        Descargar Todo
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-destructive"
-                        onClick={() => {
-                          if (confirm("Eliminar esta encuesta y todos sus resultados?"))
-                            deleteMutation.mutate(results.id);
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+              <DashboardCard>
+                <DashboardCardHeader>
+                  <div>
+                    <DashboardCardTitle>{results.question}</DashboardCardTitle>
+                    <div className="flex gap-4 mt-1 text-sm text-slate-400">
+                      <span className="flex items-center gap-1">
+                        <Users className="h-3.5 w-3.5" />
+                        {results.totalSent} enviadas
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                        {results.totalResponses} respuestas
+                      </span>
+                      <span>
+                        {results.totalSent > 0
+                          ? `${Math.round((results.totalResponses / results.totalSent) * 100)}% tasa de respuesta`
+                          : "0%"}
+                      </span>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => downloadCSV()}
+                      className="border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-xl px-4 py-2 text-sm font-medium transition-all flex items-center gap-1"
+                    >
+                      <Download className="h-4 w-4" />
+                      Descargar Todo
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (confirm("Eliminar esta encuesta y todos sus resultados?"))
+                          deleteMutation.mutate(results.id);
+                      }}
+                      className="h-8 w-8 rounded-xl flex items-center justify-center hover:bg-red-50 text-slate-400 hover:text-red-600 transition-all"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                </DashboardCardHeader>
+              </DashboardCard>
 
               {/* Bar chart */}
-              <Card>
-                <CardContent className="py-6">
-                  <h3 className="text-sm font-semibold mb-4 flex items-center gap-2">
+              <DashboardCard>
+                <DashboardCardHeader>
+                  <DashboardCardTitle className="flex items-center gap-2">
                     <BarChart3 className="h-4 w-4" />
                     Resultados
-                  </h3>
-                  <div className="space-y-3">
-                    {(results.options as string[]).map((option, i) => {
-                      const count = results.optionCounts[option] || 0;
-                      const pct = results.totalResponses > 0
-                        ? Math.round((count / results.totalResponses) * 100)
-                        : 0;
-                      const barWidth = maxVotes > 0 ? (count / maxVotes) * 100 : 0;
-                      const isSelected = selectedOption === option;
+                  </DashboardCardTitle>
+                </DashboardCardHeader>
+                <div className="space-y-3">
+                  {(results.options as string[]).map((option, i) => {
+                    const count = results.optionCounts[option] || 0;
+                    const pct = results.totalResponses > 0
+                      ? Math.round((count / results.totalResponses) * 100)
+                      : 0;
+                    const barWidth = maxVotes > 0 ? (count / maxVotes) * 100 : 0;
+                    const isSelected = selectedOption === option;
 
-                      return (
-                        <button
-                          key={`${option}-${i}`}
-                          onClick={() => setSelectedOption(isSelected ? null : option)}
-                          className={`w-full text-left rounded-lg p-3 border transition-colors ${
-                            isSelected ? "border-primary bg-primary/5" : "hover:bg-muted"
-                          }`}
-                        >
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-sm font-medium">{option}</span>
-                            <span className="text-sm text-muted-foreground">
-                              {count} votos ({pct}%)
-                            </span>
-                          </div>
-                          <div className="h-6 rounded-full bg-muted overflow-hidden">
-                            <div
-                              className={`h-full rounded-full transition-all duration-500 ${COLORS[i % COLORS.length]}`}
-                              style={{ width: `${barWidth}%` }}
-                            />
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </CardContent>
-              </Card>
+                    return (
+                      <button
+                        key={`${option}-${i}`}
+                        onClick={() => setSelectedOption(isSelected ? null : option)}
+                        className={`w-full text-left rounded-2xl p-3 border transition-colors ${
+                          isSelected ? "border-emerald-500 bg-emerald-50" : "border-slate-100 hover:bg-slate-50"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm font-medium text-slate-800">{option}</span>
+                          <span className="text-sm text-slate-400">
+                            {count} votos ({pct}%)
+                          </span>
+                        </div>
+                        <div className="h-6 rounded-full bg-slate-100 overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all duration-500 ${COLORS[i % COLORS.length]}`}
+                            style={{ width: `${barWidth}%` }}
+                          />
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </DashboardCard>
 
               {/* Selected option detail - phones */}
               {selectedOption && (
-                <Card>
-                  <CardContent className="py-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <h3 className="text-sm font-semibold">
-                        Numeros que eligieron: &quot;{selectedOption}&quot;
-                        <Badge variant="secondary" className="ml-2">
-                          {phonesForOption.length}
-                        </Badge>
-                      </h3>
+                <DashboardCard>
+                  <DashboardCardHeader>
+                    <div className="flex items-center justify-between w-full">
+                      <div>
+                        <DashboardCardTitle>
+                          Numeros que eligieron: "{selectedOption}"
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-500 ml-2">
+                            {phonesForOption.length}
+                          </span>
+                        </DashboardCardTitle>
+                      </div>
                       <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
+                        <button
                           onClick={() => copyPhones(phonesForOption)}
                           disabled={phonesForOption.length === 0}
+                          className="border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-xl px-4 py-2 text-sm font-medium transition-all disabled:opacity-50 flex items-center gap-1"
                         >
-                          <Copy className="h-3.5 w-3.5 mr-1" />
+                          <Copy className="h-3.5 w-3.5" />
                           Copiar
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
+                        </button>
+                        <button
                           onClick={() => downloadCSV(selectedOption)}
                           disabled={phonesForOption.length === 0}
+                          className="border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-xl px-4 py-2 text-sm font-medium transition-all disabled:opacity-50 flex items-center gap-1"
                         >
-                          <Download className="h-3.5 w-3.5 mr-1" />
+                          <Download className="h-3.5 w-3.5" />
                           CSV
-                        </Button>
-                        <Button
-                          size="sm"
+                        </button>
+                        <button
                           onClick={() => savePhones(phonesForOption, selectedOption)}
                           disabled={phonesForOption.length === 0}
+                          className="bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl px-4 py-2 text-sm font-semibold transition-all disabled:opacity-50 flex items-center gap-1"
                         >
-                          <Save className="h-3.5 w-3.5 mr-1" />
+                          <Save className="h-3.5 w-3.5" />
                           Guardar
-                        </Button>
+                        </button>
                       </div>
                     </div>
+                  </DashboardCardHeader>
 
-                    {phonesForOption.length === 0 ? (
-                      <p className="text-sm text-muted-foreground py-4 text-center">
-                        Nadie ha seleccionado esta opcion aun
-                      </p>
-                    ) : (
-                      <div className="max-h-60 overflow-y-auto border rounded-lg">
-                        <table className="w-full text-sm">
-                          <thead className="bg-muted/50 sticky top-0">
-                            <tr>
-                              <th className="text-left px-3 py-2 font-medium">#</th>
-                              <th className="text-left px-3 py-2 font-medium">Telefono</th>
-                              <th className="text-left px-3 py-2 font-medium">Fecha</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {phonesForOption.map((phone, idx) => {
-                              const resp = results.responses.find(
-                                (r) =>
-                                  r.phone === phone &&
-                                  r.selectedOptions.includes(selectedOption!)
-                              );
-                              return (
-                                <tr key={idx} className="border-t hover:bg-muted/30">
-                                  <td className="px-3 py-2 text-muted-foreground">{idx + 1}</td>
-                                  <td className="px-3 py-2 font-mono">{phone}</td>
-                                  <td className="px-3 py-2 text-muted-foreground">
-                                    {resp?.respondedAt
-                                      ? new Date(resp.respondedAt).toLocaleString("es-CO", {
-                                          day: "numeric",
-                                          month: "short",
-                                          hour: "2-digit",
-                                          minute: "2-digit",
-                                        })
-                                      : "-"}
-                                  </td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
+                  {phonesForOption.length === 0 ? (
+                    <p className="text-sm text-slate-400 py-4 text-center">
+                      Nadie ha seleccionado esta opcion aun
+                    </p>
+                  ) : (
+                    <div className="max-h-60 overflow-y-auto border border-slate-100 rounded-2xl">
+                      <table className="w-full text-sm">
+                        <thead className="bg-slate-50/50 sticky top-0">
+                          <tr>
+                            <th className="text-left px-3 py-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">#</th>
+                            <th className="text-left px-3 py-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">Telefono</th>
+                            <th className="text-left px-3 py-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">Fecha</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {phonesForOption.map((phone, idx) => {
+                            const resp = results.responses.find(
+                              (r) =>
+                                r.phone === phone &&
+                                r.selectedOptions.includes(selectedOption!)
+                            );
+                            return (
+                              <tr key={idx} className="border-t border-slate-100 hover:bg-slate-50/30">
+                                <td className="px-3 py-2 text-xs text-slate-400">{idx + 1}</td>
+                                <td className="px-3 py-2 font-mono text-sm text-slate-600">{phone}</td>
+                                <td className="px-3 py-2 text-xs text-slate-400">
+                                  {resp?.respondedAt
+                                    ? new Date(resp.respondedAt).toLocaleString("es-CO", {
+                                        day: "numeric",
+                                        month: "short",
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                      })
+                                    : "-"}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </DashboardCard>
               )}
             </div>
           )}

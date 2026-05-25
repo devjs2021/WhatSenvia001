@@ -5,20 +5,17 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { useI18n } from "@/i18n";
 import type { ApiResponse, WhatsAppSession } from "@/types";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Textarea } from "@/components/ui/textarea";
 import { Plus, Plug, PlugZap, Trash2, RefreshCw, Send, BarChart3, X } from "lucide-react";
 import { MetaSignupButton } from "@/components/whatsapp/meta-signup-button";
+import { DashboardHeader } from "@/components/dashboard/dashboard-header";
+import { DashboardCard, DashboardCardHeader, DashboardCardTitle, DashboardCardDescription, DashboardCardIcon } from "@/components/ui/dashboard-card";
 
-const statusColors: Record<string, "default" | "secondary" | "destructive" | "success" | "warning" | "outline"> = {
-  disconnected: "secondary",
-  connecting: "warning",
-  connected: "success",
-  qr_pending: "warning",
+const statusStyles: Record<string, string> = {
+  disconnected: "bg-slate-100 text-slate-500",
+  connecting: "bg-amber-50 text-amber-600",
+  connected: "bg-emerald-50 text-emerald-600",
+  qr_pending: "bg-amber-50 text-amber-600",
 };
 
 export default function WhatsAppPage() {
@@ -126,45 +123,50 @@ export default function WhatsAppPage() {
 
   return (
     <div className="space-y-4 md:space-y-6">
-      <div>
-        <h1 className="text-lg md:text-xl font-semibold">{t('whatsapp.title')}</h1>
-        <p className="text-muted-foreground">{t('whatsapp.subtitle')}</p>
-      </div>
+      <DashboardHeader
+        title={t('whatsapp.title')}
+        description={t('whatsapp.subtitle')}
+      />
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">{t('whatsapp.newSession')}</CardTitle>
-          <CardDescription>{t('whatsapp.connectNumber')}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (sessionName.trim()) createMutation.mutate(sessionName.trim());
-            }}
-            className="flex flex-col sm:flex-row gap-2"
+      {/* New Session */}
+      <DashboardCard>
+        <DashboardCardHeader>
+          <div>
+            <DashboardCardTitle>{t('whatsapp.newSession')}</DashboardCardTitle>
+            <DashboardCardDescription>{t('whatsapp.connectNumber')}</DashboardCardDescription>
+          </div>
+        </DashboardCardHeader>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (sessionName.trim()) createMutation.mutate(sessionName.trim());
+          }}
+          className="flex flex-col sm:flex-row gap-3"
+        >
+          <input
+            placeholder={t('whatsapp.sessionPlaceholder')}
+            value={sessionName}
+            onChange={(e) => setSessionName(e.target.value)}
+            className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 sm:max-w-md w-full"
+          />
+          <button
+            type="submit"
+            disabled={createMutation.isPending || !sessionName.trim()}
+            className="bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl px-5 py-2.5 text-sm font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
-            <Input
-              placeholder={t('whatsapp.sessionPlaceholder')}
-              value={sessionName}
-              onChange={(e) => setSessionName(e.target.value)}
-              className="sm:max-w-md"
-            />
-            <Button type="submit" disabled={createMutation.isPending || !sessionName.trim()}>
-              <Plus className="mr-2 h-4 w-4" />
-              {t('common.create')}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+            <Plus className="h-4 w-4" />
+            {t('common.create')}
+          </button>
+        </form>
+      </DashboardCard>
 
-      {/* Meta Cloud API - Embedded Signup (hide when already connected) */}
+      {/* Meta Cloud API */}
       {!hasMetaCloudSession && (
-        <div className="mb-6 p-4 border rounded-lg border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/30">
-          <h3 className="font-semibold text-blue-900 dark:text-blue-200 mb-1">
+        <div className="p-5 border border-blue-200 rounded-3xl bg-blue-50">
+          <h3 className="font-display text-base font-bold text-blue-900 mb-1">
             Meta Cloud API (Oficial)
           </h3>
-          <p className="text-sm text-blue-700 dark:text-blue-400 mb-3">
+          <p className="text-sm text-blue-700 mb-3">
             Conecta tu número de WhatsApp Business oficial sin usar QR
           </p>
           <MetaSignupButton
@@ -185,199 +187,200 @@ export default function WhatsAppPage() {
         </div>
       )}
 
+      {/* QR Code */}
       {qrCode && connectingId && (
-        <Card className="border-whatsapp">
-          <CardHeader>
-            <CardTitle className="text-lg">{t('whatsapp.scanQr')}</CardTitle>
-            <CardDescription>
-              {t('whatsapp.scanInstructions')}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="flex justify-center">
-            <img src={qrCode} alt="QR Code" className="rounded-lg" width={300} height={300} />
-          </CardContent>
-        </Card>
+        <DashboardCard>
+          <DashboardCardHeader>
+            <div>
+              <DashboardCardTitle>{t('whatsapp.scanQr')}</DashboardCardTitle>
+              <DashboardCardDescription>{t('whatsapp.scanInstructions')}</DashboardCardDescription>
+            </div>
+          </DashboardCardHeader>
+          <div className="flex justify-center">
+            <img src={qrCode} alt="QR Code" className="rounded-2xl" width={300} height={300} />
+          </div>
+        </DashboardCard>
       )}
 
+      {/* Quick Send */}
       {connectedSessions.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">{t('whatsapp.quickSend')}</CardTitle>
-            <CardDescription>{t('whatsapp.quickSendDesc')}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                const sid = quickSessionId || connectedSessions[0]?.id;
-                if (sid && quickPhone.trim() && quickMessage.trim()) {
-                  sendQuickMutation.mutate({ sessionId: sid, phone: quickPhone.trim(), content: quickMessage.trim() });
-                }
-              }}
-              className="space-y-4"
-            >
-              {connectedSessions.length > 1 && (
-                <div>
-                  <label className="text-sm font-medium mb-1 block">{t('whatsapp.sessionLabel')}</label>
-                  <select
-                    className="flex h-9 w-full max-w-md rounded-md border border-input bg-transparent px-3 py-1 text-sm"
-                    value={quickSessionId || connectedSessions[0]?.id}
-                    onChange={(e) => setQuickSessionId(e.target.value)}
-                  >
-                    {connectedSessions.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.name} ({s.phone})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
-              <div className="flex gap-2">
-                <Input
-                  placeholder={t('whatsapp.phonePlaceholder')}
-                  value={quickPhone}
-                  onChange={(e) => setQuickPhone(e.target.value)}
-                  className="max-w-xs"
-                />
+        <DashboardCard>
+          <DashboardCardHeader>
+            <div>
+              <DashboardCardTitle>{t('whatsapp.quickSend')}</DashboardCardTitle>
+              <DashboardCardDescription>{t('whatsapp.quickSendDesc')}</DashboardCardDescription>
+            </div>
+          </DashboardCardHeader>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              const sid = quickSessionId || connectedSessions[0]?.id;
+              if (sid && quickPhone.trim() && quickMessage.trim()) {
+                sendQuickMutation.mutate({ sessionId: sid, phone: quickPhone.trim(), content: quickMessage.trim() });
+              }
+            }}
+            className="space-y-4"
+          >
+            {connectedSessions.length > 1 && (
+              <div>
+                <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5 block">{t('whatsapp.sessionLabel')}</label>
+                <select
+                  className="appearance-none bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 cursor-pointer max-w-md w-full"
+                  value={quickSessionId || connectedSessions[0]?.id}
+                  onChange={(e) => setQuickSessionId(e.target.value)}
+                >
+                  {connectedSessions.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name} ({s.phone})
+                    </option>
+                  ))}
+                </select>
               </div>
-              <Textarea
-                placeholder={t('whatsapp.messagePlaceholder')}
-                value={quickMessage}
-                onChange={(e) => setQuickMessage(e.target.value)}
-                rows={3}
-                className="max-w-md"
-              />
-              <Button
-                type="submit"
-                disabled={sendQuickMutation.isPending || !quickPhone.trim() || !quickMessage.trim()}
-              >
-                <Send className="mr-2 h-4 w-4" />
-                {sendQuickMutation.isPending ? t('whatsapp.enviando') : t('messages.sendMessage')}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
+            )}
+            <input
+              placeholder={t('whatsapp.phonePlaceholder')}
+              value={quickPhone}
+              onChange={(e) => setQuickPhone(e.target.value)}
+              className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 max-w-xs w-full"
+            />
+            <textarea
+              placeholder={t('whatsapp.messagePlaceholder')}
+              value={quickMessage}
+              onChange={(e) => setQuickMessage(e.target.value)}
+              rows={3}
+              className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-emerald-500/30 max-w-md w-full"
+            />
+            <button
+              type="submit"
+              disabled={sendQuickMutation.isPending || !quickPhone.trim() || !quickMessage.trim()}
+              className="bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl px-5 py-2.5 text-sm font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              <Send className="h-4 w-4" />
+              {sendQuickMutation.isPending ? t('whatsapp.enviando') : t('messages.sendMessage')}
+            </button>
+          </form>
+        </DashboardCard>
       )}
 
       {/* Poll Section */}
       {connectedSessions.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <BarChart3 className="h-5 w-5" />
-              {t('whatsapp.sendPoll')}
-            </CardTitle>
-            <CardDescription>{t('whatsapp.sendPollDesc')}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                const sid = pollSessionId || connectedSessions[0]?.id;
-                const validOptions = pollOptions.filter((o) => o.trim());
-                if (sid && pollPhone.trim() && pollQuestion.trim() && validOptions.length >= 2) {
-                  sendPollMutation.mutate({
-                    sessionId: sid,
-                    phone: pollPhone.trim(),
-                    question: pollQuestion.trim(),
-                    options: validOptions,
-                    multiSelect: pollMultiSelect,
-                  });
-                }
-              }}
-              className="space-y-4"
-            >
-              {connectedSessions.length > 1 && (
-                <select
-                  className="flex h-9 w-full max-w-md rounded-md border border-input bg-transparent px-3 py-1 text-sm"
-                  value={pollSessionId || connectedSessions[0]?.id}
-                  onChange={(e) => setPollSessionId(e.target.value)}
-                >
-                  {connectedSessions.map((s) => (
-                    <option key={s.id} value={s.id}>{s.name} ({s.phone})</option>
-                  ))}
-                </select>
-              )}
-              <Input
-                placeholder={t('whatsapp.phonePlaceholder')}
-                value={pollPhone}
-                onChange={(e) => setPollPhone(e.target.value)}
-                className="max-w-xs"
-              />
-              <Input
-                placeholder={t('campaigns.pollQuestion')}
-                value={pollQuestion}
-                onChange={(e) => setPollQuestion(e.target.value)}
-                className="max-w-md"
-              />
-              <div className="space-y-2 max-w-md">
-                <label className="text-sm font-medium">{t('whatsapp.pollOptionsLabel')}</label>
-                {pollOptions.map((opt, i) => (
-                  <div key={i} className="flex gap-2">
-                    <Input
-                      placeholder={`${t('whatsapp.optionPlaceholder')} ${i + 1}`}
-                      value={opt}
-                      onChange={(e) => {
-                        const newOpts = [...pollOptions];
-                        newOpts[i] = e.target.value;
-                        setPollOptions(newOpts);
-                      }}
-                    />
-                    {pollOptions.length > 2 && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="h-10 w-10 shrink-0"
-                        onClick={() => setPollOptions(pollOptions.filter((_, j) => j !== i))}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
-                ))}
-                {pollOptions.length < 12 && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setPollOptions([...pollOptions, ""])}
-                  >
-                    <Plus className="mr-1 h-4 w-4" />
-                    {t('whatsapp.addOption')}
-                  </Button>
-                )}
-              </div>
-              <label className="flex items-center gap-2 text-sm cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={pollMultiSelect}
-                  onChange={(e) => setPollMultiSelect(e.target.checked)}
-                  className="rounded"
-                />
-                {t('whatsapp.multiSelect')}
-              </label>
-              <Button
-                type="submit"
-                disabled={sendPollMutation.isPending || !pollPhone.trim() || !pollQuestion.trim() || pollOptions.filter((o) => o.trim()).length < 2}
+        <DashboardCard>
+          <DashboardCardHeader>
+            <div>
+              <DashboardCardTitle className="flex items-center gap-2">
+                <BarChart3 className="h-5 w-5" />
+                {t('whatsapp.sendPoll')}
+              </DashboardCardTitle>
+              <DashboardCardDescription>{t('whatsapp.sendPollDesc')}</DashboardCardDescription>
+            </div>
+          </DashboardCardHeader>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              const sid = pollSessionId || connectedSessions[0]?.id;
+              const validOptions = pollOptions.filter((o) => o.trim());
+              if (sid && pollPhone.trim() && pollQuestion.trim() && validOptions.length >= 2) {
+                sendPollMutation.mutate({
+                  sessionId: sid,
+                  phone: pollPhone.trim(),
+                  question: pollQuestion.trim(),
+                  options: validOptions,
+                  multiSelect: pollMultiSelect,
+                });
+              }
+            }}
+            className="space-y-4"
+          >
+            {connectedSessions.length > 1 && (
+              <select
+                className="appearance-none bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 cursor-pointer max-w-md w-full"
+                value={pollSessionId || connectedSessions[0]?.id}
+                onChange={(e) => setPollSessionId(e.target.value)}
               >
-                <BarChart3 className="mr-2 h-4 w-4" />
-                {sendPollMutation.isPending ? t('whatsapp.enviando') : t('whatsapp.sendPoll')}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
+                {connectedSessions.map((s) => (
+                  <option key={s.id} value={s.id}>{s.name} ({s.phone})</option>
+                ))}
+              </select>
+            )}
+            <input
+              placeholder={t('whatsapp.phonePlaceholder')}
+              value={pollPhone}
+              onChange={(e) => setPollPhone(e.target.value)}
+              className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 max-w-xs w-full"
+            />
+            <input
+              placeholder={t('campaigns.pollQuestion')}
+              value={pollQuestion}
+              onChange={(e) => setPollQuestion(e.target.value)}
+              className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 max-w-md w-full"
+            />
+            <div className="space-y-2 max-w-md">
+              <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{t('whatsapp.pollOptionsLabel')}</label>
+              {pollOptions.map((opt, i) => (
+                <div key={i} className="flex gap-2">
+                  <input
+                    placeholder={`${t('whatsapp.optionPlaceholder')} ${i + 1}`}
+                    value={opt}
+                    onChange={(e) => {
+                      const newOpts = [...pollOptions];
+                      newOpts[i] = e.target.value;
+                      setPollOptions(newOpts);
+                    }}
+                    className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 w-full"
+                  />
+                  {pollOptions.length > 2 && (
+                    <button
+                      type="button"
+                      onClick={() => setPollOptions(pollOptions.filter((_, j) => j !== i))}
+                      className="h-10 w-10 rounded-xl flex items-center justify-center hover:bg-slate-50 text-slate-400 hover:text-slate-600 transition-all shrink-0"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
+              ))}
+              {pollOptions.length < 12 && (
+                <button
+                  type="button"
+                  onClick={() => setPollOptions([...pollOptions, ""])}
+                  className="border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-xl px-4 py-2 text-sm font-medium transition-all flex items-center gap-1"
+                >
+                  <Plus className="h-4 w-4" />
+                  {t('whatsapp.addOption')}
+                </button>
+              )}
+            </div>
+            <label className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={pollMultiSelect}
+                onChange={(e) => setPollMultiSelect(e.target.checked)}
+                className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+              />
+              {t('whatsapp.multiSelect')}
+            </label>
+            <button
+              type="submit"
+              disabled={sendPollMutation.isPending || !pollPhone.trim() || !pollQuestion.trim() || pollOptions.filter((o) => o.trim()).length < 2}
+              className="bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl px-5 py-2.5 text-sm font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              <BarChart3 className="h-4 w-4" />
+              {sendPollMutation.isPending ? t('whatsapp.enviando') : t('whatsapp.sendPoll')}
+            </button>
+          </form>
+        </DashboardCard>
       )}
 
-      <div className="grid gap-4">
+      {/* Sessions List */}
+      <div className="space-y-3">
         {isLoading ? (
-          <p className="text-center text-muted-foreground py-8">{t('whatsapp.loadingSessions')}</p>
+          <p className="text-center text-slate-400 py-8 text-sm">{t('whatsapp.loadingSessions')}</p>
         ) : sessions.length === 0 ? (
-          <Card>
-            <CardContent className="py-8 text-center text-muted-foreground">
+          <DashboardCard>
+            <div className="py-8 text-center text-slate-400 text-sm">
               {t('whatsapp.noSessions')}
-            </CardContent>
-          </Card>
+            </div>
+          </DashboardCard>
         ) : (
           [...sessions].sort((a, b) => {
             const order = { connected: 0, connecting: 1, qr_pending: 2, disconnected: 3 };
@@ -385,61 +388,62 @@ export default function WhatsAppPage() {
           }).map((session) => {
             const isMeta = session.connectionType === "meta_cloud";
             return (
-              <Card key={session.id} className={isMeta ? "border-blue-200 dark:border-blue-800" : ""}>
-                <CardContent className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4">
+              <DashboardCard key={session.id} className={isMeta ? "border-blue-200" : ""}>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 md:p-6">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
-                      <h3 className="font-semibold text-sm">{session.name}</h3>
-                      <Badge variant={statusColors[session.status]}>{t(`whatsapp.${session.status}`)}</Badge>
-                      {isMeta && <Badge variant="outline" className="text-blue-600 border-blue-300 dark:text-blue-400 dark:border-blue-700">Meta Cloud</Badge>}
+                      <h3 className="font-display text-sm font-bold text-slate-900">{session.name}</h3>
+                      <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${statusStyles[session.status] || "bg-slate-100 text-slate-500"}`}>
+                        {t(`whatsapp.${session.status}`)}
+                      </span>
+                      {isMeta && (
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-600">
+                          Meta Cloud
+                        </span>
+                      )}
                     </div>
                     {session.phone && (
-                      <p className="text-sm text-muted-foreground font-mono">+{session.phone}</p>
+                      <p className="text-sm text-slate-400 font-mono">+{session.phone}</p>
                     )}
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {session.status === "disconnected" && !isMeta && (
-                      <Button
-                        size="sm"
-                        variant="outline"
+                      <button
                         onClick={() => connectMutation.mutate(session.id)}
                         disabled={connectMutation.isPending}
+                        className="border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-xl px-4 py-2 text-sm font-medium transition-all flex items-center gap-1.5"
                       >
-                        <Plug className="mr-1 h-4 w-4" />
+                        <Plug className="h-4 w-4" />
                         {t('whatsapp.connect')}
-                      </Button>
+                      </button>
                     )}
                     {session.status === "connected" && !isMeta && (
-                      <Button
-                        size="sm"
-                        variant="outline"
+                      <button
                         onClick={() => disconnectMutation.mutate(session.id)}
+                        className="border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-xl px-4 py-2 text-sm font-medium transition-all flex items-center gap-1.5"
                       >
-                        <PlugZap className="mr-1 h-4 w-4" />
+                        <PlugZap className="h-4 w-4" />
                         {t('whatsapp.disconnect')}
-                      </Button>
+                      </button>
                     )}
                     {session.status === "qr_pending" && (
-                      <Button
-                        size="sm"
-                        variant="outline"
+                      <button
                         onClick={() => connectMutation.mutate(session.id)}
+                        className="border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-xl px-4 py-2 text-sm font-medium transition-all flex items-center gap-1.5"
                       >
-                        <RefreshCw className="mr-1 h-4 w-4" />
+                        <RefreshCw className="h-4 w-4" />
                         {t('whatsapp.newQr')}
-                      </Button>
+                      </button>
                     )}
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="text-destructive"
+                    <button
                       onClick={() => deleteMutation.mutate(session.id)}
+                      className="h-8 w-8 rounded-xl flex items-center justify-center hover:bg-red-50 text-slate-400 hover:text-red-600 transition-all"
                     >
                       <Trash2 className="h-4 w-4" />
-                    </Button>
+                    </button>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </DashboardCard>
             );
           })
         )}

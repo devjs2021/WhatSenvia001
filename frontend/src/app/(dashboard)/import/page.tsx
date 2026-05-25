@@ -1,480 +1,250 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useRef } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
 import {
   Upload,
   FileSpreadsheet,
-  ClipboardPaste,
-  Link2,
+  FileText,
   CheckCircle2,
-  AlertCircle,
+  XCircle,
   Loader2,
+  Download,
+  AlertTriangle,
+  Users,
 } from "lucide-react";
+import { DashboardHeader } from "@/components/dashboard/dashboard-header";
+import { DashboardCard, DashboardCardHeader, DashboardCardTitle, DashboardCardDescription } from "@/components/ui/dashboard-card";
 
-type Tab = "csv" | "paste" | "sheets";
-
-interface ParsedContact {
-  phone: string;
-  name?: string;
-  email?: string;
-  tags?: string[];
-}
-
-interface ColumnMapping {
-  phone: number;
-  name: number;
-  email: number;
-}
-
-function parseCSVLine(line: string): string[] {
-  const result: string[] = [];
-  let current = "";
-  let inQuotes = false;
-  for (let i = 0; i < line.length; i++) {
-    const ch = line[i];
-    if (inQuotes) {
-      if (ch === '"' && line[i + 1] === '"') {
-        current += '"';
-        i++;
-      } else if (ch === '"') {
-        inQuotes = false;
-      } else {
-        current += ch;
-      }
-    } else {
-      if (ch === '"') {
-        inQuotes = true;
-      } else if (ch === "," || ch === "\t" || ch === ";") {
-        result.push(current.trim());
-        current = "";
-      } else {
-        current += ch;
-      }
-    }
-  }
-  result.push(current.trim());
-  return result;
-}
-
-function parseData(text: string): { headers: string[]; rows: string[][] } {
-  const lines = text
-    .split(/\r?\n/)
-    .map((l) => l.trim())
-    .filter((l) => l.length > 0);
-  if (lines.length === 0) return { headers: [], rows: [] };
-  const headers = parseCSVLine(lines[0]);
-  const rows = lines.slice(1).map(parseCSVLine);
-  return { headers, rows };
-}
-
-function guessColumnIndex(headers: string[], keywords: string[]): number {
-  const lower = headers.map((h) => h.toLowerCase());
-  for (const kw of keywords) {
-    const idx = lower.findIndex((h) => h.includes(kw));
-    if (idx !== -1) return idx;
-  }
-  return -1;
+interface ImportResult {
+  imported: number;
+  duplicates: number;
+  errors: number;
+  total: number;
+  errorDetails?: string[];
 }
 
 export default function ImportPage() {
-  const [activeTab, setActiveTab] = useState<Tab>("csv");
-  const [headers, setHeaders] = useState<string[]>([]);
-  const [rows, setRows] = useState<string[][]>([]);
-  const [mapping, setMapping] = useState<ColumnMapping>({ phone: 0, name: -1, email: -1 });
-  const [importing, setImporting] = useState(false);
-  const [result, setResult] = useState<{ imported: number } | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [sheetsUrl, setSheetsUrl] = useState("");
-  const [fetchingSheet, setFetchingSheet] = useState(false);
-  const fileRef = useRef<HTMLInputElement>(null);
+  const queryClient = useQueryClient();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [file, setFile] = useState<File | null>(null);
   const [dragOver, setDragOver] = useState(false);
+  const [result, setResult] = useState<ImportResult | null>(null);
+  const [tag, setTag] = useState("");
 
-  const resetState = useCallback(() => {
-    setHeaders([]);
-    setRows([]);
-    setResult(null);
-    setError(null);
-  }, []);
+  const importMutation = useMutation({
+    mutationFn: async (formData: FormData) => {
+      const res = await api.post<{ success: boolean; data: ImportResult }>("/contacts/import", formData);
+      return res.data;
+    },
+    onSuccess: (data) => {
+      setResult(data);
+      toast.success(`${data.imported} contactos importados`);
+      queryClient.invalidateQueries({ queryKey: ["contacts"] });
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
 
-  const loadParsedData = useCallback((text: string) => {
-    const { headers: h, rows: r } = parseData(text);
-    if (h.length === 0) {
-      setError("No se encontraron datos para importar.");
+  const handleFileChange = (selectedFile: File | null) => {
+    if (!selectedFile) return;
+    const ext = selectedFile.name.split(".").pop()?.toLowerCase();
+    if (!["csv", "xlsx", "xls", "txt"].includes(ext || "")) {
+      toast.error("Formato no soportado. Usa CSV, XLSX o TXT");
       return;
     }
-    setHeaders(h);
-    setRows(r);
+    setFile(selectedFile);
     setResult(null);
-    setError(null);
+  };
 
-    // Auto-map columns
-    const phoneIdx = guessColumnIndex(h, ["phone", "telefono", "tel", "celular", "numero", "whatsapp"]);
-    const nameIdx = guessColumnIndex(h, ["name", "nombre", "contacto"]);
-    const emailIdx = guessColumnIndex(h, ["email", "correo", "mail"]);
-    setMapping({
-      phone: phoneIdx >= 0 ? phoneIdx : 0,
-      name: nameIdx,
-      email: emailIdx,
-    });
-  }, []);
-
-  const handleFileUpload = useCallback(
-    (file: File) => {
-      resetState();
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const text = e.target?.result as string;
-        loadParsedData(text);
-      };
-      reader.readAsText(file);
-    },
-    [resetState, loadParsedData]
-  );
-
-  const handleDrop = useCallback(
-    (e: React.DragEvent) => {
-      e.preventDefault();
-      setDragOver(false);
-      const file = e.dataTransfer.files[0];
-      if (file) handleFileUpload(file);
-    },
-    [handleFileUpload]
-  );
-
-  const handlePaste = useCallback(
-    (text: string) => {
-      resetState();
-      if (text.trim()) loadParsedData(text);
-    },
-    [resetState, loadParsedData]
-  );
-
-  const handleFetchSheet = useCallback(async () => {
-    resetState();
-    setFetchingSheet(true);
-    try {
-      // Convert Google Sheets URL to CSV export URL
-      let csvUrl = sheetsUrl;
-      const match = sheetsUrl.match(/\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/);
-      if (match) {
-        const sheetId = match[1];
-        csvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv`;
-      }
-      const resp = await fetch(csvUrl);
-      if (!resp.ok) throw new Error("No se pudo descargar la hoja. Verifica que sea publica.");
-      const text = await resp.text();
-      loadParsedData(text);
-    } catch (err: any) {
-      setError(err.message || "Error al descargar la hoja de calculo.");
-    } finally {
-      setFetchingSheet(false);
-    }
-  }, [sheetsUrl, resetState, loadParsedData]);
-
-  const handleImport = useCallback(async () => {
-    if (rows.length === 0) return;
-    setImporting(true);
-    setError(null);
-    setResult(null);
-
-    const contacts: ParsedContact[] = rows
-      .map((row) => ({
-        phone: row[mapping.phone] ?? "",
-        name: mapping.name >= 0 ? row[mapping.name] ?? "" : "",
-        email: mapping.email >= 0 ? row[mapping.email] ?? "" : "",
-      }))
-      .filter((c) => c.phone.replace(/\D/g, "").length >= 8);
-
-    if (contacts.length === 0) {
-      setError("No se encontraron contactos validos con numeros de telefono.");
-      setImporting(false);
+  const handleSubmit = () => {
+    if (!file) {
+      toast.error("Selecciona un archivo primero");
       return;
     }
+    const formData = new FormData();
+    formData.append("file", file);
+    if (tag.trim()) formData.append("tag", tag.trim());
+    importMutation.mutate(formData);
+  };
 
-    try {
-      const res = await api.post<{ success: boolean; data: { imported: number } }>(
-        "/contacts/import",
-        { contacts }
-      );
-      setResult(res.data);
-    } catch (err: any) {
-      setError(err.message || "Error al importar contactos.");
-    } finally {
-      setImporting(false);
-    }
-  }, [rows, mapping]);
-
-  const tabs: { id: Tab; label: string; icon: React.ElementType }[] = [
-    { id: "csv", label: "Archivo CSV", icon: FileSpreadsheet },
-    { id: "paste", label: "Pegar Datos", icon: ClipboardPaste },
-    { id: "sheets", label: "Google Sheets URL", icon: Link2 },
-  ];
-
-  const previewRows = rows.slice(0, 5);
+  const downloadTemplate = () => {
+    const csv = "Telefono,Nombre,Email,Etiqueta\n573001234567,Juan Perez,juan@email.com,clientes\n573001234568,Maria Garcia,maria@email.com,clientes\n";
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "plantilla_importacion.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success("Plantilla descargada");
+  };
 
   return (
     <div className="space-y-4 md:space-y-6">
-      <div>
-        <h1 className="text-lg md:text-xl font-semibold">Importar Contactos</h1>
-        <p className="text-muted-foreground text-sm">
-          Importa contactos desde archivos CSV, datos pegados o Google Sheets
-        </p>
-      </div>
+      <DashboardHeader
+        title={
+          <div className="flex items-center gap-2">
+            <Upload className="h-5 w-5" />
+            Importar Contactos
+          </div>
+        }
+        description="Sube un archivo CSV, XLSX o TXT con tus contactos"
+      >
+        <button
+          onClick={downloadTemplate}
+          className="border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-xl px-4 py-2 text-sm font-medium transition-all flex items-center gap-2"
+        >
+          <Download className="h-4 w-4" />
+          Descargar Plantilla
+        </button>
+      </DashboardHeader>
 
-      {/* Tabs */}
-      <div className="flex gap-2 border-b overflow-x-auto">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => {
-              setActiveTab(tab.id);
-              resetState();
-            }}
-            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
-              activeTab === tab.id
-                ? "border-primary text-primary"
-                : "border-transparent text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <tab.icon className="h-4 w-4" />
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      {/* Upload area */}
+      <DashboardCard>
+        <DashboardCardHeader>
+          <DashboardCardTitle>Subir Archivo</DashboardCardTitle>
+          <DashboardCardDescription>
+            Formatos aceptados: CSV, XLSX, TXT. Maximo 10MB.
+          </DashboardCardDescription>
+        </DashboardCardHeader>
 
-      {/* Tab Content */}
-      <Card>
-        <CardContent className="p-6">
-          {/* CSV Upload */}
-          {activeTab === "csv" && (
-            <div>
-              <div
-                onDragOver={(e) => {
-                  e.preventDefault();
-                  setDragOver(true);
-                }}
-                onDragLeave={() => setDragOver(false)}
-                onDrop={handleDrop}
-                onClick={() => fileRef.current?.click()}
-                className={`border-2 border-dashed rounded-lg p-12 text-center cursor-pointer transition-colors ${
-                  dragOver
-                    ? "border-primary bg-primary/5"
-                    : "border-muted-foreground/25 hover:border-primary/50"
-                }`}
-              >
-                <Upload className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
-                <p className="text-sm font-medium">
-                  Arrastra un archivo CSV aqui o haz click para seleccionar
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Formatos: .csv, .txt (separado por comas, tabs o punto y coma)
-                </p>
-              </div>
-              <input
-                ref={fileRef}
-                type="file"
-                accept=".csv,.txt,.tsv"
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) handleFileUpload(file);
-                }}
-              />
-            </div>
-          )}
-
-          {/* Paste Data */}
-          {activeTab === "paste" && (
-            <div>
-              <p className="text-sm text-muted-foreground mb-3">
-                Pega datos tabulares (desde Google Sheets, Excel, etc). La primera fila debe contener
-                los encabezados.
-              </p>
-              <textarea
-                className="w-full h-48 border rounded-lg p-3 text-sm font-mono resize-none focus:outline-none focus:ring-2 focus:ring-primary bg-background"
-                placeholder={"nombre\ttelefono\temail\nJuan Perez\t+5491155551234\tjuan@email.com\nMaria Lopez\t+5491155555678\tmaria@email.com"}
-                onChange={(e) => handlePaste(e.target.value)}
-              />
-            </div>
-          )}
-
-          {/* Google Sheets URL */}
-          {activeTab === "sheets" && (
-            <div className="space-y-4">
-              <div className="p-4 rounded-lg bg-blue-50 border border-blue-200">
-                <p className="text-sm text-blue-800">
-                  La hoja de Google Sheets debe ser publica. Ve a{" "}
-                  <span className="font-medium">Archivo &gt; Compartir &gt; Publicar en la web</span>{" "}
-                  y selecciona formato CSV.
-                </p>
-              </div>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={sheetsUrl}
-                  onChange={(e) => setSheetsUrl(e.target.value)}
-                  placeholder="https://docs.google.com/spreadsheets/d/..."
-                  className="flex-1 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-background"
-                />
-                <button
-                  onClick={handleFetchSheet}
-                  disabled={!sheetsUrl || fetchingSheet}
-                  className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50 flex items-center gap-2"
-                >
-                  {fetchingSheet && <Loader2 className="h-4 w-4 animate-spin" />}
-                  Obtener
-                </button>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Preview & Mapping */}
-      {headers.length > 0 && (
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">Vista Previa y Mapeo de Columnas</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {/* Column Mapping */}
-            <div className="flex flex-wrap gap-4 mb-4 p-4 bg-muted/50 rounded-lg">
-              <div className="flex items-center gap-2">
-                <label className="text-sm font-medium">Telefono:</label>
-                <select
-                  value={mapping.phone}
-                  onChange={(e) => setMapping({ ...mapping, phone: Number(e.target.value) })}
-                  className="border rounded px-2 py-1 text-sm bg-background"
-                >
-                  {headers.map((h, i) => (
-                    <option key={i} value={i}>
-                      {h}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="flex items-center gap-2">
-                <label className="text-sm font-medium">Nombre:</label>
-                <select
-                  value={mapping.name}
-                  onChange={(e) => setMapping({ ...mapping, name: Number(e.target.value) })}
-                  className="border rounded px-2 py-1 text-sm bg-background"
-                >
-                  <option value={-1}>-- No mapear --</option>
-                  {headers.map((h, i) => (
-                    <option key={i} value={i}>
-                      {h}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="flex items-center gap-2">
-                <label className="text-sm font-medium">Email:</label>
-                <select
-                  value={mapping.email}
-                  onChange={(e) => setMapping({ ...mapping, email: Number(e.target.value) })}
-                  className="border rounded px-2 py-1 text-sm bg-background"
-                >
-                  <option value={-1}>-- No mapear --</option>
-                  {headers.map((h, i) => (
-                    <option key={i} value={i}>
-                      {h}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {/* Preview Table */}
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b">
-                    {headers.map((h, i) => (
-                      <th
-                        key={i}
-                        className={`pb-2 px-2 text-left font-medium ${
-                          i === mapping.phone
-                            ? "text-green-700"
-                            : i === mapping.name
-                            ? "text-blue-700"
-                            : i === mapping.email
-                            ? "text-purple-700"
-                            : "text-muted-foreground"
-                        }`}
-                      >
-                        {h}
-                        {i === mapping.phone && (
-                          <Badge variant="outline" className="ml-1 text-[10px] border-green-300 text-green-700">
-                            Tel
-                          </Badge>
-                        )}
-                        {i === mapping.name && (
-                          <Badge variant="outline" className="ml-1 text-[10px] border-blue-300 text-blue-700">
-                            Nombre
-                          </Badge>
-                        )}
-                        {i === mapping.email && (
-                          <Badge variant="outline" className="ml-1 text-[10px] border-purple-300 text-purple-700">
-                            Email
-                          </Badge>
-                        )}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {previewRows.map((row, ri) => (
-                    <tr key={ri} className="border-b last:border-0">
-                      {headers.map((_, ci) => (
-                        <td key={ci} className="py-2 px-2 truncate max-w-[200px]">
-                          {row[ci] ?? ""}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            <p className="text-xs text-muted-foreground mt-2">
-              Mostrando {previewRows.length} de {rows.length} filas
-            </p>
-
-            {/* Import Button */}
-            <div className="flex items-center gap-4 mt-4 pt-4 border-t">
+        <div
+          onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={(e) => { e.preventDefault(); setDragOver(false); handleFileChange(e.dataTransfer.files[0]); }}
+          onClick={() => fileInputRef.current?.click()}
+          className={`border-2 border-dashed rounded-3xl p-12 text-center cursor-pointer transition-colors ${
+            dragOver ? "border-emerald-500 bg-emerald-50" : "border-slate-200 hover:border-slate-300"
+          }`}
+        >
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".csv,.xlsx,.xls,.txt"
+            onChange={(e) => handleFileChange(e.target.files?.[0] || null)}
+            className="hidden"
+          />
+          {file ? (
+            <div className="space-y-2">
+              <FileSpreadsheet className="h-10 w-10 text-emerald-500 mx-auto" />
+              <p className="font-display text-base font-bold text-slate-900">{file.name}</p>
+              <p className="text-sm text-slate-400">{(file.size / 1024).toFixed(1)} KB</p>
               <button
-                onClick={handleImport}
-                disabled={importing || rows.length === 0}
-                className="px-6 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50 flex items-center gap-2"
+                onClick={(e) => { e.stopPropagation(); setFile(null); setResult(null); }}
+                className="text-xs text-red-500 hover:text-red-600"
               >
-                {importing && <Loader2 className="h-4 w-4 animate-spin" />}
-                Importar {rows.length} contacto{rows.length !== 1 ? "s" : ""}
+                Quitar archivo
               </button>
-
-              {result && (
-                <div className="flex items-center gap-2 text-green-700">
-                  <CheckCircle2 className="h-4 w-4" />
-                  <span className="text-sm font-medium">
-                    {result.imported} contacto{result.imported !== 1 ? "s" : ""} importado
-                    {result.imported !== 1 ? "s" : ""}
-                  </span>
-                </div>
-              )}
-
-              {error && (
-                <div className="flex items-center gap-2 text-red-600">
-                  <AlertCircle className="h-4 w-4" />
-                  <span className="text-sm">{error}</span>
-                </div>
-              )}
             </div>
-          </CardContent>
-        </Card>
+          ) : (
+            <div className="space-y-2">
+              <Upload className="h-10 w-10 text-slate-300 mx-auto" />
+              <p className="font-display text-base font-bold text-slate-900">
+                Arrastra tu archivo aqui o haz clic para seleccionar
+              </p>
+              <p className="text-sm text-slate-400">CSV, XLSX o TXT</p>
+            </div>
+          )}
+        </div>
+
+        {/* Tag input */}
+        <div className="mt-4">
+          <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5 block">
+            Etiqueta para los contactos (opcional)
+          </label>
+          <input
+            placeholder="Ej: clientes-vip, leads-enero"
+            value={tag}
+            onChange={(e) => setTag(e.target.value)}
+            className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 max-w-md w-full"
+          />
+        </div>
+
+        <button
+          onClick={handleSubmit}
+          disabled={!file || importMutation.isPending}
+          className="mt-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl px-5 py-2.5 text-sm font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+        >
+          {importMutation.isPending ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Upload className="h-4 w-4" />
+          )}
+          {importMutation.isPending ? "Importando..." : "Importar Contactos"}
+        </button>
+      </DashboardCard>
+
+      {/* Result */}
+      {result && (
+        <DashboardCard>
+          <DashboardCardHeader>
+            <DashboardCardTitle>Resultado de Importacion</DashboardCardTitle>
+          </DashboardCardHeader>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="rounded-2xl bg-emerald-50 p-4 text-center">
+              <CheckCircle2 className="h-6 w-6 text-emerald-500 mx-auto mb-1" />
+              <p className="font-display text-xl font-bold text-emerald-600">{result.imported}</p>
+              <p className="text-xs text-emerald-600">Importados</p>
+            </div>
+            <div className="rounded-2xl bg-amber-50 p-4 text-center">
+              <AlertTriangle className="h-6 w-6 text-amber-500 mx-auto mb-1" />
+              <p className="font-display text-xl font-bold text-amber-600">{result.duplicates}</p>
+              <p className="text-xs text-amber-600">Duplicados</p>
+            </div>
+            <div className="rounded-2xl bg-red-50 p-4 text-center">
+              <XCircle className="h-6 w-6 text-red-500 mx-auto mb-1" />
+              <p className="font-display text-xl font-bold text-red-600">{result.errors}</p>
+              <p className="text-xs text-red-600">Errores</p>
+            </div>
+            <div className="rounded-2xl bg-slate-50 p-4 text-center">
+              <Users className="h-6 w-6 text-slate-500 mx-auto mb-1" />
+              <p className="font-display text-xl font-bold text-slate-600">{result.total}</p>
+              <p className="text-xs text-slate-500">Total</p>
+            </div>
+          </div>
+          {result.errorDetails && result.errorDetails.length > 0 && (
+            <div className="mt-4">
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Detalles de errores</p>
+              <div className="max-h-32 overflow-y-auto space-y-1">
+                {result.errorDetails.map((err, i) => (
+                  <p key={i} className="text-xs text-red-500">{err}</p>
+                ))}
+              </div>
+            </div>
+          )}
+        </DashboardCard>
       )}
+
+      {/* Instructions */}
+      <DashboardCard>
+        <DashboardCardHeader>
+          <DashboardCardTitle>Instrucciones</DashboardCardTitle>
+        </DashboardCardHeader>
+        <ul className="space-y-2 text-sm text-slate-500">
+          <li className="flex items-start gap-2">
+            <span className="text-emerald-500 mt-0.5">1.</span>
+            <span>Descarga la plantilla de ejemplo para ver el formato esperado.</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="text-emerald-500 mt-0.5">2.</span>
+            <span>La columna <strong>Telefono</strong> es obligatoria. Debe incluir codigo de pais (ej: 573001234567).</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="text-emerald-500 mt-0.5">3.</span>
+            <span>Las columnas <strong>Nombre</strong>, <strong>Email</strong> y <strong>Etiqueta</strong> son opcionales.</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="text-emerald-500 mt-0.5">4.</span>
+            <span>Los numeros duplicados seran omitidos automaticamente.</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="text-emerald-500 mt-0.5">5.</span>
+            <span>Puedes asignar una etiqueta global a todos los contactos importados.</span>
+          </li>
+        </ul>
+      </DashboardCard>
     </div>
   );
 }

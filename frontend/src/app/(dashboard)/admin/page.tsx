@@ -10,7 +10,6 @@ import {
   Shield,
   Plus,
   Trash2,
-  Edit,
   Key,
   Ban,
   CheckCircle,
@@ -18,6 +17,8 @@ import {
   Clock,
   BarChart3,
 } from "lucide-react";
+import { DashboardHeader } from "@/components/dashboard/dashboard-header";
+import { DashboardCard, DashboardCardHeader, DashboardCardTitle, DashboardCardDescription } from "@/components/ui/dashboard-card";
 
 interface AdminUser {
   id: string;
@@ -177,104 +178,117 @@ export default function AdminPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
+        <div className="animate-spin h-8 w-8 border-4 border-emerald-500 border-t-transparent rounded-full" />
       </div>
     );
   }
 
   return (
     <div className="space-y-4 md:space-y-6">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-lg md:text-xl font-bold flex items-center gap-2">
-          <Crown className="h-5 w-5" />
-          Panel de Administracion
-        </h1>
+      <DashboardHeader
+        title={
+          <div className="flex items-center gap-2">
+            <Crown className="h-5 w-5" />
+            Panel de Administracion
+          </div>
+        }
+      >
         <button
           onClick={() => setShowCreateUser(true)}
-          className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 w-fit"
+          className="bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl px-5 py-2.5 text-sm font-semibold transition-all flex items-center gap-2"
         >
           <Plus className="h-4 w-4" />
           Crear Usuario
         </button>
-      </div>
+      </DashboardHeader>
 
       {/* Stats */}
       {stats && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-          <div className="rounded-lg border bg-card p-4">
-            <div className="flex items-center gap-2 text-muted-foreground text-sm">
-              <Users className="h-4 w-4" />
-              Total Usuarios
+          <DashboardCard variant="metric">
+            <div>
+              <div className="flex items-center gap-2 text-slate-400 text-xs font-semibold uppercase tracking-wider">
+                <Users className="h-4 w-4" />
+                Total Usuarios
+              </div>
+              <p className="font-display text-2xl font-bold text-slate-900 mt-1">{stats.totalUsers}</p>
             </div>
-            <p className="text-2xl font-bold mt-1">{stats.totalUsers}</p>
-          </div>
-          <div className="rounded-lg border bg-card p-4">
-            <div className="flex items-center gap-2 text-muted-foreground text-sm">
-              <Shield className="h-4 w-4" />
-              Licencias Activas
+          </DashboardCard>
+          <DashboardCard variant="metric">
+            <div>
+              <div className="flex items-center gap-2 text-slate-400 text-xs font-semibold uppercase tracking-wider">
+                <Shield className="h-4 w-4" />
+                Licencias Activas
+              </div>
+              <p className="font-display text-2xl font-bold text-slate-900 mt-1">{stats.activeLicenses}</p>
             </div>
-            <p className="text-2xl font-bold mt-1">{stats.activeLicenses}</p>
-          </div>
-          <div className="rounded-lg border bg-card p-4">
-            <div className="flex items-center gap-2 text-muted-foreground text-sm">
-              <Crown className="h-4 w-4" />
-              Admins
+          </DashboardCard>
+          <DashboardCard variant="metric">
+            <div>
+              <div className="flex items-center gap-2 text-slate-400 text-xs font-semibold uppercase tracking-wider">
+                <Crown className="h-4 w-4" />
+                Admins
+              </div>
+              <p className="font-display text-2xl font-bold text-slate-900 mt-1">{stats.roleStats?.admin || 0}</p>
             </div>
-            <p className="text-2xl font-bold mt-1">{stats.roleStats?.admin || 0}</p>
-          </div>
-          <div className="rounded-lg border bg-card p-4">
-            <div className="flex items-center gap-2 text-muted-foreground text-sm">
-              <BarChart3 className="h-4 w-4" />
-              Planes Activos
+          </DashboardCard>
+          <DashboardCard variant="metric">
+            <div>
+              <div className="flex items-center gap-2 text-slate-400 text-xs font-semibold uppercase tracking-wider">
+                <BarChart3 className="h-4 w-4" />
+                Planes Activos
+              </div>
+              <div className="flex gap-2 mt-2 flex-wrap">
+                {Object.entries(stats.planStats || {}).map(([plan, count]) => (
+                  <span key={plan} className="text-xs bg-slate-50 text-slate-500 px-2 py-1 rounded-full">
+                    {plan}: {count}
+                  </span>
+                ))}
+              </div>
             </div>
-            <div className="flex gap-2 mt-1">
-              {Object.entries(stats.planStats || {}).map(([plan, count]) => (
-                <span key={plan} className="text-xs bg-muted px-2 py-1 rounded">
-                  {plan}: {count}
-                </span>
-              ))}
-            </div>
-          </div>
+          </DashboardCard>
         </div>
       )}
 
       {/* Create User Modal */}
       {showCreateUser && (
-        <div className="rounded-lg border bg-card p-4 md:p-6">
-          <h3 className="font-semibold mb-4">Crear Nuevo Usuario</h3>
+        <DashboardCard>
+          <DashboardCardHeader>
+            <DashboardCardTitle>Crear Nuevo Usuario</DashboardCardTitle>
+          </DashboardCardHeader>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <input
               type="text"
               placeholder="Nombre"
               value={newUser.name}
               onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
-              className="rounded-md border px-3 py-2 text-sm bg-background"
+              className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
             />
             <input
               type="email"
               placeholder="Email"
               value={newUser.email}
               onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
-              className="rounded-md border px-3 py-2 text-sm bg-background"
+              className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
             />
             <input
               type="password"
               placeholder="Contraseña (min 8 chars)"
               value={newUser.password}
               onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
-              className="rounded-md border px-3 py-2 text-sm bg-background"
+              className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
             />
             <input
               type="text"
               placeholder="Empresa (opcional)"
               value={newUser.company}
               onChange={(e) => setNewUser({ ...newUser, company: e.target.value })}
-              className="rounded-md border px-3 py-2 text-sm bg-background"
+              className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
             />
             <select
               value={newUser.role}
               onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
-              className="rounded-md border px-3 py-2 text-sm bg-background"
+              className="appearance-none bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 cursor-pointer"
             >
               <option value="user">Usuario</option>
               <option value="admin">Administrador</option>
@@ -283,51 +297,51 @@ export default function AdminPage() {
           <div className="flex gap-2 mt-4">
             <button
               onClick={handleCreateUser}
-              className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+              className="bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl px-5 py-2.5 text-sm font-semibold transition-all"
             >
               Crear
             </button>
             <button
               onClick={() => setShowCreateUser(false)}
-              className="rounded-lg border px-4 py-2 text-sm font-medium hover:bg-accent"
+              className="border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-xl px-4 py-2 text-sm font-medium transition-all"
             >
               Cancelar
             </button>
           </div>
-        </div>
+        </DashboardCard>
       )}
 
       {/* Users Table */}
-      <div className="rounded-lg border bg-card">
+      <DashboardCard variant="table">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm min-w-[800px]">
+          <table className="w-full min-w-[800px]">
             <thead>
-              <tr className="border-b bg-muted/50">
-                <th className="px-4 py-3 text-left font-medium">Usuario</th>
-                <th className="px-4 py-3 text-left font-medium">Email</th>
-                <th className="px-4 py-3 text-left font-medium">Rol</th>
-                <th className="px-4 py-3 text-left font-medium">Licencia</th>
-                <th className="px-4 py-3 text-left font-medium">Estado</th>
-                <th className="px-4 py-3 text-left font-medium">Registro</th>
-                <th className="px-4 py-3 text-right font-medium">Acciones</th>
+              <tr className="border-b border-slate-100 bg-slate-50/50">
+                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Usuario</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Email</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Rol</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Licencia</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Estado</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Registro</th>
+                <th className="px-4 py-3 text-right text-xs font-semibold text-slate-400 uppercase tracking-wider">Acciones</th>
               </tr>
             </thead>
             <tbody>
               {users.map((user) => (
-                <tr key={user.id} className="border-b last:border-0">
+                <tr key={user.id} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors last:border-0">
                   <td className="px-4 py-3">
                     <div>
-                      <p className="font-medium">{user.name}</p>
-                      {user.company && <p className="text-xs text-muted-foreground">{user.company}</p>}
+                      <p className="text-sm font-medium text-slate-800">{user.name}</p>
+                      {user.company && <p className="text-xs text-slate-400">{user.company}</p>}
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-muted-foreground">{user.email}</td>
+                  <td className="px-4 py-3 text-sm text-slate-500">{user.email}</td>
                   <td className="px-4 py-3">
                     <span
-                      className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium ${
+                      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${
                         user.role === "admin"
-                          ? "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400"
-                          : "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400"
+                          ? "bg-amber-50 text-amber-600"
+                          : "bg-blue-50 text-blue-600"
                       }`}
                     >
                       {user.role === "admin" ? <Crown className="h-3 w-3" /> : <Users className="h-3 w-3" />}
@@ -338,58 +352,58 @@ export default function AdminPage() {
                     {user.license ? (
                       <div>
                         <span
-                          className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
+                          className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${
                             user.license.status === "active"
-                              ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
-                              : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
+                              ? "bg-emerald-50 text-emerald-600"
+                              : "bg-red-50 text-red-600"
                           }`}
                         >
                           {user.license.plan} ({user.license.status})
                         </span>
                         {user.license.expiresAt && (
-                          <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                          <p className="text-xs text-slate-400 mt-1 flex items-center gap-1">
                             <Clock className="h-3 w-3" />
                             {new Date(user.license.expiresAt).toLocaleDateString()}
                           </p>
                         )}
                       </div>
                     ) : (
-                      <span className="text-xs text-muted-foreground">Sin licencia</span>
+                      <span className="text-xs text-slate-400">Sin licencia</span>
                     )}
                   </td>
                   <td className="px-4 py-3">
                     <span
-                      className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
+                      className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${
                         user.isActive
-                          ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
-                          : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
+                          ? "bg-emerald-50 text-emerald-600"
+                          : "bg-red-50 text-red-600"
                       }`}
                     >
                       {user.isActive ? "Activo" : "Inactivo"}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground">
+                  <td className="px-4 py-3 text-xs text-slate-400">
                     {new Date(user.createdAt).toLocaleDateString()}
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-end gap-1">
                       <button
                         onClick={() => setShowCreateLicense(showCreateLicense === user.id ? null : user.id)}
-                        className="rounded p-1.5 hover:bg-accent text-muted-foreground hover:text-foreground"
+                        className="h-8 w-8 rounded-xl flex items-center justify-center hover:bg-slate-50 text-slate-400 hover:text-slate-600 transition-all"
                         title="Asignar licencia"
                       >
                         <Shield className="h-4 w-4" />
                       </button>
                       <button
                         onClick={() => setEditingPassword(editingPassword === user.id ? null : user.id)}
-                        className="rounded p-1.5 hover:bg-accent text-muted-foreground hover:text-foreground"
+                        className="h-8 w-8 rounded-xl flex items-center justify-center hover:bg-slate-50 text-slate-400 hover:text-slate-600 transition-all"
                         title="Cambiar contraseña"
                       >
                         <Key className="h-4 w-4" />
                       </button>
                       <button
                         onClick={() => handleToggleActive(user.id, user.isActive)}
-                        className="rounded p-1.5 hover:bg-accent text-muted-foreground hover:text-foreground"
+                        className="h-8 w-8 rounded-xl flex items-center justify-center hover:bg-slate-50 text-slate-400 hover:text-slate-600 transition-all"
                         title={user.isActive ? "Desactivar" : "Activar"}
                       >
                         {user.isActive ? <Ban className="h-4 w-4" /> : <CheckCircle className="h-4 w-4" />}
@@ -397,7 +411,7 @@ export default function AdminPage() {
                       {user.license && user.license.status === "active" && (
                         <button
                           onClick={() => handleSuspendLicense(user.license!.id)}
-                          className="rounded p-1.5 hover:bg-accent text-orange-500"
+                          className="h-8 w-8 rounded-xl flex items-center justify-center hover:bg-amber-50 text-amber-500 transition-all"
                           title="Suspender licencia"
                         >
                           <Ban className="h-4 w-4" />
@@ -406,7 +420,7 @@ export default function AdminPage() {
                       {user.license && user.license.status === "suspended" && (
                         <button
                           onClick={() => handleReactivateLicense(user.license!.id)}
-                          className="rounded p-1.5 hover:bg-accent text-green-500"
+                          className="h-8 w-8 rounded-xl flex items-center justify-center hover:bg-emerald-50 text-emerald-500 transition-all"
                           title="Reactivar licencia"
                         >
                           <CheckCircle className="h-4 w-4" />
@@ -414,7 +428,7 @@ export default function AdminPage() {
                       )}
                       <button
                         onClick={() => handleDeleteUser(user.id)}
-                        className="rounded p-1.5 hover:bg-accent text-destructive"
+                        className="h-8 w-8 rounded-xl flex items-center justify-center hover:bg-red-50 text-slate-400 hover:text-red-600 transition-all"
                         title="Eliminar usuario"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -423,11 +437,11 @@ export default function AdminPage() {
 
                     {/* License creation inline */}
                     {showCreateLicense === user.id && (
-                      <div className="mt-2 p-3 rounded border bg-muted/50 space-y-2">
+                      <div className="mt-2 p-3 rounded-2xl border border-slate-100 bg-slate-50 space-y-2">
                         <select
                           value={newLicense.plan}
                           onChange={(e) => setNewLicense({ ...newLicense, plan: e.target.value })}
-                          className="w-full rounded border px-2 py-1.5 text-xs bg-background"
+                          className="appearance-none bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 cursor-pointer w-full"
                         >
                           {PLANS.map((p) => (
                             <option key={p} value={p}>
@@ -439,13 +453,13 @@ export default function AdminPage() {
                           type="number"
                           value={newLicense.durationDays}
                           onChange={(e) => setNewLicense({ ...newLicense, durationDays: Number(e.target.value) })}
-                          className="w-full rounded border px-2 py-1.5 text-xs bg-background"
+                          className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 w-full"
                           placeholder="Dias de duracion"
                           min={1}
                         />
                         <button
                           onClick={() => handleCreateLicense(user.id)}
-                          className="w-full rounded bg-primary px-2 py-1.5 text-xs font-medium text-primary-foreground"
+                          className="w-full bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl px-3 py-1.5 text-xs font-semibold transition-all"
                         >
                           Asignar Licencia
                         </button>
@@ -454,17 +468,17 @@ export default function AdminPage() {
 
                     {/* Password reset inline */}
                     {editingPassword === user.id && (
-                      <div className="mt-2 p-3 rounded border bg-muted/50 space-y-2">
+                      <div className="mt-2 p-3 rounded-2xl border border-slate-100 bg-slate-50 space-y-2">
                         <input
                           type="password"
                           value={newPassword}
                           onChange={(e) => setNewPassword(e.target.value)}
-                          className="w-full rounded border px-2 py-1.5 text-xs bg-background"
+                          className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 w-full"
                           placeholder="Nueva contraseña (min 8)"
                         />
                         <button
                           onClick={() => handleResetPassword(user.id)}
-                          className="w-full rounded bg-primary px-2 py-1.5 text-xs font-medium text-primary-foreground"
+                          className="w-full bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl px-3 py-1.5 text-xs font-semibold transition-all"
                         >
                           Cambiar Contraseña
                         </button>
@@ -476,7 +490,7 @@ export default function AdminPage() {
             </tbody>
           </table>
         </div>
-      </div>
+      </DashboardCard>
     </div>
   );
 }

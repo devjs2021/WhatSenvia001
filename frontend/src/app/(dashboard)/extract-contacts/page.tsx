@@ -1,586 +1,271 @@
 "use client";
 
-import { useState, useRef } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
-import type { WhatsAppSession, ApiResponse } from "@/types";
-import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
+import type { ApiResponse, WhatsAppSession } from "@/types";
 import { toast } from "sonner";
 import {
   Users,
   Download,
+  RefreshCw,
   Search,
+  Filter,
+  Copy,
+  Loader2,
   CheckCircle2,
   XCircle,
-  Upload,
-  Loader2,
-  RefreshCw,
 } from "lucide-react";
-
-type Tab = "groups" | "verify";
-
-interface GroupInfo {
-  id: string;
-  subject: string;
-  participantsCount: number;
-}
+import { DashboardHeader } from "@/components/dashboard/dashboard-header";
+import { DashboardCard, DashboardCardHeader, DashboardCardTitle, DashboardCardDescription } from "@/components/ui/dashboard-card";
 
 interface ExtractedContact {
   phone: string;
-  isAdmin: boolean;
-}
-
-interface VerifyResult {
-  phone: string;
-  exists: boolean;
-  jid?: string;
+  name?: string;
+  pushName?: string;
+  isBusiness?: boolean;
+  isMyContact?: boolean;
 }
 
 export default function ExtractContactsPage() {
-  const [tab, setTab] = useState<Tab>("groups");
-  const [selectedSession, setSelectedSession] = useState("");
+  const queryClient = useQueryClient();
+  const [selectedSessionId, setSelectedSessionId] = useState<string>("");
+  const [contacts, setContacts] = useState<ExtractedContact[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterBusiness, setFilterBusiness] = useState<boolean | null>(null);
+  const [filterMyContact, setFilterMyContact] = useState<boolean | null>(null);
 
-  // --- Groups tab state ---
-  const [selectedGroups, setSelectedGroups] = useState<Set<string>>(new Set());
-  const [extractedContacts, setExtractedContacts] = useState<ExtractedContact[]>([]);
-  const [groupSearch, setGroupSearch] = useState("");
-
-  // --- Verify tab state ---
-  const [phonesText, setPhonesText] = useState("");
-  const [verifyResults, setVerifyResults] = useState<VerifyResult[]>([]);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // Fetch sessions
   const { data: sessionsData } = useQuery({
     queryKey: ["whatsapp-sessions"],
-    queryFn: () =>
-      api.get<ApiResponse<WhatsAppSession[]>>("/whatsapp/sessions"),
+    queryFn: () => api.get<ApiResponse<WhatsAppSession[]>>("/whatsapp/sessions"),
   });
 
-  const sessions = sessionsData?.data || [];
-  const connectedSessions = sessions.filter((s) => s.status === "connected");
+  const sessions = (sessionsData?.data || []).filter((s) => s.status === "connected");
 
-  // Fetch groups
-  const {
-    data: groupsData,
-    isLoading: groupsLoading,
-    refetch: refetchGroups,
-  } = useQuery({
-    queryKey: ["whatsapp-groups", selectedSession],
-    queryFn: () =>
-      api.get<GroupInfo[]>(`/whatsapp/sessions/${selectedSession}/groups`),
-    enabled: !!selectedSession && tab === "groups",
-  });
-
-  const groups = groupsData || [];
-  const filteredGroups = groups.filter((g) =>
-    g.subject.toLowerCase().includes(groupSearch.toLowerCase())
-  );
-
-  // Extract contacts mutation
   const extractMutation = useMutation({
-    mutationFn: (groupIds: string[]) =>
-      api.post<ExtractedContact[]>(
-        `/whatsapp/sessions/${selectedSession}/group-contacts`,
-        { groupIds }
-      ),
+    mutationFn: (sessionId: string) =>
+      api.post<ApiResponse<{ contacts: ExtractedContact[] }>>(`/whatsapp/sessions/${sessionId}/extract-contacts`),
     onSuccess: (data) => {
-      const contacts = Array.isArray(data) ? data : [];
-      setExtractedContacts(contacts);
-      toast.success(`${contacts.length} contactos extraidos`);
+      setContacts(data.data.contacts);
+      toast.success(`${data.data.contacts.length} contactos extraidos`);
     },
-    onError: (err: any) => toast.error(err.message || "Error al extraer contactos"),
+    onError: (err: any) => toast.error(err.message),
   });
 
-  // Verify numbers mutation
-  const verifyMutation = useMutation({
-    mutationFn: (phones: string[]) =>
-      api.post<VerifyResult[]>(
-        `/whatsapp/sessions/${selectedSession}/check-numbers`,
-        { phones }
-      ),
-    onSuccess: (data) => {
-      const results = Array.isArray(data) ? data : [];
-      setVerifyResults(results);
-      const valid = results.filter((r) => r.exists).length;
-      toast.success(`${valid} de ${results.length} numeros son validos`);
-    },
-    onError: (err: any) => toast.error(err.message || "Error al verificar"),
+  const filteredContacts = contacts.filter((c) => {
+    const phone = c.phone || "";
+    const name = c.name || c.pushName || "";
+    const search = searchTerm.toLowerCase();
+    if (searchTerm && !phone.includes(search) && !name.toLowerCase().includes(search)) return false;
+    if (filterBusiness !== null && c.isBusiness !== filterBusiness) return false;
+    if (filterMyContact !== null && c.isMyContact !== filterMyContact) return false;
+    return true;
   });
 
-  function toggleGroup(groupId: string) {
-    setSelectedGroups((prev) => {
-      const next = new Set(prev);
-      if (next.has(groupId)) next.delete(groupId);
-      else next.add(groupId);
-      return next;
-    });
-  }
-
-  function toggleAllGroups() {
-    if (selectedGroups.size === filteredGroups.length) {
-      setSelectedGroups(new Set());
-    } else {
-      setSelectedGroups(new Set(filteredGroups.map((g) => g.id)));
+  const downloadCSV = () => {
+    if (filteredContacts.length === 0) {
+      toast.error("No hay contactos para descargar");
+      return;
     }
-  }
-
-  function handleExtract() {
-    if (selectedGroups.size === 0) return toast.error("Selecciona al menos un grupo");
-    extractMutation.mutate(Array.from(selectedGroups));
-  }
-
-  function handleVerify() {
-    const phones = phonesText
-      .split(/[\n,;]+/)
-      .map((p) => p.trim().replace(/[^0-9]/g, ""))
-      .filter((p) => p.length >= 10);
-    if (phones.length === 0) return toast.error("No hay numeros validos para verificar");
-    verifyMutation.mutate(phones);
-  }
-
-  function handleFileUpload(file: File) {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const text = e.target?.result as string;
-      if (text) {
-        setPhonesText((prev) => (prev.trim() ? `${prev}\n${text}` : text));
-        toast.success("Archivo cargado");
-      }
-    };
-    reader.readAsText(file);
-  }
-
-  function downloadCsv(data: Array<Record<string, any>>, filename: string) {
-    if (data.length === 0) return;
-    const headers = Object.keys(data[0]);
-    const csv =
-      headers.join(",") +
-      "\n" +
-      data.map((row) => headers.map((h) => row[h] ?? "").join(",")).join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
+    let csv = "Telefono,Nombre,PushName,EsBusiness,EsContacto\n";
+    for (const c of filteredContacts) {
+      csv += `${c.phone},"${c.name || ""}","${c.pushName || ""}",${c.isBusiness ? "Si" : "No"},${c.isMyContact ? "Si" : "No"}\n`;
+    }
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = filename;
+    a.download = `contactos_extraidos_${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
-  }
+    toast.success("CSV descargado");
+  };
+
+  const copyPhones = () => {
+    const phones = filteredContacts.map((c) => c.phone).filter(Boolean);
+    if (phones.length === 0) {
+      toast.error("No hay numeros para copiar");
+      return;
+    }
+    navigator.clipboard.writeText(phones.join("\n"));
+    toast.success(`${phones.length} numeros copiados`);
+  };
 
   return (
     <div className="space-y-4 md:space-y-6">
-      <div>
-        <h1 className="text-lg md:text-xl font-semibold">Extraer Contactos</h1>
-        <p className="text-muted-foreground">
-          Extrae contactos desde grupos de WhatsApp o verifica numeros existentes
-        </p>
-      </div>
+      <DashboardHeader
+        title={
+          <div className="flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            Extraer Contactos
+          </div>
+        }
+        description="Extrae los contactos de tus sesiones de WhatsApp conectadas"
+      />
 
       {/* Session selector */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-            <label className="text-sm font-medium whitespace-nowrap">Sesion WhatsApp:</label>
-            <select
-              className="flex h-10 w-full max-w-sm rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-              value={selectedSession}
-              onChange={(e) => {
-                setSelectedSession(e.target.value);
-                setExtractedContacts([]);
-                setVerifyResults([]);
-                setSelectedGroups(new Set());
-              }}
-            >
-              <option value="">Seleccionar sesion...</option>
-              {connectedSessions.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name} ({s.phone || "sin telefono"})
-                </option>
-              ))}
-            </select>
-            {connectedSessions.length === 0 && (
-              <p className="text-sm text-destructive">
-                No hay sesiones conectadas. Conecta una en la seccion WhatsApp.
-              </p>
+      <DashboardCard>
+        <DashboardCardHeader>
+          <DashboardCardTitle>Seleccionar Sesion</DashboardCardTitle>
+          <DashboardCardDescription>
+            Elige la sesion de WhatsApp de la cual deseas extraer los contactos
+          </DashboardCardDescription>
+        </DashboardCardHeader>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <select
+            value={selectedSessionId}
+            onChange={(e) => setSelectedSessionId(e.target.value)}
+            className="appearance-none bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 cursor-pointer max-w-md w-full"
+          >
+            <option value="">Selecciona una sesion...</option>
+            {sessions.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name} ({s.phone || "sin numero"})
+              </option>
+            ))}
+          </select>
+          <button
+            onClick={() => selectedSessionId && extractMutation.mutate(selectedSessionId)}
+            disabled={!selectedSessionId || extractMutation.isPending}
+            className="bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl px-5 py-2.5 text-sm font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          >
+            {extractMutation.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Download className="h-4 w-4" />
             )}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Tabs */}
-      <div className="flex gap-1 border-b">
-        <button
-          onClick={() => setTab("groups")}
-          className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
-            tab === "groups"
-              ? "border-primary text-primary"
-              : "border-transparent text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          <Users className="inline h-4 w-4 mr-2" />
-          Desde Grupos
-        </button>
-        <button
-          onClick={() => setTab("verify")}
-          className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
-            tab === "verify"
-              ? "border-primary text-primary"
-              : "border-transparent text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          <CheckCircle2 className="inline h-4 w-4 mr-2" />
-          Verificar Numeros
-        </button>
-      </div>
-
-      {/* ===== GROUPS TAB ===== */}
-      {tab === "groups" && (
-        <div className="space-y-4">
-          {!selectedSession ? (
-            <Card>
-              <CardContent className="py-16 text-center">
-                <Users className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
-                <p className="text-lg font-medium">Selecciona una sesion</p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Elige una sesion conectada para cargar los grupos
-                </p>
-              </CardContent>
-            </Card>
-          ) : (
-            <>
-              {/* Controls */}
-              <div className="flex items-center gap-4">
-                <div className="relative flex-1 max-w-sm">
-                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    placeholder="Buscar grupos..."
-                    className="pl-10"
-                    value={groupSearch}
-                    onChange={(e) => setGroupSearch(e.target.value)}
-                  />
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => refetchGroups()}
-                  disabled={groupsLoading}
-                >
-                  <RefreshCw className={`mr-2 h-4 w-4 ${groupsLoading ? "animate-spin" : ""}`} />
-                  Cargar Grupos
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={handleExtract}
-                  disabled={selectedGroups.size === 0 || extractMutation.isPending}
-                >
-                  {extractMutation.isPending ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <Download className="mr-2 h-4 w-4" />
-                  )}
-                  Extraer Contactos ({selectedGroups.size})
-                </Button>
-              </div>
-
-              {/* Groups list */}
-              <Card>
-                <div className="overflow-x-auto max-h-96 overflow-y-auto">
-                  <table className="w-full">
-                    <thead className="border-b bg-muted/50 sticky top-0">
-                      <tr>
-                        <th className="px-4 py-3 text-left w-10">
-                          <input
-                            type="checkbox"
-                            checked={filteredGroups.length > 0 && selectedGroups.size === filteredGroups.length}
-                            onChange={toggleAllGroups}
-                            className="rounded"
-                          />
-                        </th>
-                        <th className="px-4 py-3 text-left text-sm font-medium">Grupo</th>
-                        <th className="px-4 py-3 text-right text-sm font-medium">Participantes</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {groupsLoading ? (
-                        <tr>
-                          <td colSpan={3} className="px-4 py-8 text-center text-muted-foreground">
-                            <Loader2 className="h-5 w-5 animate-spin inline mr-2" />
-                            Cargando grupos...
-                          </td>
-                        </tr>
-                      ) : filteredGroups.length === 0 ? (
-                        <tr>
-                          <td colSpan={3} className="px-4 py-8 text-center text-muted-foreground">
-                            {groups.length === 0
-                              ? 'No hay grupos. Haz clic en "Cargar Grupos" para buscar.'
-                              : "No se encontraron grupos con ese filtro."}
-                          </td>
-                        </tr>
-                      ) : (
-                        filteredGroups.map((group) => (
-                          <tr
-                            key={group.id}
-                            className="border-b hover:bg-muted/30 transition-colors cursor-pointer"
-                            onClick={() => toggleGroup(group.id)}
-                          >
-                            <td className="px-4 py-3">
-                              <input
-                                type="checkbox"
-                                checked={selectedGroups.has(group.id)}
-                                onChange={() => toggleGroup(group.id)}
-                                className="rounded"
-                              />
-                            </td>
-                            <td className="px-4 py-3 text-sm font-medium">{group.subject}</td>
-                            <td className="px-4 py-3 text-right">
-                              <Badge variant="secondary">{group.participantsCount}</Badge>
-                            </td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-                {groups.length > 0 && (
-                  <div className="border-t px-4 py-3 text-sm text-muted-foreground">
-                    {groups.length} grupos encontrados - {selectedGroups.size} seleccionados
-                  </div>
-                )}
-              </Card>
-
-              {/* Extracted contacts results */}
-              {extractedContacts.length > 0 && (
-                <Card>
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <CardTitle className="text-lg">
-                          Contactos Extraidos ({extractedContacts.length})
-                        </CardTitle>
-                        <CardDescription>
-                          {extractedContacts.filter((c) => c.isAdmin).length} administradores
-                        </CardDescription>
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() =>
-                          downloadCsv(
-                            extractedContacts.map((c) => ({
-                              phone: c.phone,
-                              isAdmin: c.isAdmin ? "Si" : "No",
-                            })),
-                            "contactos-extraidos.csv"
-                          )
-                        }
-                      >
-                        <Download className="mr-2 h-4 w-4" />
-                        Exportar CSV
-                      </Button>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="overflow-x-auto max-h-80 overflow-y-auto">
-                      <table className="w-full">
-                        <thead className="border-b bg-muted/50 sticky top-0">
-                          <tr>
-                            <th className="px-4 py-2 text-left text-sm font-medium">#</th>
-                            <th className="px-4 py-2 text-left text-sm font-medium">Telefono</th>
-                            <th className="px-4 py-2 text-left text-sm font-medium">Admin</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {extractedContacts.map((contact, i) => (
-                            <tr key={contact.phone} className="border-b">
-                              <td className="px-4 py-2 text-xs text-muted-foreground">{i + 1}</td>
-                              <td className="px-4 py-2 text-sm font-mono">{contact.phone}</td>
-                              <td className="px-4 py-2">
-                                {contact.isAdmin ? (
-                                  <Badge variant="default" className="text-xs">Admin</Badge>
-                                ) : (
-                                  <span className="text-xs text-muted-foreground">-</span>
-                                )}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </>
-          )}
+            {extractMutation.isPending ? "Extrayendo..." : "Extraer Contactos"}
+          </button>
         </div>
-      )}
+      </DashboardCard>
 
-      {/* ===== VERIFY TAB ===== */}
-      {tab === "verify" && (
-        <div className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Verificar Numeros de WhatsApp</CardTitle>
-              <CardDescription>
-                Pega numeros de telefono (uno por linea) o carga un archivo CSV para verificar
-                cuales tienen WhatsApp activo.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <textarea
-                className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono resize-none focus:outline-none focus:ring-2 focus:ring-ring"
-                placeholder={"Pega los numeros, uno por linea:\n573001234567\n573112233445\n521234567890"}
-                rows={8}
-                value={phonesText}
-                onChange={(e) => setPhonesText(e.target.value)}
+      {/* Filters */}
+      {contacts.length > 0 && (
+        <DashboardCard>
+          <DashboardCardHeader>
+            <DashboardCardTitle>
+              Contactos Extraidos
+              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-500 ml-2">
+                {filteredContacts.length} de {contacts.length}
+              </span>
+            </DashboardCardTitle>
+          </DashboardCardHeader>
+          <div className="flex flex-col sm:flex-row gap-3 mb-4">
+            <div className="relative flex-1 max-w-xs">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <input
+                placeholder="Buscar por telefono o nombre..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-4 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 w-full"
               />
-              <div className="flex items-center justify-between">
-                <p className="text-xs text-muted-foreground">
-                  {
-                    phonesText
-                      .split(/[\n,;]+/)
-                      .map((p) => p.trim().replace(/[^0-9]/g, ""))
-                      .filter((p) => p.length >= 10).length
-                  }{" "}
-                  numeros detectados
-                </p>
-                <div className="flex gap-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    <Upload className="mr-1 h-4 w-4" />
-                    Desde CSV
-                  </Button>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept=".csv,.txt"
-                    className="hidden"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) handleFileUpload(file);
-                    }}
-                  />
-                </div>
-              </div>
-              <div className="flex justify-end gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setPhonesText("");
-                    setVerifyResults([]);
-                  }}
-                >
-                  Limpiar
-                </Button>
-                <Button
-                  onClick={handleVerify}
-                  disabled={!selectedSession || verifyMutation.isPending}
-                >
-                  {verifyMutation.isPending ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Verificando...
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle2 className="mr-2 h-4 w-4" />
-                      Verificar
-                    </>
-                  )}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setFilterBusiness(filterBusiness === null ? true : filterBusiness === true ? false : null)}
+                className={`rounded-xl px-3 py-2 text-xs font-medium transition-all border ${
+                  filterBusiness === true
+                    ? "bg-emerald-50 border-emerald-500 text-emerald-600"
+                    : filterBusiness === false
+                    ? "bg-red-50 border-red-200 text-red-600"
+                    : "border-slate-200 text-slate-500 hover:bg-slate-50"
+                }`}
+              >
+                Business
+              </button>
+              <button
+                onClick={() => setFilterMyContact(filterMyContact === null ? true : filterMyContact === true ? false : null)}
+                className={`rounded-xl px-3 py-2 text-xs font-medium transition-all border ${
+                  filterMyContact === true
+                    ? "bg-emerald-50 border-emerald-500 text-emerald-600"
+                    : filterMyContact === false
+                    ? "bg-red-50 border-red-200 text-red-600"
+                    : "border-slate-200 text-slate-500 hover:bg-slate-50"
+                }`}
+              >
+                En agenda
+              </button>
+              <button
+                onClick={() => {
+                  setSearchTerm("");
+                  setFilterBusiness(null);
+                  setFilterMyContact(null);
+                }}
+                className="rounded-xl px-3 py-2 text-xs font-medium border border-slate-200 text-slate-500 hover:bg-slate-50 transition-all"
+              >
+                Limpiar
+              </button>
+            </div>
+          </div>
 
-          {/* Verify results */}
-          {verifyResults.length > 0 && (
-            <Card>
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="text-lg">
-                      Resultados ({verifyResults.length})
-                    </CardTitle>
-                    <CardDescription>
-                      <span className="text-green-600 font-medium">
-                        {verifyResults.filter((r) => r.exists).length} validos
-                      </span>
-                      {" / "}
-                      <span className="text-red-500 font-medium">
-                        {verifyResults.filter((r) => !r.exists).length} invalidos
-                      </span>
-                    </CardDescription>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() =>
-                        downloadCsv(
-                          verifyResults.map((r) => ({
-                            phone: r.phone,
-                            exists: r.exists ? "Si" : "No",
-                          })),
-                          "verificacion-numeros.csv"
-                        )
-                      }
-                    >
-                      <Download className="mr-2 h-4 w-4" />
-                      Exportar Todo
-                    </Button>
-                    <Button
-                      size="sm"
-                      onClick={() =>
-                        downloadCsv(
-                          verifyResults
-                            .filter((r) => r.exists)
-                            .map((r) => ({ phone: r.phone })),
-                          "numeros-validos.csv"
-                        )
-                      }
-                    >
-                      <Download className="mr-2 h-4 w-4" />
-                      Solo Validos
-                    </Button>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="overflow-x-auto max-h-80 overflow-y-auto">
-                  <table className="w-full">
-                    <thead className="border-b bg-muted/50 sticky top-0">
-                      <tr>
-                        <th className="px-4 py-2 text-left text-sm font-medium">#</th>
-                        <th className="px-4 py-2 text-left text-sm font-medium">Telefono</th>
-                        <th className="px-4 py-2 text-center text-sm font-medium">Estado</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {verifyResults.map((result, i) => (
-                        <tr key={`${result.phone}-${i}`} className="border-b">
-                          <td className="px-4 py-2 text-xs text-muted-foreground">{i + 1}</td>
-                          <td className="px-4 py-2 text-sm font-mono">{result.phone}</td>
-                          <td className="px-4 py-2 text-center">
-                            {result.exists ? (
-                              <CheckCircle2 className="h-5 w-5 text-green-600 inline" />
-                            ) : (
-                              <XCircle className="h-5 w-5 text-red-500 inline" />
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </div>
+          {/* Action buttons */}
+          <div className="flex gap-2 mb-4">
+            <button
+              onClick={downloadCSV}
+              disabled={filteredContacts.length === 0}
+              className="border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-xl px-4 py-2 text-sm font-medium transition-all disabled:opacity-50 flex items-center gap-1"
+            >
+              <Download className="h-4 w-4" />
+              Descargar CSV
+            </button>
+            <button
+              onClick={copyPhones}
+              disabled={filteredContacts.length === 0}
+              className="border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-xl px-4 py-2 text-sm font-medium transition-all disabled:opacity-50 flex items-center gap-1"
+            >
+              <Copy className="h-4 w-4" />
+              Copiar Numeros
+            </button>
+          </div>
+
+          {/* Contacts table */}
+          <div className="max-h-96 overflow-y-auto border border-slate-100 rounded-2xl">
+            <table className="w-full text-sm">
+              <thead className="bg-slate-50/50 sticky top-0">
+                <tr>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">#</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Telefono</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Nombre</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Push Name</th>
+                  <th className="text-center px-4 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Business</th>
+                  <th className="text-center px-4 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">En Agenda</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredContacts.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="text-center py-8 text-slate-400">
+                      No se encontraron contactos con los filtros actuales
+                    </td>
+                  </tr>
+                ) : (
+                  filteredContacts.map((c, i) => (
+                    <tr key={i} className="border-t border-slate-100 hover:bg-slate-50/30">
+                      <td className="px-4 py-3 text-xs text-slate-400">{i + 1}</td>
+                      <td className="px-4 py-3 font-mono text-sm text-slate-600">{c.phone}</td>
+                      <td className="px-4 py-3 text-sm text-slate-800">{c.name || "-"}</td>
+                      <td className="px-4 py-3 text-sm text-slate-500">{c.pushName || "-"}</td>
+                      <td className="px-4 py-3 text-center">
+                        {c.isBusiness ? (
+                          <CheckCircle2 className="h-4 w-4 text-emerald-500 inline" />
+                        ) : (
+                          <XCircle className="h-4 w-4 text-slate-300 inline" />
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        {c.isMyContact ? (
+                          <CheckCircle2 className="h-4 w-4 text-emerald-500 inline" />
+                        ) : (
+                          <XCircle className="h-4 w-4 text-slate-300 inline" />
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </DashboardCard>
       )}
     </div>
   );

@@ -20,7 +20,10 @@ import {
   Gauge,
   MessageSquare,
   BarChart2,
+  Loader2,
 } from "lucide-react";
+import { DashboardHeader } from "@/components/dashboard/dashboard-header";
+import { DashboardCard, DashboardCardHeader, DashboardCardTitle, DashboardCardDescription } from "@/components/ui/dashboard-card";
 
 interface Template {
   id: string;
@@ -315,27 +318,22 @@ export default function CampaignsPage() {
   const isConnected = selectedSession?.status === "connected";
 
   return (
-    <div className="bg-gray-50/50 dark:bg-gray-950/50 p-3 md:p-6 space-y-3 md:space-y-4">
+    <div className="space-y-4 md:space-y-6">
+      <DashboardHeader
+        title={t('campaigns.title')}
+        description={t('campaigns.subtitle')}
+      />
 
-      {/* Header */}
-      <div>
-        <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100 tracking-tight">{t('campaigns.title')}</h1>
-        <p className="text-xs text-gray-400 mt-0.5">{t('campaigns.subtitle')}</p>
-      </div>
-
-      {/* Barra de configuración compacta */}
-      <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm px-3 md:px-5 py-3 flex flex-col md:flex-row md:items-center gap-3 md:gap-0 md:divide-x divide-gray-100 dark:divide-gray-800">
-
-        {/* Dispositivo */}
-        <div className="flex items-center gap-3 pr-5 min-w-0 flex-1">
-          <div className="h-7 w-7 rounded-lg bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
-            <Smartphone className="h-3.5 w-3.5 text-blue-500" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">{t('campaigns.device')}</p>
+      {/* Config bar */}
+      <DashboardCard>
+        <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-6">
+          {/* Device */}
+          <div className="flex-1">
+            <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5 block">{t('campaigns.device')}</label>
             <div className="relative">
+              <Smartphone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
               <select
-                className="w-full appearance-none bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-1.5 text-xs text-gray-800 dark:text-gray-200 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/30 cursor-pointer pr-7"
+                className="appearance-none bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-9 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 cursor-pointer w-full"
                 value={sessionId}
                 onChange={(e) => setSessionId(e.target.value)}
               >
@@ -346,122 +344,105 @@ export default function CampaignsPage() {
                   </option>
                 ))}
               </select>
-              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3 w-3 text-gray-400 pointer-events-none" />
+              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
             </div>
           </div>
-          {sessionId && (
-            <div className={`flex items-center gap-1.5 text-[10px] font-semibold px-2 py-1 rounded-lg shrink-0 ${
-              isConnected ? "bg-green-50 dark:bg-green-900/20 text-green-600" : "bg-gray-100 dark:bg-gray-800 text-gray-400"
-            }`}>
-              <div className={`h-1.5 w-1.5 rounded-full ${isConnected ? "bg-green-500 animate-pulse" : "bg-gray-400"}`} />
-              {isConnected ? "Online" : "Off"}
-            </div>
-          )}
-        </div>
 
-        {/* Modo */}
-        <div className="flex items-center gap-3 px-5">
-          <div className="h-7 w-7 rounded-lg bg-violet-50 dark:bg-violet-900/30 flex items-center justify-center shrink-0">
-            <Zap className="h-3.5 w-3.5 text-violet-500" />
-          </div>
+          {/* Mode */}
           <div>
-            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">{t('campaigns.mode')}</p>
-            <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 rounded-lg p-0.5">
+            <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5 block">{t('campaigns.mode')}</label>
+            <div className="flex gap-1 bg-slate-100 rounded-xl p-1">
               {([["manual", t('campaigns.manual'), Users], ["lists", t('campaigns.lists'), List]] as const).map(([mode, label, Icon]) => (
                 <button
                   key={mode}
                   onClick={() => { setSendMode(mode); setSelectedListId(""); setListPhones([]); }}
-                  className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition-all ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                     sendMode === mode
-                      ? "bg-white dark:bg-gray-700 text-violet-600 dark:text-violet-400 shadow-sm"
-                      : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                      ? "bg-white text-slate-800 shadow-sm"
+                      : "text-slate-400 hover:text-slate-600"
                   }`}
                 >
-                  <Icon className="h-3 w-3" />
+                  <Icon className="h-3.5 w-3.5" />
                   {label}
                 </button>
               ))}
             </div>
           </div>
-        </div>
 
-        {/* Velocidad */}
-        <div className="flex items-center gap-3 pl-5">
-          <div className="h-7 w-7 rounded-lg bg-orange-50 dark:bg-orange-900/30 flex items-center justify-center shrink-0">
-            <Gauge className="h-3.5 w-3.5 text-orange-500" />
-          </div>
+          {/* Speed */}
           <div>
-            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">{t('campaigns.speed')}</p>
-            <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 rounded-lg p-0.5">
+            <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5 block">{t('campaigns.speed')}</label>
+            <div className="flex gap-1 bg-slate-100 rounded-xl p-1">
               {(Object.entries(speedPresets) as [SpeedPreset, { label: string; seconds: string; color: string }][]).map(([key, preset]) => (
                 <button
                   key={key}
                   onClick={() => setSpeed(key)}
-                  className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
+                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
                     speed === key
-                      ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm"
-                      : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                      ? "bg-white text-slate-800 shadow-sm"
+                      : "text-slate-400 hover:text-slate-600"
                   }`}
                 >
                   <span>{preset.label}</span>
-                  <span className={`text-[10px] ${speed === key ? "opacity-50" : preset.color}`}>({preset.seconds})</span>
+                  <span className={`text-[10px] ${preset.color}`}>({preset.seconds})</span>
                 </button>
               ))}
             </div>
           </div>
         </div>
-
-      </div>
+      </DashboardCard>
 
       {/* Main two-column section */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-        {/* Destinatarios */}
-        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-5">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <span className="h-5 w-5 rounded-full bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-xs font-bold flex items-center justify-center">1</span>
-              <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">{t('campaigns.recipients')}</p>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+        {/* Recipients */}
+        <DashboardCard>
+          <DashboardCardHeader>
+            <div className="flex items-center justify-between w-full">
+              <div>
+                <DashboardCardTitle>{t('campaigns.recipients')}</DashboardCardTitle>
+                <DashboardCardDescription>
+                  {totalRecipients > 0 && `${totalRecipients} ${t('campaigns.numbers')}`}
+                </DashboardCardDescription>
+              </div>
+              {totalRecipients > 0 && (
+                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-600">
+                  {totalRecipients} {t('campaigns.numbers')}
+                </span>
+              )}
             </div>
-            {detectedNumbers.length > 0 || totalRecipients > 0 ? (
-              <span className="text-xs font-medium bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 px-2.5 py-1 rounded-full">
-                {totalRecipients} {t('campaigns.numbers')}
-              </span>
-            ) : null}
-          </div>
+          </DashboardCardHeader>
 
           {sendMode === "manual" ? (
             <div className="space-y-3">
               <textarea
                 placeholder={t('campaigns.pasteNumbers')}
-                rows={14}
+                rows={12}
                 value={manualNumbers}
                 onChange={(e) => setManualNumbers(e.target.value)}
-                className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 text-sm font-mono text-gray-800 dark:text-gray-200 placeholder:text-gray-400 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-mono text-slate-800 placeholder:text-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
               />
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5 text-xs text-gray-500">
-                  <div className={`h-1.5 w-1.5 rounded-full ${detectedNumbers.length > 0 ? "bg-green-500" : "bg-gray-300"}`} />
+                <span className="text-xs text-slate-400">
                   {detectedNumbers.length} {t('campaigns.numbersDetected')}
-                </div>
+                </span>
                 <button
                   onClick={() => setShowExcelImport(!showExcelImport)}
-                  className="flex items-center gap-1.5 text-xs font-medium text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 transition-colors px-3 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
+                  className="flex items-center gap-1.5 text-xs font-medium text-slate-500 hover:text-slate-700 transition-colors"
                 >
                   <FileSpreadsheet className="h-3.5 w-3.5" />
                   {t('campaigns.fromExcel')}
                 </button>
               </div>
               {showExcelImport && (
-                <div className="rounded-xl border border-dashed border-gray-200 dark:border-gray-700 p-4 bg-gray-50 dark:bg-gray-800/50 space-y-2">
-                  <p className="text-xs text-gray-400">{t('campaigns.excelInstructions')}</p>
+                <div className="rounded-2xl border border-dashed border-slate-200 p-4 bg-slate-50 space-y-2">
+                  <p className="text-xs text-slate-400">{t('campaigns.excelInstructions')}</p>
                   <input
                     type="file"
                     accept=".xlsx,.xls,.csv"
                     onChange={(e) => { const f = e.target.files?.[0]; if (f) handleExcelUpload(f); }}
-                    className="text-xs text-gray-500 file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-gray-200 file:text-gray-700 hover:file:bg-gray-300 cursor-pointer"
+                    className="text-xs text-slate-500 file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-slate-200 file:text-slate-700 hover:file:bg-slate-300 cursor-pointer"
                   />
-                  {uploading && <p className="text-xs text-gray-400 animate-pulse">{t('campaigns.importing')}</p>}
+                  {uploading && <p className="text-xs text-slate-400 animate-pulse">{t('campaigns.importing')}</p>}
                 </div>
               )}
             </div>
@@ -469,12 +450,12 @@ export default function CampaignsPage() {
             <div className="space-y-3">
               {contactLists.length > 0 && (
                 <div>
-                  <label className="text-xs font-medium text-gray-400 mb-1.5 flex items-center gap-1">
+                  <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5 flex items-center gap-1">
                     <List className="h-3 w-3" /> {t('campaigns.savedLists')}
                   </label>
                   <div className="relative">
                     <select
-                      className="w-full appearance-none bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-2.5 text-sm text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/30 cursor-pointer pr-9"
+                      className="appearance-none bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 cursor-pointer w-full pr-9"
                       value={selectedListId}
                       onChange={(e) => handleSelectList(e.target.value)}
                     >
@@ -485,18 +466,18 @@ export default function CampaignsPage() {
                         </option>
                       ))}
                     </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
                   </div>
                 </div>
               )}
               {!selectedListId && (
                 <div>
-                  <label className="text-xs font-medium text-gray-400 mb-1.5 flex items-center gap-1">
+                  <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5 flex items-center gap-1">
                     <Users className="h-3 w-3" /> {t('campaigns.filterTag')}
                   </label>
                   <div className="relative">
                     <select
-                      className="w-full appearance-none bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-2.5 text-sm text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/30 cursor-pointer pr-9"
+                      className="appearance-none bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 cursor-pointer w-full pr-9"
                       value={selectedTag}
                       onChange={(e) => setSelectedTag(e.target.value)}
                     >
@@ -505,16 +486,16 @@ export default function CampaignsPage() {
                         <option key={tag} value={tag}>{tag}</option>
                       ))}
                     </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
                   </div>
                 </div>
               )}
-              <div className="rounded-xl bg-gray-50 dark:bg-gray-800 p-6 flex flex-col items-center justify-center gap-2 mt-2">
-                <div className="h-10 w-10 rounded-full bg-white dark:bg-gray-700 shadow-sm flex items-center justify-center">
-                  {selectedListId ? <List className="h-5 w-5 text-gray-400" /> : <Users className="h-5 w-5 text-gray-400" />}
+              <div className="rounded-2xl bg-slate-50 p-6 flex flex-col items-center justify-center gap-2">
+                <div className="h-12 w-12 rounded-full bg-white shadow-sm flex items-center justify-center">
+                  {selectedListId ? <List className="h-6 w-6 text-slate-400" /> : <Users className="h-6 w-6 text-slate-400" />}
                 </div>
-                <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{totalRecipients}</p>
-                <p className="text-xs text-gray-400 text-center">
+                <p className="font-display text-3xl font-bold text-slate-900">{totalRecipients}</p>
+                <p className="text-xs text-slate-400 text-center">
                   {selectedListId
                     ? t('campaigns.inList', { name: contactLists.find((l) => l.id === selectedListId)?.name })
                     : selectedTag ? t('campaigns.withTag', { tag: selectedTag }) : t('campaigns.inTotal')}
@@ -522,48 +503,49 @@ export default function CampaignsPage() {
               </div>
             </div>
           )}
-        </div>
+        </DashboardCard>
 
-        {/* Contenido */}
-        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-5">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <span className="h-5 w-5 rounded-full bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-xs font-bold flex items-center justify-center">2</span>
-              <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">{t('campaigns.content')}</p>
+        {/* Content */}
+        <DashboardCard>
+          <DashboardCardHeader>
+            <div className="flex items-center justify-between w-full">
+              <div>
+                <DashboardCardTitle>{t('campaigns.content')}</DashboardCardTitle>
+              </div>
+              <div className="flex gap-1 bg-slate-100 rounded-xl p-1">
+                <button
+                  onClick={() => setContentType("text")}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                    contentType === "text"
+                      ? "bg-white text-slate-800 shadow-sm"
+                      : "text-slate-400 hover:text-slate-600"
+                  }`}
+                >
+                  <MessageSquare className="h-3.5 w-3.5" />
+                  {t('campaigns.text')}
+                </button>
+                <button
+                  onClick={() => setContentType("poll")}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                    contentType === "poll"
+                      ? "bg-white text-slate-800 shadow-sm"
+                      : "text-slate-400 hover:text-slate-600"
+                  }`}
+                >
+                  <BarChart2 className="h-3.5 w-3.5" />
+                  {t('campaigns.poll')}
+                </button>
+              </div>
             </div>
-            <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 rounded-xl p-1">
-              <button
-                onClick={() => setContentType("text")}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                  contentType === "text"
-                    ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm"
-                    : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                }`}
-              >
-                <MessageSquare className="h-3.5 w-3.5" />
-                {t('campaigns.text')}
-              </button>
-              <button
-                onClick={() => setContentType("poll")}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                  contentType === "poll"
-                    ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm"
-                    : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                }`}
-              >
-                <BarChart2 className="h-3.5 w-3.5" />
-                {t('campaigns.poll')}
-              </button>
-            </div>
-          </div>
+          </DashboardCardHeader>
 
           {isMetaCloud && contentType === "text" ? (
             <div className="space-y-3">
               <div className="flex items-center gap-2">
                 <div className="relative flex-1">
-                  <FileText className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400 pointer-events-none" />
+                  <FileText className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
                   <select
-                    className="w-full appearance-none bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl pl-9 pr-9 py-2.5 text-sm text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/30 cursor-pointer"
+                    className="appearance-none bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-9 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 cursor-pointer w-full"
                     value={selectedMetaTemplateId}
                     onChange={(e) => handleSelectMetaTemplate(e.target.value)}
                   >
@@ -574,15 +556,15 @@ export default function CampaignsPage() {
                       </option>
                     ))}
                   </select>
-                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
                 </div>
                 <button
                   onClick={handleSyncMetaTemplates}
                   disabled={syncing}
-                  className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-medium bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors disabled:opacity-50 shrink-0"
+                  className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors disabled:opacity-50 shrink-0"
                 >
                   {syncing ? (
-                    <div className="h-3.5 w-3.5 rounded-full border-2 border-blue-300 border-t-blue-600 animate-spin" />
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
                   ) : (
                     <Zap className="h-3.5 w-3.5" />
                   )}
@@ -592,31 +574,25 @@ export default function CampaignsPage() {
 
               {selectedMetaTemplate && (
                 <div className="space-y-3">
-                  <div className="rounded-xl bg-gray-50 dark:bg-gray-800 p-4 space-y-2">
-                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{t('campaigns.templatePreview')}</p>
+                  <div className="rounded-2xl bg-slate-50 p-4 space-y-2">
+                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{t('campaigns.templatePreview')}</p>
                     {selectedMetaTemplate.components.map((comp, i) => (
-                      <div key={i} className="text-sm text-gray-700 dark:text-gray-300">
-                        {comp.type === "HEADER" && comp.text && (
-                          <p className="font-semibold">{comp.text}</p>
-                        )}
-                        {comp.type === "BODY" && comp.text && (
-                          <p className="whitespace-pre-wrap">{comp.text}</p>
-                        )}
-                        {comp.type === "FOOTER" && comp.text && (
-                          <p className="text-xs text-gray-400 mt-1">{comp.text}</p>
-                        )}
+                      <div key={i} className="text-sm text-slate-700">
+                        {comp.type === "HEADER" && comp.text && <p className="font-semibold">{comp.text}</p>}
+                        {comp.type === "BODY" && comp.text && <p className="whitespace-pre-wrap">{comp.text}</p>}
+                        {comp.type === "FOOTER" && comp.text && <p className="text-xs text-slate-400 mt-1">{comp.text}</p>}
                       </div>
                     ))}
                   </div>
 
                   {Object.entries(templateParamMapping).map(([compType, fields]) => (
                     <div key={compType} className="space-y-2">
-                      <p className="text-xs font-semibold text-gray-500 uppercase">{compType} {t('campaigns.parameters')}</p>
+                      <p className="text-xs font-semibold text-slate-500 uppercase">{compType} {t('campaigns.parameters')}</p>
                       {fields.map((field, idx) => (
                         <div key={idx} className="flex items-center gap-2">
-                          <span className="text-xs text-gray-400 font-mono shrink-0">{`{{${idx + 1}}}`}</span>
+                          <span className="text-xs text-slate-400 font-mono shrink-0">{`{{${idx + 1}}}`}</span>
                           <select
-                            className="flex-1 appearance-none bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-1.5 text-xs text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/30 cursor-pointer"
+                            className="flex-1 appearance-none bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 cursor-pointer"
                             value={field}
                             onChange={(e) => {
                               const newMapping = { ...templateParamMapping };
@@ -637,10 +613,10 @@ export default function CampaignsPage() {
               )}
 
               {metaTemplates.length === 0 && (
-                <div className="rounded-xl bg-gray-50 dark:bg-gray-800 p-6 flex flex-col items-center justify-center gap-2">
-                  <FileText className="h-8 w-8 text-gray-300" />
-                  <p className="text-sm text-gray-400 text-center">{t('campaigns.noMetaTemplates')}</p>
-                  <p className="text-xs text-gray-400 text-center">{t('campaigns.syncToLoad')}</p>
+                <div className="rounded-2xl bg-slate-50 p-6 flex flex-col items-center justify-center gap-2">
+                  <FileText className="h-8 w-8 text-slate-300" />
+                  <p className="text-sm text-slate-400 text-center">{t('campaigns.noMetaTemplates')}</p>
+                  <p className="text-xs text-slate-400 text-center">{t('campaigns.syncToLoad')}</p>
                 </div>
               )}
             </div>
@@ -648,9 +624,9 @@ export default function CampaignsPage() {
             <div className="space-y-3">
               {templates.length > 0 && (
                 <div className="relative">
-                  <FileText className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400 pointer-events-none" />
+                  <FileText className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
                   <select
-                    className="w-full appearance-none bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl pl-9 pr-9 py-2.5 text-sm text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 cursor-pointer"
+                    className="appearance-none bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-9 py-2.5 text-sm text-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 cursor-pointer w-full"
                     value=""
                     onChange={(e) => {
                       const t = templates.find((t) => t.id === e.target.value);
@@ -664,23 +640,23 @@ export default function CampaignsPage() {
                       </option>
                     ))}
                   </select>
-                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
                 </div>
               )}
 
               {/* Format toolbar */}
-              <div className="flex items-center gap-1 border-b border-gray-100 dark:border-gray-800 pb-2">
+              <div className="flex items-center gap-1 border-b border-slate-100 pb-2">
                 {[
                   { label: <strong className="text-xs">B</strong>, insert: "*texto*", title: t('campaigns.bold') },
                   { label: <em className="text-xs">I</em>, insert: "_texto_", title: t('campaigns.italic') },
                   { label: <span className="text-xs line-through">S</span>, insert: "~texto~", title: t('campaigns.strikethrough') },
-                  { label: <span className="text-xs font-mono">&lt;/&gt;</span>, insert: "```codigo```", title: t('campaigns.code') },
+                  { label: <span className="text-xs font-mono">{'</>'}</span>, insert: "```codigo```", title: t('campaigns.code') },
                 ].map((btn, i) => (
                   <button
                     key={i}
                     title={btn.title}
                     onClick={() => setMessage((m) => m + btn.insert)}
-                    className="h-7 w-7 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                    className="h-7 w-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
                   >
                     {btn.label}
                   </button>
@@ -688,7 +664,7 @@ export default function CampaignsPage() {
                 {message && (
                   <div className="ml-auto flex gap-1 flex-wrap">
                     {message.match(/\{\{(\w+)\}\}/g)?.map((v, i) => (
-                      <span key={i} className="text-xs bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded-full font-mono">{v}</span>
+                      <span key={i} className="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full font-mono">{v}</span>
                     ))}
                   </div>
                 )}
@@ -699,7 +675,7 @@ export default function CampaignsPage() {
                 rows={9}
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
-                className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 text-sm text-gray-800 dark:text-gray-200 placeholder:text-gray-400 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
               />
             </div>
           ) : (
@@ -708,9 +684,9 @@ export default function CampaignsPage() {
                 placeholder={t('campaigns.pollQuestion')}
                 value={pollQuestion}
                 onChange={(e) => setPollQuestion(e.target.value)}
-                className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-2.5 text-sm text-gray-800 dark:text-gray-200 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
               />
-              <p className="text-xs font-medium text-gray-400">{t('campaigns.pollOptions')}</p>
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{t('campaigns.pollOptions')}</p>
               <div className="space-y-2">
                 {pollOptions.map((opt, i) => (
                   <div key={i} className="flex gap-2">
@@ -722,12 +698,12 @@ export default function CampaignsPage() {
                         newOpts[i] = e.target.value;
                         setPollOptions(newOpts);
                       }}
-                      className="flex-1 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-2.5 text-sm text-gray-800 dark:text-gray-200 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                      className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
                     />
                     {pollOptions.length > 2 && (
                       <button
                         onClick={() => setPollOptions(pollOptions.filter((_, j) => j !== i))}
-                        className="h-10 w-10 rounded-xl bg-red-50 dark:bg-red-900/20 text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 flex items-center justify-center transition-colors"
+                        className="h-10 w-10 rounded-xl bg-red-50 text-red-400 hover:bg-red-100 flex items-center justify-center transition-colors"
                       >
                         <X className="h-4 w-4" />
                       </button>
@@ -738,51 +714,53 @@ export default function CampaignsPage() {
               {pollOptions.length < 12 && (
                 <button
                   onClick={() => setPollOptions([...pollOptions, ""])}
-                  className="flex items-center gap-1.5 text-xs font-medium text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                  className="flex items-center gap-1.5 text-xs font-medium text-slate-400 hover:text-slate-700 transition-colors"
                 >
                   <Plus className="h-3.5 w-3.5" />
                   {t('campaigns.addOption')}
                 </button>
               )}
-              <label className="flex items-center gap-2.5 text-sm text-gray-600 dark:text-gray-400 cursor-pointer">
+
+              <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={pollMultiSelect}
                   onChange={(e) => setPollMultiSelect(e.target.checked)}
-                  className="h-4 w-4 rounded-md accent-gray-900 dark:accent-white"
+                  className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500/30"
                 />
-                {t('campaigns.multiSelect')}
+                <span className="text-xs text-slate-500">{t('campaigns.multiSelect')}</span>
               </label>
             </div>
           )}
-        </div>
+        </DashboardCard>
       </div>
 
-      {/* Send Bar */}
-      <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm px-3 md:px-5 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-4 text-xs text-gray-500">
-          <span><span className="font-semibold text-gray-900 dark:text-gray-100">{totalRecipients}</span> {t('campaigns.numbers')}</span>
-          <span className="text-gray-200 dark:text-gray-700">·</span>
-          <span className={`font-semibold ${speedPresets[speed].color}`}>{speedPresets[speed].label} ({speedPresets[speed].seconds})</span>
-          <span className="text-gray-200 dark:text-gray-700">·</span>
-          <span>{contentType === "text" ? t('campaigns.text') : t('campaigns.poll')}</span>
+      {/* Send button */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          {totalRecipients > 0 && (
+            <span className="text-sm text-slate-500">
+              <strong className="text-slate-800">{totalRecipients}</strong> {t('campaigns.recipientsLower')}
+            </span>
+          )}
+          {selectedSession && (
+            <span className={`text-xs flex items-center gap-1 ${isConnected ? "text-emerald-500" : "text-red-400"}`}>
+              <span className={`h-1.5 w-1.5 rounded-full ${isConnected ? "bg-emerald-500" : "bg-red-400"}`} />
+              {isConnected ? t('campaigns.connected') : t('campaigns.disconnected')}
+            </span>
+          )}
         </div>
         <button
           onClick={handleSend}
-          disabled={isSending}
-          className="flex items-center gap-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 px-5 py-2 rounded-xl text-sm font-semibold hover:bg-gray-700 dark:hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm"
+          disabled={isSending || !isConnected || totalRecipients === 0}
+          className="bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl px-6 py-3 text-sm font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
         >
           {isSending ? (
-            <>
-              <div className="h-3.5 w-3.5 rounded-full border-2 border-white/30 dark:border-gray-900/30 border-t-white dark:border-t-gray-900 animate-spin" />
-              {t('campaigns.enviando')}
-            </>
+            <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
-            <>
-              <Send className="h-3.5 w-3.5" />
-              {t('campaigns.sendTo', { count: totalRecipients })}
-            </>
+            <Send className="h-4 w-4" />
           )}
+          {isSending ? t('campaigns.sending') : t('campaigns.sendCampaign')}
         </button>
       </div>
     </div>
