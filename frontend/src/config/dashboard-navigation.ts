@@ -8,7 +8,6 @@ import {
   Users,
   Upload,
   UserPlus,
-  List,
   BarChart3,
   Activity,
   PieChart,
@@ -33,6 +32,7 @@ export interface DashboardNavItem {
 export interface DashboardNavGroup {
   nameKey: string;
   icon: LucideIcon;
+  href: string; // ruta principal del grupo (la primera página)
   children: DashboardNavItem[];
 }
 
@@ -40,8 +40,9 @@ export type NavEntry = DashboardNavGroup;
 
 export const dashboardNavGroups: NavEntry[] = [
   {
-    nameKey: "nav.dashboard",
+    nameKey: "navGroup.dashboard",
     icon: LayoutDashboard,
+    href: "/dashboard",
     children: [
       { nameKey: "nav.dashboard", href: "/dashboard", icon: LayoutDashboard, feature: null },
     ],
@@ -49,6 +50,7 @@ export const dashboardNavGroups: NavEntry[] = [
   {
     nameKey: "navGroup.messaging",
     icon: Send,
+    href: "/campaigns",
     children: [
       { nameKey: "nav.bulkSend", href: "/campaigns", icon: Send, feature: "campaigns" },
       { nameKey: "nav.connection", href: "/whatsapp", icon: Smartphone, feature: null },
@@ -60,6 +62,7 @@ export const dashboardNavGroups: NavEntry[] = [
   {
     nameKey: "navGroup.contacts",
     icon: Users,
+    href: "/contacts",
     children: [
       { nameKey: "nav.contacts", href: "/contacts", icon: Users, feature: null },
       { nameKey: "nav.import", href: "/import", icon: Upload, feature: "import" },
@@ -69,6 +72,7 @@ export const dashboardNavGroups: NavEntry[] = [
   {
     nameKey: "navGroup.analytics",
     icon: BarChart3,
+    href: "/poll-results",
     children: [
       { nameKey: "nav.polls", href: "/poll-results", icon: BarChart3, feature: "polls" },
       { nameKey: "nav.monitor", href: "/campaign-monitor", icon: Activity, feature: null },
@@ -78,7 +82,9 @@ export const dashboardNavGroups: NavEntry[] = [
   {
     nameKey: "navGroup.settings",
     icon: Settings,
+    href: "/admin",
     children: [
+      { nameKey: "nav.adminPanel", href: "/admin", icon: Crown, feature: null },
       { nameKey: "nav.templates", href: "/templates", icon: FileText, feature: "templates" },
       { nameKey: "nav.metaTemplates", href: "/meta-templates", icon: FileCheck, feature: null },
       { nameKey: "nav.control", href: "/campaign-control", icon: Shield, feature: "campaignControl" },
@@ -89,9 +95,9 @@ export const dashboardNavGroups: NavEntry[] = [
   },
 ];
 
-export const adminNavItem: DashboardNavItem = {
-  nameKey: "nav.adminPanel",
-  href: "/admin",
-  icon: Crown,
-  feature: null,
-};
+/** Encuentra a qué grupo pertenece una ruta */
+export function findGroupByHref(pathname: string): DashboardNavGroup | undefined {
+  return dashboardNavGroups.find((group) =>
+    group.children.some((child) => pathname === child.href || pathname.startsWith(child.href + "/"))
+  );
+}

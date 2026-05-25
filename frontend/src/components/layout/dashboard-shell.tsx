@@ -4,6 +4,7 @@ import { useState } from "react";
 import { DashboardSidebar } from "./dashboard-sidebar";
 import { DashboardTopbar } from "./dashboard-topbar";
 import { MobileSidebar } from "./mobile-sidebar";
+import { GroupSubNav } from "./group-subnav";
 import type { ReactNode } from "react";
 
 interface DashboardShellProps {
@@ -30,6 +31,11 @@ export function DashboardShell({ children }: DashboardShellProps) {
         <DashboardTopbar
           onMobileMenuToggle={() => setMobileMenuOpen(true)}
         />
+
+        {/* Sub-navegación del grupo activo */}
+        <div className="px-6 md:px-10 pt-4 md:pt-6 max-w-6xl w-full mx-auto 2xl:max-w-7xl">
+          <GroupSubNav />
+        </div>
 
         {/* Contenido */}
         <div className="flex-1 p-6 md:p-10 max-w-6xl w-full mx-auto space-y-8 2xl:max-w-7xl">
