@@ -1,0 +1,29 @@
+ClickSend - Manual de Estilo y Arquitectura para IA (Cline)
+Esta es la guía de arquitectura y diseño que debe seguir para cualquier modificación o creación de nuevas funcionalidades en ClickSend.
+1. Filosofía de Diseño (Estilo "ClickSend")
+●	Estética: Minimalista, lineal, estilo "Vercel / Linear / Notion".
+●	Paleta de Colores: - Fondo base: slate-50.
+○	Fondo cards: white.
+○	Acento principal (Acciones): emerald-600 / emerald-500.
+○	Bordes: border-slate-100 o border-slate-200.
+○	Tipografía: 'Inter' (texto) y 'Plus Jakarta Sans' (títulos).
+●	Espaciado: Generoso (p-6, gap-8). Bordes redondeados consistentes (rounded-2xl o rounded-3xl).
+2. Patrones de Código
+●	Frameworks: Tailwind CSS (CDN preferido para prototipado rápido), HTML5 puro, JavaScript Vanilla (sin frameworks pesados a menos que se solicite).
+●	Componentes:
+○	Los componentes deben ser auto-contenidos, modulares y responsive.
+○	Usar siempre transiciones CSS para interacciones (cubic-bezier(0.4, 0, 0.2, 1)).
+○	Priorizar la semántica HTML5.
+●	Iconografía: Lucide o SVG inline nativos (líneas finas, stroke-width: 1.5 o 2).
+3. Instrucciones de Comportamiento
+●	Siempre:
+○	Mantener la coherencia con el Dashboard generado (clicksend_dashboard.html).
+○	Usar nombres de variables y clases en español/inglés técnico consistente.
+○	Asegurar que todo sea responsivo (Mobile-first).
+●	Nunca:
+○	Añadir estilos pesados o sombras innecesarias.
+○	Usar alert() (usar el componente de Toast definido en el dashboard).
+○	Romper la jerarquía de tipografía establecida (Plus Jakarta Sans para encabezados).
+4. Flujo de Trabajo
+●	Si se crea un nuevo componente, integrarlo en el clicksend_dashboard.html como un "tab-content" nuevo si es parte de la consola.
+●	Mantener la paleta de colores de "Salud de Cuenta" (Verde Esmeralda para estados óptimos).

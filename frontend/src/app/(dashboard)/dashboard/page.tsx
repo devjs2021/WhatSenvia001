@@ -4,9 +4,13 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { useI18n } from "@/i18n";
 import {
-  Users, Send, MessageSquare, Smartphone, Wifi, WifiOff,
-  BarChart3, Bot, CheckCircle2, XCircle, Clock, TrendingUp, Activity,
+  Users, Send, BarChart3, Bot, CheckCircle2, XCircle, Clock,
+  Smartphone, Activity, MessageSquare, TrendingUp, Wifi, WifiOff,
 } from "lucide-react";
+import { DashboardHeader } from "@/components/dashboard/dashboard-header";
+import { DashboardKPIs } from "@/components/dashboard/dashboard-kpis";
+import { DashboardChart } from "@/components/dashboard/dashboard-chart";
+import { DashboardCard, DashboardCardHeader, DashboardCardTitle } from "@/components/ui/dashboard-card";
 
 interface DashboardData {
   overview: {
@@ -24,11 +28,11 @@ interface DashboardData {
 }
 
 const statusColors: Record<string, string> = {
-  draft: "bg-gray-100 text-gray-600",
+  draft: "bg-slate-100 text-slate-600",
   scheduled: "bg-blue-100 text-blue-700",
-  running: "bg-yellow-100 text-yellow-700",
+  running: "bg-amber-100 text-amber-700",
   paused: "bg-orange-100 text-orange-700",
-  completed: "bg-green-100 text-green-700",
+  completed: "bg-emerald-100 text-emerald-700",
   failed: "bg-red-100 text-red-700",
 };
 
@@ -63,11 +67,11 @@ export default function DashboardPage() {
 
   if (isLoading) {
     return (
-      <div className="p-6 space-y-4">
-        <div className="h-6 w-40 bg-gray-200 rounded-lg animate-pulse" />
-        <div className="grid grid-cols-4 gap-3">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="h-24 bg-gray-100 rounded-2xl animate-pulse" />
+      <div className="space-y-8">
+        <div className="h-8 w-48 bg-slate-100 rounded-xl animate-pulse" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="h-32 bg-slate-50 rounded-3xl animate-pulse" />
           ))}
         </div>
       </div>
@@ -79,69 +83,90 @@ export default function DashboardPage() {
   const { overview, messageStats: ms } = stats;
   const totalSent = ms.sent + ms.delivered + ms.read;
   const successRate = overview.totalMessages > 0 ? Math.round((totalSent / overview.totalMessages) * 100) : 0;
-  const maxMsg = Math.max(ms.sent, ms.delivered, ms.read, ms.queued, ms.failed, 1);
 
-  const statCards = [
-    { label: t('dashboard.totalContacts'), value: overview.totalContacts.toLocaleString(), sub: t('dashboard.contacts'), icon: Users, color: "bg-blue-50 dark:bg-blue-900/20", iconColor: "text-blue-500" },
-    { label: t('dashboard.messages'), value: overview.totalMessages.toLocaleString(), sub: `${successRate}% ${t('dashboard.success')}`, icon: Send, color: "bg-green-50 dark:bg-green-900/20", iconColor: "text-green-500" },
-    { label: t('nav.bulkSend'), value: overview.totalCampaigns.toString(), sub: `${overview.totalPolls} ${t('nav.polls')}`, icon: BarChart3, color: "bg-violet-50 dark:bg-violet-900/20", iconColor: "text-violet-500" },
-    { label: t('dashboard.activeFlowsTitle'), value: overview.activeFlows.toString(), sub: t('dashboard.activeFlows'), icon: Bot, color: "bg-orange-50 dark:bg-orange-900/20", iconColor: "text-orange-500" },
+  const kpiItems = [
+    {
+      label: t('dashboard.totalContacts'),
+      value: overview.totalContacts.toLocaleString(),
+      sub: t('dashboard.contacts'),
+      icon: Users,
+      iconBg: "bg-blue-50",
+      iconColor: "text-blue-500",
+    },
+    {
+      label: t('dashboard.messages'),
+      value: overview.totalMessages.toLocaleString(),
+      sub: `${successRate}% ${t('dashboard.success')}`,
+      icon: Send,
+      iconBg: "bg-emerald-50",
+      iconColor: "text-emerald-600",
+    },
+    {
+      label: t('nav.bulkSend'),
+      value: overview.totalCampaigns.toString(),
+      sub: `${overview.totalPolls} ${t('nav.polls')}`,
+      icon: BarChart3,
+      iconBg: "bg-violet-50",
+      iconColor: "text-violet-500",
+    },
   ];
 
   const msgBars = [
     { label: t('messages.sent'), value: ms.sent, color: "bg-blue-400" },
-    { label: t('messages.delivered'), value: ms.delivered, color: "bg-green-400" },
-    { label: t('messages.read'), value: ms.read, color: "bg-emerald-500" },
-    { label: t('messages.queued'), value: ms.queued, color: "bg-yellow-400" },
+    { label: t('messages.delivered'), value: ms.delivered, color: "bg-emerald-400" },
+    { label: t('messages.read'), value: ms.read, color: "bg-emerald-600" },
+    { label: t('messages.queued'), value: ms.queued, color: "bg-amber-400" },
     { label: t('messages.failed'), value: ms.failed, color: "bg-red-400" },
   ];
 
+  const maxMsg = Math.max(ms.sent, ms.delivered, ms.read, ms.queued, ms.failed, 1);
+
   return (
-    <div className="bg-gray-50/50 dark:bg-gray-950/50 p-3 md:p-6 space-y-3 md:space-y-4">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-lg md:text-xl font-semibold tracking-[-0.04em] text-gray-900 dark:text-gray-100">{t('nav.dashboard')}</h1>
-          <p className="text-xs font-normal tracking-normal text-gray-400 mt-0.5">{t('dashboard.overview')}</p>
-        </div>
-        <div className={`flex items-center gap-2 text-xs font-medium tracking-normal px-3 py-1.5 rounded-xl shadow-[0_0_0_1px_rgba(0,0,0,0.08)] ${
+    <div className="space-y-8">
+      {/* Encabezado inspirador */}
+      <DashboardHeader
+        title={<>Cuidamos de <span className="text-emerald-500 font-extrabold">ti</span> y de tu <span className="text-emerald-500 font-extrabold">tiempo</span>.</>}
+        description="Aquí tienes un resumen de la actividad y la salud de tus envíos hoy."
+      >
+        <div className={`flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full ${
           overview.connectedSessions > 0
-            ? "bg-green-50 border-green-200 text-green-700 dark:bg-green-900/20 dark:border-green-800 dark:text-green-400"
-            : "bg-red-50 border-red-200 text-red-700 dark:bg-red-900/20 dark:border-red-800 dark:text-red-400"
+            ? "bg-emerald-50 border border-emerald-100 text-emerald-700"
+            : "bg-red-50 border border-red-100 text-red-700"
         }`}>
-          {overview.connectedSessions > 0
-            ? <><Wifi className="h-3.5 w-3.5" />{overview.connectedSessions} {t('dashboard.sessionActive')}</>
-            : <><WifiOff className="h-3.5 w-3.5" />{t('whatsapp.disconnected')}</>}
+          {overview.connectedSessions > 0 ? (
+            <><Wifi className="w-3.5 h-3.5" />{overview.connectedSessions} {t('dashboard.sessionActive')}</>
+          ) : (
+            <><WifiOff className="w-3.5 h-3.5" />{t('whatsapp.disconnected')}</>
+          )}
         </div>
-      </div>
+      </DashboardHeader>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        {statCards.map(({ label, value, sub, icon: Icon, color, iconColor }) => (
-          <div key={label} className="bg-white dark:bg-gray-900 rounded-2xl shadow-[0_0_0_1px_rgba(0,0,0,0.08)] dark:shadow-[0_0_0_1px_rgba(255,255,255,0.08)] p-3 md:p-4">
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-xs font-normal tracking-normal text-gray-400 uppercase">{label}</p>
-              <div className={`h-8 w-8 rounded-xl ${color} flex items-center justify-center`}>
-                <Icon className={`h-4 w-4 ${iconColor}`} />
+      {/* KPIs */}
+      <DashboardKPIs items={kpiItems} columns={3} />
+
+      {/* Gráfico de tendencia */}
+      <DashboardChart
+        title="Historial de Envíos del Mes"
+        description="Total de mensajes despachados sin bloqueos."
+      />
+
+      {/* Grid de 2 columnas: Status + Quick Actions */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Message Status Bars */}
+        <DashboardCard className="lg:col-span-2" padding="lg">
+          <DashboardCardHeader>
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-xl bg-slate-50 flex items-center justify-center">
+                <Activity className="w-4 h-4 text-slate-500" strokeWidth={1.5} />
               </div>
+              <DashboardCardTitle>{t('messages.status')}</DashboardCardTitle>
             </div>
-            <p className="text-xl md:text-2xl font-semibold tracking-[-0.03em] text-gray-900 dark:text-gray-100">{value}</p>
-            <p className="text-xs font-normal tracking-normal text-gray-400 mt-0.5">{sub}</p>
-          </div>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-        <div className="lg:col-span-2 bg-white dark:bg-gray-900 rounded-2xl shadow-[0_0_0_1px_rgba(0,0,0,0.08)] dark:shadow-[0_0_0_1px_rgba(255,255,255,0.08)] p-3 md:p-5">
-          <div className="flex items-center gap-2 mb-4">
-            <div className="h-7 w-7 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-              <Activity className="h-3.5 w-3.5 text-gray-500" />
-            </div>
-            <p className="text-sm font-medium tracking-[-0.02em] text-gray-800 dark:text-gray-200">{t('messages.status')}</p>
-          </div>
-          <div className="space-y-2.5">
+          </DashboardCardHeader>
+          <div className="space-y-3">
             {msgBars.map(({ label, value, color }) => (
               <div key={label} className="flex items-center gap-3">
-                <span className="text-xs font-normal tracking-normal text-gray-400 w-20 shrink-0">{label}</span>
-                <div className="flex-1 h-6 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                <span className="text-xs font-semibold text-slate-400 w-20 shrink-0">{label}</span>
+                <div className="flex-1 h-6 bg-slate-50 rounded-full overflow-hidden">
                   <div
                     className={`h-full ${color} rounded-full transition-all duration-500 flex items-center justify-end pr-2`}
                     style={{ width: `${Math.max((value / maxMsg) * 100, value > 0 ? 6 : 0)}%` }}
@@ -149,114 +174,124 @@ export default function DashboardPage() {
                     {value > 0 && <span className="text-[10px] font-bold text-white">{value.toLocaleString()}</span>}
                   </div>
                 </div>
-                {value === 0 && <span className="text-xs text-gray-300 w-4">0</span>}
+                {value === 0 && <span className="text-xs text-slate-300 w-4">0</span>}
               </div>
             ))}
           </div>
-        </div>
+        </DashboardCard>
 
-        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-[0_0_0_1px_rgba(0,0,0,0.08)] dark:shadow-[0_0_0_1px_rgba(255,255,255,0.08)] p-5">
-          <div className="flex items-center gap-2 mb-4">
-            <div className="h-7 w-7 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-              <TrendingUp className="h-3.5 w-3.5 text-gray-500" />
+        {/* Quick Stats */}
+        <DashboardCard padding="lg">
+          <DashboardCardHeader>
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-xl bg-slate-50 flex items-center justify-center">
+                <TrendingUp className="w-4 h-4 text-slate-500" strokeWidth={1.5} />
+              </div>
+              <DashboardCardTitle>{t('dashboard.quickActions')}</DashboardCardTitle>
             </div>
-            <p className="text-sm font-medium tracking-[-0.02em] text-gray-800 dark:text-gray-200">{t('dashboard.quickActions')}</p>
-          </div>
+          </DashboardCardHeader>
           <div className="space-y-2">
             {[
-              { icon: CheckCircle2, label: t('dashboard.success'), value: totalSent.toLocaleString(), bg: "bg-green-50 dark:bg-green-900/20", color: "text-green-600 dark:text-green-400", val: "text-green-700 dark:text-green-400" },
-              { icon: XCircle, label: t('common.error'), value: ms.failed.toLocaleString(), bg: "bg-red-50 dark:bg-red-900/20", color: "text-red-500", val: "text-red-700 dark:text-red-400" },
-              { icon: Clock, label: t('messages.queued'), value: (ms.queued + ms.sending).toLocaleString(), bg: "bg-yellow-50 dark:bg-yellow-900/20", color: "text-yellow-500", val: "text-yellow-700 dark:text-yellow-400" },
-              { icon: Smartphone, label: t('dashboard.session'), value: `${overview.connectedSessions}/${overview.totalSessions}`, bg: "bg-blue-50 dark:bg-blue-900/20", color: "text-blue-500", val: "text-blue-700 dark:text-blue-400" },
+              { icon: CheckCircle2, label: t('dashboard.success'), value: totalSent.toLocaleString(), bg: "bg-emerald-50", color: "text-emerald-600", val: "text-emerald-700" },
+              { icon: XCircle, label: t('common.error'), value: ms.failed.toLocaleString(), bg: "bg-red-50", color: "text-red-500", val: "text-red-700" },
+              { icon: Clock, label: t('messages.queued'), value: (ms.queued + ms.sending).toLocaleString(), bg: "bg-amber-50", color: "text-amber-500", val: "text-amber-700" },
+              { icon: Smartphone, label: t('dashboard.session'), value: `${overview.connectedSessions}/${overview.totalSessions}`, bg: "bg-blue-50", color: "text-blue-500", val: "text-blue-700" },
             ].map(({ icon: Icon, label, value, bg, color, val }) => (
               <div key={label} className={`flex items-center justify-between ${bg} rounded-xl px-3 py-2.5`}>
                 <div className="flex items-center gap-2">
-                  <Icon className={`h-3.5 w-3.5 ${color}`} />
-                  <span className="text-xs font-normal tracking-normal text-gray-600 dark:text-gray-400">{label}</span>
+                  <Icon className={`w-3.5 h-3.5 ${color}`} strokeWidth={1.5} />
+                  <span className="text-xs font-medium text-slate-600">{label}</span>
                 </div>
-                <span className={`text-sm font-semibold tracking-[-0.02em] ${val}`}>{value}</span>
+                <span className={`text-sm font-bold ${val}`}>{value}</span>
               </div>
             ))}
           </div>
-        </div>
+        </DashboardCard>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-[0_0_0_1px_rgba(0,0,0,0.08)] dark:shadow-[0_0_0_1px_rgba(255,255,255,0.08)] p-5">
-          <div className="flex items-center gap-2 mb-4">
-            <div className="h-7 w-7 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-              <Send className="h-3.5 w-3.5 text-gray-500" />
+      {/* Grid de 2 columnas: Recent Campaigns + Recent Messages */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Recent Campaigns */}
+        <DashboardCard padding="lg">
+          <DashboardCardHeader>
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-xl bg-slate-50 flex items-center justify-center">
+                <Send className="w-4 h-4 text-slate-500" strokeWidth={1.5} />
+              </div>
+              <DashboardCardTitle>{t('dashboard.recentCampaigns')}</DashboardCardTitle>
             </div>
-            <p className="text-sm font-medium tracking-[-0.02em] text-gray-800 dark:text-gray-200">{t('dashboard.recentCampaigns')}</p>
-          </div>
+          </DashboardCardHeader>
           {stats.recentCampaigns.length === 0 ? (
             <div className="py-8 text-center">
-              <Send className="h-8 w-8 text-gray-200 mx-auto mb-2" />
-              <p className="text-xs font-normal tracking-normal text-gray-400">{t('dashboard.noCampaigns')}</p>
+              <Send className="w-8 h-8 text-slate-200 mx-auto mb-2" strokeWidth={1.5} />
+              <p className="text-xs text-slate-400">{t('dashboard.noCampaigns')}</p>
             </div>
           ) : (
             <div className="space-y-2">
               {stats.recentCampaigns.map((c) => (
-                <div key={c.id} className="flex items-center justify-between py-2 px-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                <div key={c.id} className="flex items-center justify-between py-2.5 px-3 rounded-xl hover:bg-slate-50 transition-colors">
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs font-medium tracking-[-0.02em] text-gray-800 dark:text-gray-200 truncate">{c.name}</p>
+                    <p className="text-sm font-semibold text-slate-900 truncate">{c.name}</p>
                     <div className="flex items-center gap-1.5 mt-0.5">
-                      <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${statusColors[c.status]}`}>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${statusColors[c.status]}`}>
                         {statusLabels[c.status] || c.status}
                       </span>
-                      <span className="text-[10px] font-normal tracking-normal text-gray-400">{new Date(c.createdAt).toLocaleDateString()}</span>
+                      <span className="text-[10px] text-slate-400">{new Date(c.createdAt).toLocaleDateString()}</span>
                     </div>
                   </div>
                   <div className="text-right ml-3">
-                    <p className="text-xs font-semibold tracking-[-0.02em] text-gray-900 dark:text-gray-100">{c.sentCount}/{c.totalContacts}</p>
-                    <p className="text-[10px] font-normal tracking-normal text-gray-400">{t('messages.sent')}</p>
+                    <p className="text-sm font-bold text-slate-900">{c.sentCount}/{c.totalContacts}</p>
+                    <p className="text-[10px] text-slate-400">{t('messages.sent')}</p>
                   </div>
                 </div>
               ))}
             </div>
           )}
-        </div>
+        </DashboardCard>
 
-        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-[0_0_0_1px_rgba(0,0,0,0.08)] dark:shadow-[0_0_0_1px_rgba(255,255,255,0.08)] p-5">
-          <div className="flex items-center gap-2 mb-4">
-            <div className="h-7 w-7 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-              <MessageSquare className="h-3.5 w-3.5 text-gray-500" />
+        {/* Recent Messages */}
+        <DashboardCard padding="lg">
+          <DashboardCardHeader>
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-xl bg-slate-50 flex items-center justify-center">
+                <MessageSquare className="w-4 h-4 text-slate-500" strokeWidth={1.5} />
+              </div>
+              <DashboardCardTitle>{t('dashboard.recentMessages')}</DashboardCardTitle>
             </div>
-            <p className="text-sm font-medium tracking-[-0.02em] text-gray-800 dark:text-gray-200">{t('dashboard.recentMessages')}</p>
-          </div>
+          </DashboardCardHeader>
           {stats.recentMessages.length === 0 ? (
             <div className="py-8 text-center">
-              <MessageSquare className="h-8 w-8 text-gray-200 mx-auto mb-2" />
-              <p className="text-xs font-normal tracking-normal text-gray-400">{t('dashboard.noMessages')}</p>
+              <MessageSquare className="w-8 h-8 text-slate-200 mx-auto mb-2" strokeWidth={1.5} />
+              <p className="text-xs text-slate-400">{t('dashboard.noMessages')}</p>
             </div>
           ) : (
             <div className="space-y-1.5">
               {stats.recentMessages.map((msg) => (
-                <div key={msg.id} className="flex items-center gap-2.5 py-2 px-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                <div key={msg.id} className="flex items-center gap-3 py-2 px-3 rounded-xl hover:bg-slate-50 transition-colors">
                   <div className="shrink-0">
                     {["sent","delivered","read"].includes(msg.status)
-                      ? <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
+                      ? <CheckCircle2 className="w-4 h-4 text-emerald-500" strokeWidth={1.5} />
                       : msg.status === "failed"
-                        ? <XCircle className="h-3.5 w-3.5 text-red-500" />
-                        : <Clock className="h-3.5 w-3.5 text-yellow-500" />}
+                        ? <XCircle className="w-4 h-4 text-red-500" strokeWidth={1.5} />
+                        : <Clock className="w-4 h-4 text-amber-500" strokeWidth={1.5} />}
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5">
-                      <span className="text-[10px] font-mono text-gray-400">{msg.phone}</span>
-                      <span className="text-[10px] bg-gray-100 dark:bg-gray-800 text-gray-500 px-1.5 py-0.5 rounded-full">
+                      <span className="text-[10px] font-mono text-slate-400">{msg.phone}</span>
+                      <span className="text-[10px] bg-slate-50 text-slate-500 px-1.5 py-0.5 rounded-full font-semibold">
                         {msgStatusLabels[msg.status] || msg.status}
                       </span>
                     </div>
-                    <p className="text-xs font-normal tracking-normal text-gray-700 dark:text-gray-300 truncate mt-0.5">{msg.content}</p>
+                    <p className="text-xs text-slate-600 truncate mt-0.5">{msg.content}</p>
                   </div>
-                  <span className="text-[10px] font-normal tracking-normal text-gray-400 shrink-0">
+                  <span className="text-[10px] text-slate-400 shrink-0">
                     {new Date(msg.createdAt).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })}
                   </span>
                 </div>
               ))}
             </div>
           )}
-        </div>
+        </DashboardCard>
       </div>
     </div>
   );

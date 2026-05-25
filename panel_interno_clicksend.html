@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClickSend - Consola de Envíos Seguros</title>
+    
+    <!-- Fuentes premium de Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Plus Jakarta Sans', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        body {
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        /* Transiciones suaves para colapsar/expandir opciones */
+        .settings-pane {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease;
+            opacity: 0;
+        }
+        .settings-pane.active {
+            max-height: 300px;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="bg-[#F8FAFC] font-sans text-slate-800 min-h-screen flex">
+
+    <!-- MENU LATERAL (SIDEBAR) -->
+    <aside class="w-64 border-r border-slate-100 bg-white flex flex-col justify-between p-6 shrink-0 hidden md:flex">
+        <div class="space-y-8">
+            <!-- Logotipo ClickSend -->
+            <div class="flex items-center gap-2">
+                <span class="font-display text-2xl font-extrabold tracking-tight text-slate-900">
+                    Click<span class="text-emerald-600">Send</span>
+                </span>
+            </div>
+
+            <!-- Enlaces de navegación interactivos -->
+            <nav class="space-y-1">
+                <button onclick="switchTab('dashboard')" id="nav-dashboard" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all text-emerald-600 bg-emerald-50/50">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6a7.5 7.5 0 107.5 7.5h-7.5V6z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 10.5H21A7.5 7.5 0 0013.5 3v7.5z" />
+                    </svg>
+                    <span>Dashboard</span>
+                </button>
+                <button onclick="switchTab('campanas')" id="nav-campanas" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all text-slate-500 hover:text-slate-900 hover:bg-slate-50">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.59 14.37a6 6 0 01-5.84 7.38v-4.8a3.07 3.07 0 002.25-1.57l3.59-1.01z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 14.25a3 3 0 003-3V3.75a3 3 0 10-6 0v7.5a3 3 0 003 3z" />
+                    </svg>
+                    <span>Control de Campañas</span>
+                </button>
+                <button onclick="switchTab('plantillas')" id="nav-plantillas" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all text-slate-500 hover:text-slate-900 hover:bg-slate-50">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                    </svg>
+                    <span>Plantillas de Meta</span>
+                </button>
+            </nav>
+        </div>
+
+        <!-- Estado de la Cuenta conectada (Cuidamos tu cuenta) -->
+        <div class="border border-slate-100 rounded-2xl p-4 bg-slate-50/50 space-y-3">
+            <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Salud de Cuenta</span>
+            </div>
+            <div>
+                <p class="text-sm font-semibold text-slate-900">Excelente protección</p>
+                <p class="text-[11px] text-slate-500 mt-0.5">Límites optimizados para evitar spam de Meta.</p>
+            </div>
+        </div>
+    </aside>
+
+    <!-- AREA DE CONTENIDO PRINCIPAL -->
+    <main class="flex-1 flex flex-col min-w-0 overflow-y-auto">
+        
+        <!-- CABEZAL SUPERIOR (TOPBAR) -->
+        <header class="h-20 border-b border-slate-100 bg-white flex items-center justify-between px-6 md:px-10 shrink-0">
+            <!-- Ubicación actual interactiva (Breadcrumbs) -->
+            <div>
+                <span class="text-xs font-semibold text-slate-400 uppercase tracking-widest">ClickSend Consola</span>
+                <h2 id="current-location-title" class="font-display text-lg font-bold text-slate-900 mt-0.5">Dashboard</h2>
+            </div>
+
+            <!-- Acciones rápidas & Perfil de Usuario -->
+            <div class="flex items-center gap-4">
+                <!-- Estado Conectado Oficial -->
+                <div class="hidden sm:flex items-center gap-2 bg-emerald-50 border border-emerald-100 px-3 py-1.5 rounded-full">
+                    <svg class="w-4 h-4 text-emerald-600 fill-current" viewBox="0 0 24 24">
+                        <path d="M16.4 6c-1.8 0-3.4 1-4.4 2.5C11 7 9.4 6 7.6 6 4.5 6 2 8.5 2 11.6s2.5 5.6 5.6 5.6c1.8 0 3.4-1 4.4-2.5 1 1.5 2.6 2.5 4.4 2.5 3.1 0 5.6-2.5 5.6-5.6S19.5 6 16.4 6zm-8.8 9.2c-2 0-3.6-1.6-3.6-3.6S5.6 8 7.6 8c1.3 0 2.5.7 3.1 1.8-.8 1.4-.8 3.2 0 4.6-.6 1.1-1.8 1.8-3.1 1.8zm8.8 0c-1.3 0-2.5-.7-3.1-1.8.8-1.4.8-3.2 0-4.6.6-1.1 1.8-1.8 3.1-1.8 2 0 3.6 1.6 3.6 3.6s-1.6 3.6-3.6 3.6z"/>
+                    </svg>
+                    <span class="text-[11px] font-bold text-emerald-700 uppercase tracking-wider">Conectado a Meta</span>
+                </div>
+
+                <!-- Notificaciones sutiles -->
+                <button class="w-10 h-10 border border-slate-100 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors relative">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
+                    </svg>
+                    <span class="absolute top-2 right-2 w-2 h-2 rounded-full bg-emerald-500"></span>
+                </button>
+
+                <!-- Avatar de Usuario -->
+                <div class="w-10 h-10 rounded-full border border-slate-100 flex items-center justify-center bg-slate-50 overflow-hidden">
+                    <svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                    </svg>
+                </div>
+            </div>
+        </header>
+
+        <!-- ESPACIO DE TRABAJO (CONTENEDOR DE PESTAÑAS) -->
+        <div class="p-6 md:p-10 max-w-6xl w-full mx-auto space-y-8">
+
+            <!-- 1. VISTA: DASHBOARD GENERAL -->
+            <section id="tab-content-dashboard" class="space-y-8">
+                <!-- Encabezado Inspirador -->
+                <div>
+                    <h1 class="font-display text-2xl md:text-3xl font-bold text-slate-900 tracking-tight">
+                        Cuidamos de <span class="text-emerald-500 font-extrabold">ti</span> y de tu <span class="text-emerald-500 font-extrabold">tiempo</span>.
+                    </h1>
+                    <p class="text-slate-400 text-sm mt-1">Aquí tienes un resumen de la actividad y la salud de tus envíos hoy.</p>
+                </div>
+
+                <!-- Tarjetas de métricas rápidas (KPIs) -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-white border border-slate-100 rounded-3xl p-6 shadow-[0_4px_20px_rgba(0,0,0,0.01)] flex justify-between items-center">
+                        <div>
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Entregas Exitosas</span>
+                            <p class="font-display text-3xl font-extrabold text-slate-900 mt-2">15,482</p>
+                            <p class="text-xs text-emerald-600 font-medium mt-1">↑ 98.6% tasa de entrega</p>
+                        </div>
+                        <div class="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-600">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                    </div>
+
+                    <div class="bg-white border border-slate-100 rounded-3xl p-6 shadow-[0_4px_20px_rgba(0,0,0,0.01)] flex justify-between items-center">
+                        <div>
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Tiempo Ahorrado</span>
+                            <p class="font-display text-3xl font-extrabold text-slate-900 mt-2">4.2 horas</p>
+                            <p class="text-xs text-slate-400 font-medium mt-1">Hoy gracias a la automatización</p>
+                        </div>
+                        <div class="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                    </div>
+
+                    <div class="bg-white border border-slate-100 rounded-3xl p-6 shadow-[0_4px_20px_rgba(0,0,0,0.01)] flex justify-between items-center">
+                        <div>
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Línea Conectada</span>
+                            <p class="font-display text-lg font-bold text-slate-900 mt-2">+57 313 8418314</p>
+                            <p class="text-xs text-emerald-600 font-medium mt-1">● Canal Oficial Validado</p>
+                        </div>
+                        <div class="w-12 h-12 rounded-2xl bg-emerald-50/50 flex items-center justify-center text-emerald-600">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.387a12.017 12.017 0 01-4.5-4.5c-.155-.44.01-.927.387-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gráfico de tendencia de entregas lineal y minimalista -->
+                <div class="bg-white border border-slate-100 rounded-[32px] p-6 md:p-8 shadow-[0_4px_30px_rgba(0,0,0,0.01)]">
+                    <div class="flex justify-between items-center mb-6">
+                        <div>
+                            <h3 class="font-display text-base font-bold text-slate-900">Historial de Envíos del Mes</h3>
+                            <p class="text-xs text-slate-400">Total de mensajes despachados sin bloqueos.</p>
+                        </div>
+                    </div>
+                    <!-- Dibujo lineal nativo en SVG del gráfico para máxima consistencia visual -->
+                    <div class="w-full h-48">
+                        <svg class="w-full h-full" viewBox="0 0 1000 200" preserveAspectRatio="none">
+                            <defs>
+                                <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stop-color="#10B981" stop-opacity="0.1" />
+                                    <stop offset="100%" stop-color="#10B981" stop-opacity="0" />
+                                </linearGradient>
+                            </defs>
+                            <!-- Grilla sutil -->
+                            <line x1="0" y1="50" x2="1000" y2="50" stroke="#F1F5F9" stroke-width="1" />
+                            <line x1="0" y1="100" x2="1000" y2="100" stroke="#F1F5F9" stroke-width="1" />
+                            <line x1="0" y1="150" x2="1000" y2="150" stroke="#F1F5F9" stroke-width="1" />
+                            <!-- Gráfico de área -->
+                            <path d="M0,200 L0,150 Q150,130 300,120 T600,60 T900,40 L1000,30 L1000,200 Z" fill="url(#chartGradient)" />
+                            <!-- Gráfico de línea principal -->
+                            <path d="M0,150 Q150,130 300,120 T600,60 T900,40 L1000,30" fill="none" stroke="#10B981" stroke-width="3" stroke-linecap="round" />
+                            <!-- Puntos indicadores -->
+                            <circle cx="300" cy="120" r="5" fill="#10B981" stroke="#FFFFFF" stroke-width="2" />
+                            <circle cx="600" cy="60" r="5" fill="#10B981" stroke="#FFFFFF" stroke-width="2" />
+                            <circle cx="1000" cy="30" r="5" fill="#10B981" stroke="#FFFFFF" stroke-width="2" />
+                        </svg>
+                    </div>
+                    <div class="flex justify-between text-[11px] text-slate-400 font-semibold tracking-wider uppercase mt-4">
+                        <span>Semana 1</span>
+                        <span>Semana 2</span>
+                        <span>Semana 3</span>
+                        <span>Semana actual</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 2. VISTA: CONTROL DE CAMPAÑAS -->
+            <section id="tab-content-campanas" class="space-y-8 hidden">
+                <!-- Encabezado de Sección -->
+                <div>
+                    <h1 class="font-display text-2xl md:text-3xl font-bold text-slate-900 tracking-tight">Control de Campañas</h1>
+                    <p class="text-slate-400 text-sm mt-1">Configura límites inteligentes, procesos de calentamiento y tiempos de espera aleatorios.</p>
+                </div>
+
+                <!-- Grid de Tarjetas de Configuración Modulares -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    
+                    <!-- Tarjeta 1: Límite Diario -->
+                    <div class="bg-white border border-slate-100 rounded-[32px] p-6 shadow-[0_4px_30px_rgba(0,0,0,0.01)] flex flex-col justify-between">
+                        <div class="space-y-4">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <h3 class="font-display text-base font-bold text-slate-900">Límite Diario</h3>
+                                    <p class="text-xs text-slate-400 mt-1">Controla cuántos mensajes se pueden despachar cada 24 horas.</p>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" id="toggle-limite" class="sr-only peer" onchange="togglePane('pane-limite', this)">
+                                    <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+                                </label>
+                            </div>
+
+                            <!-- Área Expandible de Configuración -->
+                            <div id="pane-limite" class="settings-pane space-y-4">
+                                <div class="border-t border-slate-50 pt-4 space-y-2">
+                                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest">Límite de Envíos Diarios</label>
+                                    <input type="number" value="1000" class="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all font-semibold">
+                                    <p class="text-[11px] text-slate-400">Meta recomienda un límite de 1,000 para cuentas de nivel básico.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tarjeta 2: Calentamiento / Warm-up -->
+                    <div class="bg-white border border-slate-100 rounded-[32px] p-6 shadow-[0_4px_30px_rgba(0,0,0,0.01)] flex flex-col justify-between">
+                        <div class="space-y-4">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <h3 class="font-display text-base font-bold text-slate-900">Calentamiento (Warm-up)</h3>
+                                    <p class="text-xs text-slate-400 mt-1">Incrementa de forma automática y progresiva el volumen de envíos diarios.</p>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" id="toggle-warmup" class="sr-only peer" onchange="togglePane('pane-warmup', this)">
+                                    <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+                                </label>
+                            </div>
+
+                            <!-- Área Expandible de Configuración -->
+                            <div id="pane-warmup" class="settings-pane space-y-4">
+                                <div class="border-t border-slate-50 pt-4 flex gap-4 items-center">
+                                    <div class="w-1/2">
+                                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Días de curva</label>
+                                        <input type="number" value="7" class="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-500 transition-all font-semibold">
+                                    </div>
+                                    <!-- Dibujo de la curva en miniatura -->
+                                    <div class="w-1/2 h-14 bg-slate-50 border border-slate-100 rounded-xl p-2 flex items-end">
+                                        <svg class="w-full h-8" viewBox="0 0 100 30">
+                                            <path d="M0,30 Q50,25 100,5" fill="none" stroke="#10B981" stroke-width="2" stroke-linecap="round" />
+                                            <circle cx="100" cy="5" r="3" fill="#10B981" />
+                                        </svg>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tarjeta 3: Spintax -->
+                    <div class="bg-white border border-slate-100 rounded-[32px] p-6 shadow-[0_4px_30px_rgba(0,0,0,0.01)] flex flex-col justify-between">
+                        <div class="space-y-4">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <h3 class="font-display text-base font-bold text-slate-900">Spintax (Variación de Mensaje)</h3>
+                                    <p class="text-xs text-slate-400 mt-1">Altera aleatoriamente palabras del mensaje para despistar la detección de spam.</p>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" id="toggle-spintax" class="sr-only peer" onchange="togglePane('pane-spintax', this)">
+                                    <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+                                </label>
+                            </div>
+
+                            <!-- Área Expandible de Configuración -->
+                            <div id="pane-spintax" class="settings-pane space-y-4">
+                                <div class="border-t border-slate-50 pt-4 space-y-2">
+                                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest">Estructura base de ejemplo</label>
+                                    <textarea class="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-xs font-mono focus:outline-none focus:border-emerald-500 transition-all h-20" readonly>{Hola|Buen día|Saludos}, tenemos una oferta especial...</textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tarjeta 4: Cooldown / Espera -->
+                    <div class="bg-white border border-slate-100 rounded-[32px] p-6 shadow-[0_4px_30px_rgba(0,0,0,0.01)] flex flex-col justify-between">
+                        <div class="space-y-4">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <h3 class="font-display text-base font-bold text-slate-900">Cooldown (Tiempo de Espera)</h3>
+                                    <p class="text-xs text-slate-400 mt-1">Establece lapsos aleatorios de tiempo de espera entre cada mensaje enviado.</p>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" id="toggle-cooldown" class="sr-only peer" onchange="togglePane('pane-cooldown', this)">
+                                    <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+                                </label>
+                            </div>
+
+                            <!-- Área Expandible de Configuración -->
+                            <div id="pane-cooldown" class="settings-pane space-y-4">
+                                <div class="border-t border-slate-50 pt-4 space-y-2">
+                                    <div class="flex justify-between text-xs font-bold text-slate-400 uppercase tracking-widest">
+                                        <span>Rango de Espera</span>
+                                        <span id="cooldown-range-value" class="text-emerald-600 font-extrabold">30 - 60 segundos</span>
+                                    </div>
+                                    <input type="range" min="5" max="120" value="45" oninput="updateCooldownValue(this.value)" class="w-full accent-emerald-500">
+                                    <div class="flex justify-between text-[10px] text-slate-400">
+                                        <span>Envío Rápido (5s)</span>
+                                        <span>Ultra Seguro (120s)</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Botón de acción unificado para guardar -->
+                <div class="flex justify-end pt-4">
+                    <button onclick="triggerToast('Configuración de campaña actualizada con éxito')" class="bg-slate-900 hover:bg-slate-800 text-white font-semibold text-sm px-8 py-4 rounded-2xl shadow-sm transition-all flex items-center gap-2">
+                        <span>Guardar Configuración</span>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.244 11.244a3 3 0 11-4.243-4.243m4.242 4.243a3 3 0 00-4.243-4.243m4.242 4.243H21m-6 0H3" />
+                        </svg>
+                    </button>
+                </div>
+            </section>
+
+            <!-- 3. VISTA: PLANTILLAS DE META -->
+            <section id="tab-content-plantillas" class="space-y-8 hidden">
+                <!-- Encabezado de Sección -->
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                        <h1 class="font-display text-2xl md:text-3xl font-bold text-slate-900 tracking-tight">Plantillas de Meta</h1>
+                        <p class="text-slate-400 text-sm mt-1">Gestiona y sincroniza las plantillas HSM de tu cuenta de Meta.</p>
+                        <!-- Información WABA -->
+                        <div class="flex items-center gap-2 mt-3 text-xs font-semibold text-slate-500">
+                            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                            <span>Meta WABA ID: +57 313 8418314 (1186945711159195)</span>
+                        </div>
+                    </div>
+                    <!-- Botones de Acción -->
+                    <div class="flex gap-3">
+                        <button onclick="triggerToast('Plantillas sincronizadas desde Meta')" class="border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-sm px-5 py-3 rounded-2xl transition-all">
+                            Sincronizar
+                        </button>
+                        <button onclick="triggerToast('Función disponible en versión completa')" class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm px-5 py-3 rounded-2xl shadow-[0_4px_12px_rgba(16,185,129,0.15)] transition-all">
+                            + Nueva Plantilla
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Bloques de Métricas de Plantillas -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="bg-white border border-slate-100 rounded-2xl p-4 shadow-[0_4px_20px_rgba(0,0,0,0.01)]">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Approved</span>
+                        <div class="flex items-center justify-between mt-1">
+                            <span class="font-display text-xl font-bold text-slate-900">0</span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-slate-300"></span>
+                        </div>
+                    </div>
+                    <div class="bg-white border border-slate-100 rounded-2xl p-4 shadow-[0_4px_20px_rgba(0,0,0,0.01)]">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Pending</span>
+                        <div class="flex items-center justify-between mt-1">
+                            <span class="font-display text-xl font-bold text-amber-500">1</span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"></span>
+                        </div>
+                    </div>
+                    <div class="bg-white border border-slate-100 rounded-2xl p-4 shadow-[0_4px_20px_rgba(0,0,0,0.01)]">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Rejected</span>
+                        <div class="flex items-center justify-between mt-1">
+                            <span class="font-display text-xl font-bold text-slate-900">0</span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-slate-300"></span>
+                        </div>
+                    </div>
+                    <div class="bg-white border border-slate-100 rounded-2xl p-4 shadow-[0_4px_20px_rgba(0,0,0,0.01)]">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total</span>
+                        <div class="flex items-center justify-between mt-1">
+                            <span class="font-display text-xl font-bold text-slate-900">1</span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-slate-600"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabs Internos de Categorías -->
+                <div class="flex gap-6 border-b border-slate-100 pb-2">
+                    <button class="text-xs font-bold text-emerald-600 border-b-2 border-emerald-500 pb-2">Todas</button>
+                    <button class="text-xs font-bold text-slate-400 hover:text-slate-600 pb-2">MARKETING (1)</button>
+                    <button class="text-xs font-bold text-slate-400 hover:text-slate-600 pb-2">UTILITY (0)</button>
+                </div>
+
+                <!-- Tabla de Plantillas HSM (Estilo Premium) -->
+                <div class="bg-white border border-slate-100 rounded-[32px] overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.01)]">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="border-b border-slate-50 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                                    <th class="py-5 px-6">Nombre</th>
+                                    <th class="py-5 px-6">Categoría</th>
+                                    <th class="py-5 px-6">Idioma</th>
+                                    <th class="py-5 px-6">Estado</th>
+                                    <th class="py-5 px-6">Componentes (Previsualización)</th>
+                                    <th class="py-5 px-6 text-right">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-50 text-sm font-medium">
+                                <tr class="hover:bg-slate-50/50 transition-colors">
+                                    <td class="py-5 px-6 font-mono text-xs text-slate-900">promo_imagen</td>
+                                    <td class="py-5 px-6">
+                                        <span class="inline-flex px-2.5 py-1 rounded-md bg-slate-50 border border-slate-100 text-[10px] font-bold text-slate-500 tracking-wide uppercase">Marketing</span>
+                                    </td>
+                                    <td class="py-5 px-6 text-slate-500 uppercase">es</td>
+                                    <td class="py-5 px-6">
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 text-xs font-bold">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                                            Pending
+                                        </span>
+                                    </td>
+                                    <td class="py-5 px-6 max-w-xs">
+                                        <p class="text-slate-500 text-xs truncate">Variables/Texto: "Hola {{1}}, tenemos una promoción especial para ti. ¡No te la pierdas!"</p>
+                                    </td>
+                                    <td class="py-5 px-6 text-right">
+                                        <div class="flex justify-end gap-2 text-slate-400">
+                                            <button onclick="triggerToast('Previsualización abierta')" class="p-1 hover:text-slate-900 transition-colors">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                </svg>
+                                            </button>
+                                            <button onclick="triggerToast('Opciones de plantilla desplegadas')" class="p-1 hover:text-slate-900 transition-colors">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <!-- COMPONENTE DE NOTIFICACIÓN FLOTANTE (TOAST) -->
+    <div id="toast-message" class="fixed bottom-6 right-6 bg-slate-900 text-white font-semibold text-xs px-5 py-4 rounded-2xl shadow-xl flex items-center gap-3 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none z-50">
+        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+        <span id="toast-text">Configuración actualizada</span>
+    </div>
+
+    <!-- LOGICA SENSORIAL DEL SISTEMA (VANILLA JAVASCRIPT) -->
+    <script>
+        // Navegación Interactiva de Pestañas
+        function switchTab(tabId) {
+            // Secciones de contenido
+            const sections = ['dashboard', 'campanas', 'plantillas'];
+            sections.forEach(s => {
+                const element = document.getElementById(`tab-content-${s}`);
+                if (element) {
+                    element.classList.add('hidden');
+                }
+                
+                // Reset de estilo del sidebar
+                const navBtn = document.getElementById(`nav-${s}`);
+                if (navBtn) {
+                    navBtn.className = "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all text-slate-500 hover:text-slate-900 hover:bg-slate-50";
+                }
+            });
+
+            // Activar la seleccionada
+            document.getElementById(`tab-content-${tabId}`).classList.remove('hidden');
+            
+            // Pintar activo el botón correspondiente en el menú lateral
+            const activeBtn = document.getElementById(`nav-${tabId}`);
+            activeBtn.className = "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all text-emerald-600 bg-emerald-50/50";
+
+            // Modificar título superior de navegación
+            const titleMap = {
+                'dashboard': 'Dashboard',
+                'campanas': 'Control de Campañas',
+                'plantillas': 'Plantillas de Meta'
+            };
+            document.getElementById('current-location-title').innerText = titleMap[tabId];
+        }
+
+        // Expansión interactiva de las tarjetas de configuración
+        function togglePane(paneId, checkbox) {
+            const pane = document.getElementById(paneId);
+            if (checkbox.checked) {
+                pane.classList.add('active');
+            } else {
+                pane.classList.remove('active');
+            }
+        }
+
+        // Mostrar valor en tiempo real de Cooldown
+        function updateCooldownValue(val) {
+            const min = Math.max(5, val - 15);
+            const max = parseInt(val) + 15;
+            document.getElementById('cooldown-range-value').innerText = `${min} - ${max} segundos`;
+        }
+
+        // Activación de la alerta flotante sutil (Toast)
+        function triggerToast(message) {
+            const toast = document.getElementById('toast-message');
+            document.getElementById('toast-text').innerText = message;
+            
+            // Slide de entrada
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            // Slide de salida automático
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
