@@ -100,10 +100,10 @@ export default function DashboardPage() {
     <div className="bg-gray-50/50 dark:bg-gray-950/50 p-3 md:p-6 space-y-3 md:space-y-4">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-lg md:text-xl font-semibold text-gray-900 dark:text-gray-100 tracking-tight">{t('nav.dashboard')}</h1>
-          <p className="text-xs text-gray-400 mt-0.5">{t('dashboard.overview')}</p>
+          <h1 className="text-lg md:text-xl font-semibold tracking-[-0.04em] text-gray-900 dark:text-gray-100">{t('nav.dashboard')}</h1>
+          <p className="text-xs font-normal tracking-normal text-gray-400 mt-0.5">{t('dashboard.overview')}</p>
         </div>
-        <div className={`flex items-center gap-2 text-xs font-medium px-3 py-1.5 rounded-xl border ${
+        <div className={`flex items-center gap-2 text-xs font-medium tracking-normal px-3 py-1.5 rounded-xl shadow-[0_0_0_1px_rgba(0,0,0,0.08)] ${
           overview.connectedSessions > 0
             ? "bg-green-50 border-green-200 text-green-700 dark:bg-green-900/20 dark:border-green-800 dark:text-green-400"
             : "bg-red-50 border-red-200 text-red-700 dark:bg-red-900/20 dark:border-red-800 dark:text-red-400"
@@ -116,31 +116,31 @@ export default function DashboardPage() {
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {statCards.map(({ label, value, sub, icon: Icon, color, iconColor }) => (
-          <div key={label} className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-3 md:p-4">
+          <div key={label} className="bg-white dark:bg-gray-900 rounded-2xl shadow-[0_0_0_1px_rgba(0,0,0,0.08)] dark:shadow-[0_0_0_1px_rgba(255,255,255,0.08)] p-3 md:p-4">
             <div className="flex items-center justify-between mb-3">
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{label}</p>
+              <p className="text-xs font-normal tracking-normal text-gray-400 uppercase">{label}</p>
               <div className={`h-8 w-8 rounded-xl ${color} flex items-center justify-center`}>
                 <Icon className={`h-4 w-4 ${iconColor}`} />
               </div>
             </div>
-            <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-100">{value}</p>
-            <p className="text-xs text-gray-400 mt-0.5">{sub}</p>
+            <p className="text-xl md:text-2xl font-semibold tracking-[-0.03em] text-gray-900 dark:text-gray-100">{value}</p>
+            <p className="text-xs font-normal tracking-normal text-gray-400 mt-0.5">{sub}</p>
           </div>
         ))}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-        <div className="lg:col-span-2 bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-3 md:p-5">
+        <div className="lg:col-span-2 bg-white dark:bg-gray-900 rounded-2xl shadow-[0_0_0_1px_rgba(0,0,0,0.08)] dark:shadow-[0_0_0_1px_rgba(255,255,255,0.08)] p-3 md:p-5">
           <div className="flex items-center gap-2 mb-4">
             <div className="h-7 w-7 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
               <Activity className="h-3.5 w-3.5 text-gray-500" />
             </div>
-            <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">{t('messages.status')}</p>
+            <p className="text-sm font-medium tracking-[-0.02em] text-gray-800 dark:text-gray-200">{t('messages.status')}</p>
           </div>
           <div className="space-y-2.5">
             {msgBars.map(({ label, value, color }) => (
               <div key={label} className="flex items-center gap-3">
-                <span className="text-xs text-gray-400 w-20 shrink-0">{label}</span>
+                <span className="text-xs font-normal tracking-normal text-gray-400 w-20 shrink-0">{label}</span>
                 <div className="flex-1 h-6 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
                   <div
                     className={`h-full ${color} rounded-full transition-all duration-500 flex items-center justify-end pr-2`}
@@ -155,12 +155,12 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-5">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-[0_0_0_1px_rgba(0,0,0,0.08)] dark:shadow-[0_0_0_1px_rgba(255,255,255,0.08)] p-5">
           <div className="flex items-center gap-2 mb-4">
             <div className="h-7 w-7 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
               <TrendingUp className="h-3.5 w-3.5 text-gray-500" />
             </div>
-            <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">{t('dashboard.quickActions')}</p>
+            <p className="text-sm font-medium tracking-[-0.02em] text-gray-800 dark:text-gray-200">{t('dashboard.quickActions')}</p>
           </div>
           <div className="space-y-2">
             {[
@@ -172,9 +172,9 @@ export default function DashboardPage() {
               <div key={label} className={`flex items-center justify-between ${bg} rounded-xl px-3 py-2.5`}>
                 <div className="flex items-center gap-2">
                   <Icon className={`h-3.5 w-3.5 ${color}`} />
-                  <span className="text-xs font-medium text-gray-600 dark:text-gray-400">{label}</span>
+                  <span className="text-xs font-normal tracking-normal text-gray-600 dark:text-gray-400">{label}</span>
                 </div>
-                <span className={`text-sm font-bold ${val}`}>{value}</span>
+                <span className={`text-sm font-semibold tracking-[-0.02em] ${val}`}>{value}</span>
               </div>
             ))}
           </div>
@@ -182,34 +182,34 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-5">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-[0_0_0_1px_rgba(0,0,0,0.08)] dark:shadow-[0_0_0_1px_rgba(255,255,255,0.08)] p-5">
           <div className="flex items-center gap-2 mb-4">
             <div className="h-7 w-7 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
               <Send className="h-3.5 w-3.5 text-gray-500" />
             </div>
-            <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">{t('dashboard.recentCampaigns')}</p>
+            <p className="text-sm font-medium tracking-[-0.02em] text-gray-800 dark:text-gray-200">{t('dashboard.recentCampaigns')}</p>
           </div>
           {stats.recentCampaigns.length === 0 ? (
             <div className="py-8 text-center">
               <Send className="h-8 w-8 text-gray-200 mx-auto mb-2" />
-              <p className="text-xs text-gray-400">{t('dashboard.noCampaigns')}</p>
+              <p className="text-xs font-normal tracking-normal text-gray-400">{t('dashboard.noCampaigns')}</p>
             </div>
           ) : (
             <div className="space-y-2">
               {stats.recentCampaigns.map((c) => (
                 <div key={c.id} className="flex items-center justify-between py-2 px-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs font-medium text-gray-800 dark:text-gray-200 truncate">{c.name}</p>
+                    <p className="text-xs font-medium tracking-[-0.02em] text-gray-800 dark:text-gray-200 truncate">{c.name}</p>
                     <div className="flex items-center gap-1.5 mt-0.5">
                       <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${statusColors[c.status]}`}>
                         {statusLabels[c.status] || c.status}
                       </span>
-                      <span className="text-[10px] text-gray-400">{new Date(c.createdAt).toLocaleDateString()}</span>
+                      <span className="text-[10px] font-normal tracking-normal text-gray-400">{new Date(c.createdAt).toLocaleDateString()}</span>
                     </div>
                   </div>
                   <div className="text-right ml-3">
-                    <p className="text-xs font-bold text-gray-900 dark:text-gray-100">{c.sentCount}/{c.totalContacts}</p>
-                    <p className="text-[10px] text-gray-400">{t('messages.sent')}</p>
+                    <p className="text-xs font-semibold tracking-[-0.02em] text-gray-900 dark:text-gray-100">{c.sentCount}/{c.totalContacts}</p>
+                    <p className="text-[10px] font-normal tracking-normal text-gray-400">{t('messages.sent')}</p>
                   </div>
                 </div>
               ))}
@@ -217,17 +217,17 @@ export default function DashboardPage() {
           )}
         </div>
 
-        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-5">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-[0_0_0_1px_rgba(0,0,0,0.08)] dark:shadow-[0_0_0_1px_rgba(255,255,255,0.08)] p-5">
           <div className="flex items-center gap-2 mb-4">
             <div className="h-7 w-7 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
               <MessageSquare className="h-3.5 w-3.5 text-gray-500" />
             </div>
-            <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">{t('dashboard.recentMessages')}</p>
+            <p className="text-sm font-medium tracking-[-0.02em] text-gray-800 dark:text-gray-200">{t('dashboard.recentMessages')}</p>
           </div>
           {stats.recentMessages.length === 0 ? (
             <div className="py-8 text-center">
               <MessageSquare className="h-8 w-8 text-gray-200 mx-auto mb-2" />
-              <p className="text-xs text-gray-400">{t('dashboard.noMessages')}</p>
+              <p className="text-xs font-normal tracking-normal text-gray-400">{t('dashboard.noMessages')}</p>
             </div>
           ) : (
             <div className="space-y-1.5">
@@ -247,9 +247,9 @@ export default function DashboardPage() {
                         {msgStatusLabels[msg.status] || msg.status}
                       </span>
                     </div>
-                    <p className="text-xs text-gray-700 dark:text-gray-300 truncate mt-0.5">{msg.content}</p>
+                    <p className="text-xs font-normal tracking-normal text-gray-700 dark:text-gray-300 truncate mt-0.5">{msg.content}</p>
                   </div>
-                  <span className="text-[10px] text-gray-400 shrink-0">
+                  <span className="text-[10px] font-normal tracking-normal text-gray-400 shrink-0">
                     {new Date(msg.createdAt).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })}
                   </span>
                 </div>

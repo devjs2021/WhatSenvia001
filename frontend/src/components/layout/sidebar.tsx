@@ -108,7 +108,7 @@ export function TopNav() {
           <div className="flex items-center gap-1 md:gap-1.5 overflow-x-auto">
             <div className="flex items-center gap-2 mr-3 shrink-0">
               <Image src="/logo.png" alt="CallMesd" width={26} height={26} className="rounded-full" />
-              <span className="text-sm font-bold tracking-tight hidden sm:block">CallMesd</span>
+              <span className="text-sm font-semibold tracking-[-0.02em] hidden sm:block">CallMesd</span>
             </div>
             {visibleNav.map((item) => {
               const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
@@ -117,7 +117,7 @@ export function TopNav() {
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    "flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm font-medium transition-all duration-150 whitespace-nowrap shrink-0",
+                    "flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm font-medium tracking-[-0.02em] transition-all duration-150 whitespace-nowrap shrink-0",
                     isActive
                       ? "text-primary"
                       : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
@@ -132,7 +132,7 @@ export function TopNav() {
               <Link
                 href="/admin"
                 className={cn(
-                  "flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm font-medium transition-all duration-150 whitespace-nowrap shrink-0",
+                  "flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm font-medium tracking-[-0.02em] transition-all duration-150 whitespace-nowrap shrink-0",
                   pathname.startsWith("/admin")
                     ? "text-primary"
                     : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
@@ -147,7 +147,7 @@ export function TopNav() {
           {/* Right: User info + actions */}
           <div className="flex items-center gap-2 shrink-0">
             {licenseStatus && (
-              <div className="hidden md:flex items-center gap-1.5 text-xs font-medium text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 px-2 py-1 rounded-md">
+              <div className="hidden md:flex items-center gap-1.5 text-xs font-medium tracking-normal text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 px-2 py-1 rounded-md">
                 <AlertTriangle className="h-3 w-3" />
                 <span className="hidden lg:inline">{licenseStatus.message}</span>
               </div>
@@ -156,7 +156,7 @@ export function TopNav() {
               href={supportUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+              className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm font-medium tracking-[-0.02em] text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
               title={t('nav.support')}
             >
               <Headphones className="h-3.5 w-3.5" />
@@ -165,14 +165,14 @@ export function TopNav() {
             <div className="relative">
               <button
                 onClick={() => setUserMenuOpen(!userMenuOpen)}
-                className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+                className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm font-medium tracking-[-0.02em] text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
               >
                 <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center">
                   <span className="text-xs font-semibold text-primary">
                     {user?.name?.charAt(0)?.toUpperCase() || "U"}
                   </span>
                 </div>
-                <span className="hidden md:inline text-xs font-medium text-gray-700 dark:text-gray-300 max-w-[100px] truncate">
+                <span className="hidden md:inline text-xs font-medium tracking-normal text-gray-700 dark:text-gray-300 max-w-[100px] truncate">
                   {user?.name || t('auth.user')}
                 </span>
                 <ChevronDown className="h-3 w-3" />
@@ -180,30 +180,30 @@ export function TopNav() {
               {userMenuOpen && (
                 <>
                   <div className="fixed inset-0 z-10" onClick={() => setUserMenuOpen(false)} />
-                  <div className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 shadow-sm py-1 z-20">
+                  <div className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-gray-900 rounded-lg shadow-[0_0_0_1px_rgba(0,0,0,0.08)] dark:shadow-[0_0_0_1px_rgba(255,255,255,0.08)] py-1 z-20">
                     <div className="px-3 py-2 border-b border-gray-100 dark:border-gray-800">
-                      <p className="text-xs font-semibold truncate">{user?.name || t('auth.user')}</p>
-                      <p className="text-[10px] text-gray-400 truncate">
+                      <p className="text-xs font-semibold tracking-[-0.02em] truncate">{user?.name || t('auth.user')}</p>
+                      <p className="text-[10px] font-normal tracking-normal text-gray-400 truncate">
                         {user?.license?.plan ? `${t('license.plan')} ${user.license.plan}` : user?.role === "admin" ? t('license.admin') : t('license.noLicense')}
                       </p>
                     </div>
                     <div className="px-2 py-1">
                       <button
                         onClick={() => setLocale(currentLocale === 'es' ? 'en' : 'es')}
-                        className="flex items-center gap-2 w-full rounded-md px-2 py-1.5 text-xs font-medium text-gray-500 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                        className="flex items-center gap-2 w-full rounded-md px-2 py-1.5 text-xs font-medium tracking-normal text-gray-500 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                       >
                         <Globe className="h-3 w-3" />
                         {currentLocale === 'es' ? 'English' : 'Español'}
                       </button>
                       <Link
                         href="/privacy-policy"
-                        className="flex items-center gap-2 w-full rounded-md px-2 py-1.5 text-xs font-medium text-gray-500 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                        className="flex items-center gap-2 w-full rounded-md px-2 py-1.5 text-xs font-medium tracking-normal text-gray-500 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                       >
                         {t('nav.privacyPolicy')}
                       </Link>
                       <button
                         onClick={logout}
-                        className="flex items-center gap-2 w-full rounded-md px-2 py-1.5 text-xs font-medium text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+                        className="flex items-center gap-2 w-full rounded-md px-2 py-1.5 text-xs font-medium tracking-normal text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
                       >
                         <LogOut className="h-3 w-3" />
                         {t('auth.logout')}
@@ -232,7 +232,7 @@ export function TopNav() {
             <div className="flex items-center justify-between px-4 h-14 border-b border-gray-200/60 dark:border-gray-800/60">
               <div className="flex items-center gap-2">
                 <Image src="/logo.png" alt="CallMesd" width={28} height={28} className="rounded-full" />
-                <span className="text-sm font-bold tracking-tight">CallMesd</span>
+                <span className="text-sm font-semibold tracking-[-0.02em]">CallMesd</span>
               </div>
               <button
                 onClick={() => setMobileMenuOpen(false)}
@@ -244,7 +244,7 @@ export function TopNav() {
 
             {licenseStatus && (
               <div className={cn(
-                "mx-3 mt-3 rounded-lg p-2.5 text-xs",
+                "mx-3 mt-3 rounded-lg p-2.5 text-xs font-normal tracking-normal",
                 licenseStatus.type === "warning"
                   ? "bg-amber-50 border border-amber-200 text-amber-800 dark:bg-amber-950/30 dark:border-amber-800 dark:text-amber-400"
                   : "bg-red-50 border border-red-200 text-red-800 dark:bg-red-950/30 dark:border-red-800 dark:text-red-400"
@@ -265,7 +265,7 @@ export function TopNav() {
                     href={item.href}
                     onClick={() => setMobileMenuOpen(false)}
                     className={cn(
-                      "flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium transition-all duration-150",
+                      "flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium tracking-[-0.02em] transition-all duration-150",
                       isActive
                         ? "bg-primary/5 text-primary"
                         : "text-gray-500 dark:text-gray-400 hover:bg-gray-100/50 dark:hover:bg-gray-800/50 hover:text-gray-700 dark:hover:text-gray-200"
@@ -281,7 +281,7 @@ export function TopNav() {
                   href="/admin"
                   onClick={() => setMobileMenuOpen(false)}
                   className={cn(
-                    "flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium transition-all duration-150",
+                    "flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium tracking-[-0.02em] transition-all duration-150",
                     pathname.startsWith("/admin")
                       ? "bg-primary/5 text-primary"
                       : "text-gray-500 dark:text-gray-400 hover:bg-gray-100/50 dark:hover:bg-gray-800/50 hover:text-gray-700 dark:hover:text-gray-200"
@@ -296,8 +296,8 @@ export function TopNav() {
             <div className="px-3 pb-3 border-t border-gray-200/60 dark:border-gray-800/60 pt-3">
               <div className="flex items-center justify-between">
                 <div className="min-w-0">
-                  <p className="text-xs font-semibold truncate">{user?.name || t('auth.user')}</p>
-                  <p className="text-[10px] text-gray-400 truncate">
+                  <p className="text-xs font-semibold tracking-[-0.02em] truncate">{user?.name || t('auth.user')}</p>
+                  <p className="text-[10px] font-normal tracking-normal text-gray-400 truncate">
                     {user?.license?.plan ? `${t('license.plan')} ${user.license.plan}` : user?.role === "admin" ? t('license.admin') : t('license.noLicense')}
                   </p>
                 </div>

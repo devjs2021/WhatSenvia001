@@ -7,7 +7,7 @@ import Image from "next/image";
 import { useAuth } from "@/hooks/use-auth";
 import { useI18n } from "@/i18n";
 import { toast } from "sonner";
-import { Eye, EyeOff, Mail, Lock, Globe, Rocket, CheckCircle2, ArrowRight } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, Globe, Rocket, CheckCircle2 } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -42,7 +42,7 @@ export default function LoginPage() {
         <button
           type="button"
           onClick={() => setLocale(locale === 'es' ? 'en' : 'es')}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all text-xs font-semibold text-slate-600 dark:text-slate-400"
+          className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all text-xs font-normal tracking-normal text-slate-600 dark:text-slate-400"
         >
           <Globe className="h-3.5 w-3.5" />
           {locale === 'es' ? 'English' : 'Español'}
@@ -68,11 +68,11 @@ export default function LoginPage() {
           </div>
 
           <div className="text-center space-y-2">
-            <h1 className="text-3xl xl:text-4xl font-bold text-slate-900 dark:text-white leading-tight">
+            <h1 className="text-3xl xl:text-4xl font-semibold tracking-[-0.05em] text-slate-900 dark:text-white leading-tight">
               Llega a tus clientes<br />
               <span className="text-emerald-600">sin bloqueos</span>
             </h1>
-            <p className="text-sm text-slate-500 dark:text-slate-400">
+            <p className="text-sm font-normal tracking-normal text-slate-500 dark:text-slate-400">
               Somos la única plataforma oficial de WhatsApp Business en Latinoamérica
             </p>
           </div>
@@ -90,11 +90,11 @@ export default function LoginPage() {
                   {step.done ? (
                     <CheckCircle2 className="h-4 w-4" />
                   ) : (
-                    <span className="text-xs font-semibold text-slate-500 dark:text-slate-300">{i + 1}</span>
+                    <span className="text-xs font-normal tracking-normal text-slate-500 dark:text-slate-300">{i + 1}</span>
                   )}
                 </div>
                 <span className={cn(
-                  "text-sm font-medium",
+                  "text-sm font-medium tracking-[-0.02em]",
                   step.done
                     ? "text-emerald-700 dark:text-emerald-400 font-semibold"
                     : "text-slate-600 dark:text-slate-400"
@@ -110,7 +110,7 @@ export default function LoginPage() {
             <p className="text-sm text-slate-500 dark:text-slate-400 italic leading-relaxed">
               &ldquo;La mensajería oficial es la única forma de escalar sin miedo a ser baneado&rdquo;
             </p>
-            <p className="text-xs font-semibold text-slate-600 dark:text-slate-300 mt-2">
+            <p className="text-xs font-normal tracking-normal text-slate-600 dark:text-slate-300 mt-2">
               — Ángel Avendaño, Founder
             </p>
           </div>
@@ -124,7 +124,7 @@ export default function LoginPage() {
           {/* Mobile logo */}
           <div className="lg:hidden flex flex-col items-center gap-3 mb-6">
             <Image src="/logo.png" alt="CallMesd" width={64} height={64} className="rounded-full shadow-lg" />
-            <h1 className="text-xl font-bold text-slate-900 dark:text-white">CallMesd</h1>
+            <h1 className="text-xl font-semibold tracking-[-0.04em] text-slate-900 dark:text-white">CallMesd</h1>
           </div>
 
           {/* Mobile steps (simplified) */}
@@ -138,13 +138,13 @@ export default function LoginPage() {
           </div>
 
           {/* Form card */}
-          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 md:p-8 space-y-6">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-[0_0_0_1px_rgba(0,0,0,0.08)] dark:shadow-[0_0_0_1px_rgba(255,255,255,0.08)] p-6 md:p-8 space-y-6">
             {/* Header */}
             <div className="space-y-1">
-              <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+              <h2 className="text-xl font-semibold tracking-[-0.04em] text-slate-900 dark:text-white">
                 {t('auth.welcomeBack')}
               </h2>
-              <p className="text-sm text-slate-500 dark:text-slate-400">
+              <p className="text-sm font-normal tracking-normal text-slate-500 dark:text-slate-400">
                 {t('auth.enterCredentials')}
               </p>
             </div>
@@ -153,7 +153,7 @@ export default function LoginPage() {
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* Email */}
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                <label className="text-xs font-normal tracking-normal text-slate-600 dark:text-slate-400 uppercase tracking-wider">
                   {t('auth.email')}
                 </label>
                 <div className="relative">
@@ -164,14 +164,14 @@ export default function LoginPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl pl-10 pr-4 py-3 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 transition-all"
+                    className="w-full bg-white dark:bg-slate-900 shadow-[0_0_0_1px_rgba(0,0,0,0.08)] dark:shadow-[0_0_0_1px_rgba(255,255,255,0.08)] rounded-xl pl-10 pr-4 py-3 text-sm font-normal tracking-normal text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:shadow-[0_0_0_1px_rgba(16,185,129,0.5)] transition-all"
                   />
                 </div>
               </div>
 
               {/* Password */}
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                <label className="text-xs font-normal tracking-normal text-slate-600 dark:text-slate-400 uppercase tracking-wider">
                   {t('auth.password')}
                 </label>
                 <div className="relative">
@@ -182,7 +182,7 @@ export default function LoginPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl pl-10 pr-11 py-3 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 transition-all"
+                    className="w-full bg-white dark:bg-slate-900 shadow-[0_0_0_1px_rgba(0,0,0,0.08)] dark:shadow-[0_0_0_1px_rgba(255,255,255,0.08)] rounded-xl pl-10 pr-11 py-3 text-sm font-normal tracking-normal text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:shadow-[0_0_0_1px_rgba(16,185,129,0.5)] transition-all"
                   />
                   <button
                     type="button"
@@ -198,7 +198,7 @@ export default function LoginPage() {
               <div className="flex justify-end">
                 <button
                   type="button"
-                  className="text-xs font-medium text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 transition-colors"
+                  className="text-xs font-medium tracking-normal text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 transition-colors"
                 >
                   {t('auth.forgotPassword') || "¿Olvidaste tu contraseña?"}
                 </button>
@@ -208,7 +208,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white font-bold py-3 rounded-xl text-sm transition-all shadow-sm disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="w-full bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white font-medium py-3 rounded-xl text-sm tracking-normal transition-all shadow-sm disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {isLoading ? (
                   <>
@@ -224,7 +224,7 @@ export default function LoginPage() {
               </button>
 
               {/* Register link */}
-              <p className="text-center text-sm text-slate-500 dark:text-slate-400 pt-1">
+              <p className="text-center text-sm font-normal tracking-normal text-slate-500 dark:text-slate-400 pt-1">
                 {t('auth.noAccount')}{" "}
                 <Link href="/auth/register" className="font-semibold text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 transition-colors">
                   {t('auth.registerHere')}
@@ -235,11 +235,11 @@ export default function LoginPage() {
 
           {/* Footer links */}
           <div className="flex items-center justify-center gap-4 pt-2">
-            <Link href="/privacy-policy" className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
+            <Link href="/privacy-policy" className="text-xs font-normal tracking-normal text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
               {t('nav.privacyPolicy')}
             </Link>
             <span className="text-slate-300 dark:text-slate-700">·</span>
-            <Link href="/terms-of-service" className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
+            <Link href="/terms-of-service" className="text-xs font-normal tracking-normal text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
               {t('nav.termsOfService')}
             </Link>
           </div>
