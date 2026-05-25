@@ -4,7 +4,7 @@ import { authGuard } from '../../../shared/middleware/auth.middleware.js'
 import { db } from '../../../config/database.js'
 import { whatsappSessions } from '../../../infrastructure/database/schema/whatsapp-sessions.js'
 import { eq, and } from 'drizzle-orm'
-import { encrypt } from '../../../infrastructure/security/encryption.service.js'
+import { encrypt, decrypt } from '../../../infrastructure/security/encryption.service.js'
 
 export async function metaExchangeRoutes(fastify: FastifyInstance) {
   fastify.addHook("preHandler", authGuard);
@@ -118,6 +118,91 @@ export async function metaExchangeRoutes(fastify: FastifyInstance) {
     } catch (error) {
       fastify.log.error('Error exchanging Meta token')
       return reply.status(500).send({ error: 'Error interno al conectar con Meta' })
+    }
+  })
+
+  // Register phone number with Meta Cloud API
+  fastify.post('/api/meta/register-phone', async (
+    request: FastifyRequest<{ Body: { sessionId: string; pin: string } }>,
+    reply: FastifyReply
+  ) => {
+    const userId = (request as any).user.id
+    const { sessionId, pin } = request.body
+
+    if (!sessionId || !pin) {
+      return reply.status(400).send({ error: 'sessionId and pin are required' })
+    }
+
+    const [session] = await db
+      .select()
+      .from(whatsappSessions)
+      .where(and(eq(whatsappSessions.id, sessionId), eq(whatsappSessions.userId, userId)))
+      .limit(1)
+
+    if (!session || session.connectionType !== 'meta_cloud') {
+      return reply.status(404).send({ error: 'Meta Cloud session not found' })
+    }
+
+    if (!session.metaAccessToken || !session.metaPhoneNumberId) {
+      return reply.status(400).send({ error: 'Session missing access token or phone number ID' })
+    }
+
+    try {
+      const accessToken = decrypt(session.metaAccessToken)
+      const res = await fetch(
+        `https://graph.facebook.com/v21.0/${session.metaPhoneNumberId}/register`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ messaging_product: 'whatsapp', pin }),
+        }
+      )
+      const data = await res.json()
+      return reply.status(res.ok ? 200 : res.status).send(data)
+    } catch (err: any) {
+      return reply.status(500).send({ error: err.message })
+    }
+  })
+
+  // Get phone number status from Meta Graph API
+  fastify.get('/api/meta/phone-status', async (
+    request: FastifyRequest<{ Querystring: { sessionId: string } }>,
+    reply: FastifyReply
+  ) => {
+    const userId = (request as any).user.id
+    const { sessionId } = request.query
+
+    if (!sessionId) {
+      return reply.status(400).send({ error: 'sessionId query param is required' })
+    }
+
+    const [session] = await db
+      .select()
+      .from(whatsappSessions)
+      .where(and(eq(whatsappSessions.id, sessionId), eq(whatsappSessions.userId, userId)))
+      .limit(1)
+
+    if (!session || session.connectionType !== 'meta_cloud') {
+      return reply.status(404).send({ error: 'Meta Cloud session not found' })
+    }
+
+    if (!session.metaAccessToken || !session.metaPhoneNumberId) {
+      return reply.status(400).send({ error: 'Session missing access token or phone number ID' })
+    }
+
+    try {
+      const accessToken = decrypt(session.metaAccessToken)
+      const res = await fetch(
+        `https://graph.facebook.com/v21.0/${session.metaPhoneNumberId}?fields=display_phone_number,verified_name,code_verification_status,quality_rating,status,name_status`,
+        { headers: { Authorization: `Bearer ${accessToken}` } }
+      )
+      const data = await res.json()
+      return reply.status(res.ok ? 200 : res.status).send(data)
+    } catch (err: any) {
+      return reply.status(500).send({ error: err.message })
     }
   })
 }
