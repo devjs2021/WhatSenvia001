@@ -81,8 +81,10 @@ export default function CampaignMonitorPage() {
   }, [campaignId]);
 
   useEffect(() => {
-    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const wsUrl = `${protocol}//localhost:3001/api/campaign-control/ws`;
+    const wsBase = process.env.NEXT_PUBLIC_WS_URL
+      || process.env.NEXT_PUBLIC_API_URL?.replace('https://', 'wss://').replace('http://', 'ws://')
+      || 'ws://localhost:3001';
+    const wsUrl = `${wsBase}/api/campaign-control/ws`;
 
     function connect() {
       const ws = new WebSocket(wsUrl);

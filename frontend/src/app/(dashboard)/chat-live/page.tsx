@@ -123,7 +123,10 @@ export default function ChatLivePage() {
   useEffect(() => {
     if (!sessionId) return;
 
-    const ws = new WebSocket(`ws://localhost:3001/api/chat/ws?sessionId=${sessionId}`);
+    const wsBase = process.env.NEXT_PUBLIC_WS_URL
+      || process.env.NEXT_PUBLIC_API_URL?.replace('https://', 'wss://').replace('http://', 'ws://')
+      || 'ws://localhost:3001';
+    const ws = new WebSocket(`${wsBase}/api/chat/ws?sessionId=${sessionId}`);
     wsRef.current = ws;
 
     ws.onmessage = (event) => {
