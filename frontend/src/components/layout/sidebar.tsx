@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
@@ -37,7 +36,7 @@ import {
 } from "lucide-react";
 
 const SUPPORT_PHONE = "573202101789";
-const SUPPORT_MESSAGE = "Hola, necesito ayuda con mi cuenta de CallMesd";
+const SUPPORT_MESSAGE = "Hola, necesito ayuda con mi cuenta de ClickSend";
 
 function getLicenseStatus(user: any, t: (key: string, params?: Record<string, any>) => string) {
   if (!user || user.role === "admin") return null;
@@ -107,8 +106,10 @@ export function TopNav() {
           {/* Left: Logo + Nav Items */}
           <div className="flex items-center gap-1 md:gap-1.5 overflow-x-auto">
             <div className="flex items-center gap-2 mr-3 shrink-0">
-              <Image src="/logo.png" alt="CallMesd" width={26} height={26} className="rounded-full" />
-              <span className="text-sm font-semibold tracking-[-0.02em] hidden sm:block">CallMesd</span>
+              <div className="h-7 w-7 rounded-lg bg-emerald-500 flex items-center justify-center">
+                <Clock className="h-3.5 w-3.5 text-white" strokeWidth={2} />
+              </div>
+              <span className="text-sm font-semibold tracking-[-0.02em] hidden sm:block">ClickSend</span>
             </div>
             {visibleNav.map((item) => {
               const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
@@ -231,8 +232,10 @@ export function TopNav() {
           <aside className="absolute left-0 top-0 bottom-0 w-72 bg-gray-50 dark:bg-gray-950 flex flex-col animate-in slide-in-from-left duration-200">
             <div className="flex items-center justify-between px-4 h-14 border-b border-gray-200/60 dark:border-gray-800/60">
               <div className="flex items-center gap-2">
-                <Image src="/logo.png" alt="CallMesd" width={28} height={28} className="rounded-full" />
-                <span className="text-sm font-semibold tracking-[-0.02em]">CallMesd</span>
+                <div className="h-7 w-7 rounded-lg bg-emerald-500 flex items-center justify-center">
+                  <Clock className="h-3.5 w-3.5 text-white" strokeWidth={2} />
+                </div>
+                <span className="text-sm font-semibold tracking-[-0.02em]">ClickSend</span>
               </div>
               <button
                 onClick={() => setMobileMenuOpen(false)}

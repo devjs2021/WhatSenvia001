@@ -3,11 +3,10 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
 import { useAuth } from "@/hooks/use-auth";
 import { useI18n } from "@/i18n";
 import { toast } from "sonner";
-import { Eye, EyeOff, Mail, Lock, User, Building2, UserPlus, Globe } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, User, Building2, UserPlus, Globe, Clock } from "lucide-react";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -50,9 +49,11 @@ export default function RegisterPage() {
         <div className="absolute top-[-80px] left-[-80px] h-72 w-72 rounded-full bg-white/10" />
         <div className="absolute bottom-[-60px] right-[-60px] h-96 w-96 rounded-full bg-white/10" />
         <div className="relative z-10 text-center text-white space-y-6">
-          <Image src="/logo.png" alt="CallMesd" width={120} height={120} className="rounded-full mx-auto shadow-2xl border-4 border-white/30" />
+          <div className="h-20 w-20 rounded-2xl bg-white/20 flex items-center justify-center mx-auto shadow-2xl border-4 border-white/30">
+            <Clock className="h-10 w-10 text-white" strokeWidth={1.5} />
+          </div>
           <div>
-            <h1 className="text-4xl font-bold tracking-tight">CallMesd</h1>
+            <h1 className="text-4xl font-bold tracking-tight">ClickSend</h1>
             <p className="text-blue-100 mt-2 text-lg">{t('auth.createFreeAccount')}</p>
           </div>
           <div className="space-y-3 pt-4">
@@ -84,8 +85,10 @@ export default function RegisterPage() {
 
           {/* Logo mobile */}
           <div className="lg:hidden flex flex-col items-center gap-3">
-            <Image src="/logo.png" alt="CallMesd" width={72} height={72} className="rounded-full shadow-lg" />
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">CallMesd</h1>
+            <div className="h-14 w-14 rounded-xl bg-emerald-500 flex items-center justify-center shadow-lg">
+              <Clock className="h-7 w-7 text-white" strokeWidth={1.5} />
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">ClickSend</h1>
           </div>
 
           <div className="hidden lg:block">

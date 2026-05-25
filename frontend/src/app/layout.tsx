@@ -3,7 +3,7 @@ import "./globals.css";
 import { Providers } from "./providers";
 
 export const metadata: Metadata = {
-  title: "CallMesd - Solución Inteligente de Comunicación",
+  title: "ClickSend - Solución Inteligente de Comunicación",
   description: "Conecta con tus clientes a través de múltiples canales de mensajería",
 };
 

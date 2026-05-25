@@ -7,7 +7,7 @@ import Image from "next/image";
 import { useAuth } from "@/hooks/use-auth";
 import { useI18n } from "@/i18n";
 import { toast } from "sonner";
-import { Eye, EyeOff, Globe, ArrowRight, User, Lock } from "lucide-react";
+import { Eye, EyeOff, Globe, ArrowRight, User, Lock, Clock } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -48,20 +48,16 @@ export default function LoginPage() {
         {/* ── Header ──────────────────────────────────────── */}
         <header className="w-full flex flex-col sm:flex-row justify-between items-center gap-4 pb-4 border-b border-slate-100">
           <div className="flex items-center gap-2.5">
-            <Image
-              src="/logo.png"
-              alt="CallMesd"
-              width={28}
-              height={28}
-              className="rounded-full"
-            />
+            <div className="h-8 w-8 rounded-lg bg-emerald-500 flex items-center justify-center">
+              <Clock className="h-4 w-4 text-white" strokeWidth={2} />
+            </div>
             <span
               className="text-2xl font-extrabold tracking-tight text-slate-900"
               style={{
                 fontFamily: '"Plus Jakarta Sans", system-ui, sans-serif',
               }}
             >
-              Call<span className="text-emerald-600">Mesd</span>
+              Click<span className="text-emerald-600">Send</span>
             </span>
           </div>
 
@@ -103,7 +99,7 @@ export default function LoginPage() {
             <div className="absolute inset-0 flex items-center justify-center">
               <Image
                 src="/illustrations/login-character.png"
-                alt="CallMesd"
+                alt="ClickSend"
                 width={700}
                 height={700}
                 className="h-[115%] w-auto max-w-none object-contain"

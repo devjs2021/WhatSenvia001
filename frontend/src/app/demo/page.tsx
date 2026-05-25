@@ -302,7 +302,7 @@ export default function DemoPage() {
                   '"Plus Jakarta Sans", system-ui, sans-serif',
               }}
             >
-              CallMesd
+              ClickSend
             </span>
           </div>
 
