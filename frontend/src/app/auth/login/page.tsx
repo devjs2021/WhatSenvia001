@@ -93,7 +93,7 @@ export default function LoginPage() {
               alt="CallMesd"
               width={600}
               height={600}
-              className="w-full max-w-[520px] h-auto object-contain"
+              className="w-full max-w-[620px] h-auto object-contain"
               quality={100}
               unoptimized
               priority
