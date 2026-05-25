@@ -7,7 +7,7 @@ import Image from "next/image";
 import { useAuth } from "@/hooks/use-auth";
 import { useI18n } from "@/i18n";
 import { toast } from "sonner";
-import { Eye, EyeOff, Mail, Lock, Send, Globe, User, Building2, UserPlus } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, Globe, Rocket, CheckCircle2, ArrowRight } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -27,153 +27,231 @@ export default function LoginPage() {
     }
   }
 
+  const steps = [
+    { text: "Conecta tu WhatsApp Business", done: false },
+    { text: "Redacta tu mensaje", done: false },
+    { text: "Envía campañas masivas", done: false },
+    { text: "Llega a tus clientes", done: false },
+    { text: "Sin bloqueos", done: true },
+  ];
+
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen grid lg:grid-cols-2 bg-slate-50 dark:bg-slate-950">
+      {/* Language toggle */}
+      <div className="fixed top-6 right-6 z-10">
+        <button
+          type="button"
+          onClick={() => setLocale(locale === 'es' ? 'en' : 'es')}
+          className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all text-xs font-semibold text-slate-600 dark:text-slate-400"
+        >
+          <Globe className="h-3.5 w-3.5" />
+          {locale === 'es' ? 'English' : 'Español'}
+        </button>
+      </div>
 
-      {/* Panel izquierdo — decorativo */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-600 via-blue-500 to-cyan-500 flex-col items-center justify-center p-12 relative overflow-hidden">
-        {/* Círculos decorativos */}
-        <div className="absolute top-[-80px] left-[-80px] h-72 w-72 rounded-full bg-white/10" />
-        <div className="absolute bottom-[-60px] right-[-60px] h-96 w-96 rounded-full bg-white/10" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[500px] w-[500px] rounded-full bg-white/5" />
+      {/* Left Column — Inspirational / Educational */}
+      <div className="hidden lg:flex flex-col justify-between p-10 xl:p-16 bg-white dark:bg-slate-900">
+        <div className="flex items-center gap-2">
+          <Image src="/logo.png" alt="CallMesd" width={32} height={32} className="rounded-full" />
+          <span className="text-sm font-bold tracking-tight text-slate-900 dark:text-white">CallMesd</span>
+        </div>
 
-        <div className="relative z-10 text-center text-white space-y-6">
-          <Image src="/logo.png" alt="CallMesd" width={120} height={120} className="rounded-full mx-auto shadow-2xl border-4 border-white/30" />
-          <div>
-            <h1 className="text-4xl font-bold tracking-tight">CallMesd</h1>
-            <p className="text-blue-100 mt-2 text-lg">{t('auth.smartSolution')}</p>
+        <div className="space-y-8">
+          {/* Rocket illustration */}
+          <div className="flex justify-center">
+            <div className="relative">
+              <div className="h-24 w-24 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 flex items-center justify-center">
+                <Rocket className="h-12 w-12 text-emerald-500" />
+              </div>
+              <div className="absolute -top-2 -right-2 h-8 w-8 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center">
+                <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+              </div>
+            </div>
           </div>
-          <div className="space-y-3 pt-4">
-            {[
-              { icon: Send, text: t('auth.feature1') },
-              { icon: Mail, text: t('auth.feature2') },
-              { icon: Lock, text: t('auth.feature3') },
-            ].map(({ icon: Icon, text }) => (
-              <div key={text} className="flex items-center gap-3 text-blue-50">
-                <div className="h-8 w-8 rounded-lg bg-white/20 flex items-center justify-center shrink-0">
-                  <Icon className="h-4 w-4" />
+
+          <div className="text-center space-y-3">
+            <h1 className="text-3xl xl:text-4xl font-bold text-slate-900 dark:text-white leading-tight">
+              Llega a tus clientes<br />
+              <span className="text-emerald-600">sin bloqueos</span>
+            </h1>
+            <p className="text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto">
+              Somos la única plataforma oficial de WhatsApp Business en Latinoamérica
+            </p>
+          </div>
+
+          {/* Steps */}
+          <div className="space-y-3 max-w-sm mx-auto">
+            {steps.map((step, i) => (
+              <div key={i} className="flex items-center gap-3">
+                <div className={cn(
+                  "h-7 w-7 rounded-full flex items-center justify-center shrink-0 transition-colors",
+                  step.done
+                    ? "bg-emerald-100 dark:bg-emerald-900/50"
+                    : "bg-slate-100 dark:bg-slate-800"
+                )}>
+                  {step.done ? (
+                    <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                  ) : (
+                    <span className="text-xs font-semibold text-slate-400">{i + 1}</span>
+                  )}
                 </div>
-                <span className="text-sm font-medium">{text}</span>
+                <span className={cn(
+                  "text-sm font-medium",
+                  step.done
+                    ? "text-emerald-700 dark:text-emerald-400"
+                    : "text-slate-600 dark:text-slate-400"
+                )}>
+                  {step.text}
+                </span>
               </div>
             ))}
           </div>
         </div>
+
+        {/* Testimonial */}
+        <div className="border-t border-slate-100 dark:border-slate-800 pt-6">
+          <p className="text-sm text-slate-400 dark:text-slate-500 italic leading-relaxed">
+            &ldquo;La mensajería oficial es la única forma de escalar sin miedo a ser baneado&rdquo;
+          </p>
+          <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-2">
+            — Ángel Avendaño, Founder
+          </p>
+        </div>
       </div>
 
-      {/* Panel derecho — formulario */}
-      <div className="flex-1 flex items-center justify-center bg-gray-50 dark:bg-gray-950 p-8 relative">
-        {/* Selector de idioma superior */}
-        <div className="absolute top-8 right-8">
-          <button
-            type="button"
-            onClick={() => setLocale(locale === 'es' ? 'en' : 'es')}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-sm hover:shadow-md transition-all text-xs font-semibold text-gray-600 dark:text-gray-400"
-          >
-            <Globe className="h-3.5 w-3.5" />
-            {locale === 'es' ? 'English' : 'Español'}
-          </button>
-        </div>
+      {/* Right Column — Form */}
+      <div className="flex items-center justify-center p-6 md:p-10">
+        <div className="w-full max-w-md space-y-6">
 
-        <div className="w-full max-w-sm space-y-8">
-
-          {/* Logo mobile */}
-          <div className="lg:hidden flex flex-col items-center gap-3">
-            <Image src="/logo.png" alt="CallMesd" width={72} height={72} className="rounded-full shadow-lg" />
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">CallMesd</h1>
+          {/* Mobile logo */}
+          <div className="lg:hidden flex flex-col items-center gap-3 mb-6">
+            <Image src="/logo.png" alt="CallMesd" width={64} height={64} className="rounded-full shadow-lg" />
+            <h1 className="text-xl font-bold text-slate-900 dark:text-white">CallMesd</h1>
           </div>
 
-          {/* Encabezado */}
-          <div className="hidden lg:block">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{t('auth.welcomeBack')}</h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{t('auth.enterCredentials')}</p>
+          {/* Mobile steps (simplified) */}
+          <div className="lg:hidden flex items-center justify-center gap-2 mb-4">
+            {steps.map((step, i) => (
+              <div key={i} className={cn(
+                "h-1.5 flex-1 rounded-full transition-colors",
+                step.done ? "bg-emerald-500" : "bg-slate-200 dark:bg-slate-700"
+              )} />
+            ))}
           </div>
 
-          {/* Formulario */}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Email */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
-                {t('auth.email')}
-              </label>
-              <div className="relative">
-                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <input
-                  type="email"
-                  placeholder="tu@email.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl pl-10 pr-4 py-3 text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-all"
-                />
-              </div>
+          {/* Form card */}
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 md:p-8 space-y-6">
+            {/* Header */}
+            <div className="space-y-1">
+              <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+                {t('auth.welcomeBack')}
+              </h2>
+              <p className="text-sm text-slate-500 dark:text-slate-400">
+                {t('auth.enterCredentials')}
+              </p>
             </div>
 
-            {/* Contraseña */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
-                {t('auth.password')}
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <input
-                  type={showPassword ? "text" : "password"}
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  className="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl pl-10 pr-11 py-3 text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-all"
-                />
+            {/* Form */}
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Email */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                  {t('auth.email')}
+                </label>
+                <div className="relative">
+                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                  <input
+                    type="email"
+                    placeholder="demo@clicksend.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl pl-10 pr-4 py-3 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 transition-all"
+                  />
+                </div>
+              </div>
+
+              {/* Password */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                  {t('auth.password')}
+                </label>
+                <div className="relative">
+                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl pl-10 pr-11 py-3 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 transition-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Forgot password */}
+              <div className="flex justify-end">
                 <button
                   type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+                  className="text-xs font-medium text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 transition-colors"
                 >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  {t('auth.forgotPassword') || "¿Olvidaste tu contraseña?"}
                 </button>
               </div>
-            </div>
 
-            {/* Botón */}
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white font-semibold py-3 rounded-xl text-sm transition-all shadow-md shadow-blue-200 dark:shadow-blue-900/30 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-2"
-            >
-              {isLoading ? (
-                <>
-                  <div className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
-                  {t('common.loading')}
-                </>
-              ) : (
-                <>
-                  <Send className="h-4 w-4" />
-                  {t('auth.login')}
-                </>
-              )}
-            </button>
+              {/* Submit button */}
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white font-bold py-3 rounded-xl text-sm transition-all shadow-sm disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {isLoading ? (
+                  <>
+                    <div className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                    {t('common.loading')}
+                  </>
+                ) : (
+                  <>
+                    <Rocket className="h-4 w-4" />
+                    COMENZAR
+                  </>
+                )}
+              </button>
 
-            <p className="text-center text-sm text-gray-500 dark:text-gray-400 pt-1">
-              {t('auth.noAccount')}{" "}
-              <Link href="/auth/register" className="font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors">
-                {t('auth.registerHere')}
-              </Link>
-            </p>
-          </form>
+              {/* Register link */}
+              <p className="text-center text-sm text-slate-500 dark:text-slate-400 pt-1">
+                {t('auth.noAccount')}{" "}
+                <Link href="/auth/register" className="font-semibold text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 transition-colors">
+                  {t('auth.registerHere')}
+                </Link>
+              </p>
+            </form>
+          </div>
 
           {/* Footer links */}
-          <div className="pt-8 border-t border-gray-100 dark:border-gray-900 flex flex-col items-center gap-4">
-            <div className="flex gap-4">
-              <Link href="/privacy-policy" className="text-xs text-gray-400 hover:text-gray-600 transition-colors">
-                {t('nav.privacyPolicy')}
-              </Link>
-              <Link href="/terms-of-service" className="text-xs text-gray-400 hover:text-gray-600 transition-colors">
-                {t('nav.termsOfService')}
-              </Link>
-            </div>
+          <div className="flex items-center justify-center gap-4 pt-2">
+            <Link href="/privacy-policy" className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
+              {t('nav.privacyPolicy')}
+            </Link>
+            <span className="text-slate-300 dark:text-slate-700">·</span>
+            <Link href="/terms-of-service" className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
+              {t('nav.termsOfService')}
+            </Link>
           </div>
 
         </div>
       </div>
     </div>
   );
+}
+
+function cn(...classes: (string | boolean | undefined | null)[]) {
+  return classes.filter(Boolean).join(" ");
 }
