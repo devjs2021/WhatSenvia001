@@ -81,7 +81,7 @@ export function DashboardSidebar() {
             !licenseStatus && "bg-emerald-500"
           )} />
           <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-            {t('dashboard.accountHealth') || "Account Health"}
+            {user?.role === "admin" ? "Administrador" : "Cuenta"}
           </span>
         </div>
         <div>

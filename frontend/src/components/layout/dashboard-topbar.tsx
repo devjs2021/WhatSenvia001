@@ -77,36 +77,37 @@ export function DashboardTopbar({ onMobileMenuToggle }: DashboardTopbarProps) {
           <h2 className="font-display text-lg font-bold text-slate-900 mt-0.5">
             {currentTitle}
           </h2>
-          {pathname === "/dashboard" && (
-            <p className="text-[11px] text-slate-400 mt-0.5 max-w-[320px] leading-tight">
-              Cuidamos de <span className="text-emerald-500 font-bold">ti</span> y de tu <span className="text-emerald-500 font-bold">tiempo</span>. Aquí tienes un resumen de la actividad y la salud de tus envíos hoy.
-            </p>
-          )}
         </div>
 
-        {/* Sub-nav centrado */}
-        {activeGroup && activeGroup.children.length > 1 && (
-          <nav className="flex items-center gap-1 overflow-x-auto mx-4 flex-1 justify-center">
-            {activeGroup.children.map((child) => {
-              const isActive = pathname === child.href || pathname.startsWith(child.href + "/");
-              return (
-                <Link
-                  key={child.href}
-                  href={child.href}
-                  className={cn(
-                    "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-150",
-                    isActive
-                      ? "bg-emerald-50 text-emerald-700 shadow-sm"
-                      : "text-slate-400 hover:text-slate-700 hover:bg-slate-50"
-                  )}
-                >
-                  <child.icon className="w-3.5 h-3.5 shrink-0 text-emerald-500" strokeWidth={1.5} />
-                  <span>{child.nameKey}</span>
-                </Link>
-              );
-            })}
-          </nav>
-        )}
+        {/* Centro: frase del Dashboard o sub-nav */}
+        <div className="flex-1 flex justify-center mx-4">
+          {pathname === "/dashboard" ? (
+            <p className="text-[11px] text-slate-400 leading-tight text-center max-w-[420px]">
+              Cuidamos de <span className="text-emerald-500 font-bold">ti</span> y de tu <span className="text-emerald-500 font-bold">tiempo</span>. Aquí tienes un resumen de la actividad y la salud de tus envíos hoy.
+            </p>
+          ) : activeGroup && activeGroup.children.length > 1 ? (
+            <nav className="flex items-center gap-1 overflow-x-auto">
+              {activeGroup.children.map((child) => {
+                const isActive = pathname === child.href || pathname.startsWith(child.href + "/");
+                return (
+                  <Link
+                    key={child.href}
+                    href={child.href}
+                    className={cn(
+                      "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-150",
+                      isActive
+                        ? "bg-emerald-50 text-emerald-700 shadow-sm"
+                        : "text-slate-400 hover:text-slate-700 hover:bg-slate-50"
+                    )}
+                  >
+                    <child.icon className="w-3.5 h-3.5 shrink-0 text-emerald-500" strokeWidth={1.5} />
+                    <span>{child.nameKey}</span>
+                  </Link>
+                );
+              })}
+            </nav>
+          ) : null}
+        </div>
 
         {/* Acciones rápidas & Perfil */}
         <div className="flex items-center gap-4 shrink-0">

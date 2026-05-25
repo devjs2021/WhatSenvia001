@@ -123,10 +123,10 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-8">
-      {/* Encabezado inspirador */}
+      {/* Encabezado */}
       <DashboardHeader
-        title={<>Cuidamos de <span className="text-emerald-500 font-extrabold">ti</span> y de tu <span className="text-emerald-500 font-extrabold">tiempo</span>.</>}
-        description="Aquí tienes un resumen de la actividad y la salud de tus envíos hoy."
+        title="Dashboard"
+        description="Resumen de actividad y salud de tus envíos."
       >
         <div className={`flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full ${
           overview.connectedSessions > 0
