@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { useI18n } from "@/i18n";
 import {
@@ -21,6 +23,11 @@ import {
   Type,
   MousePointerClick,
   AlignLeft,
+  Plus,
+  Trash2,
+  Check,
+  Link as LinkIcon,
+  MessageCircle,
 } from "lucide-react";
 
 interface MetaTemplate {
@@ -44,6 +51,12 @@ interface WhatsAppSession {
   connectionType?: string;
 }
 
+interface TemplateButton {
+  type: "URL" | "QUICK_REPLY";
+  text: string;
+  url?: string;
+}
+
 const STATUS_COLORS: Record<string, string> = {
   APPROVED: "bg-green-100 text-green-700 border-green-200",
   PENDING: "bg-yellow-100 text-yellow-700 border-yellow-200",
@@ -62,6 +75,23 @@ const COMPONENT_ICONS: Record<string, typeof Type> = {
   BODY: AlignLeft,
   FOOTER: MessageSquareText,
   BUTTONS: MousePointerClick,
+};
+
+const CATEGORIES = ["MARKETING", "UTILITY", "AUTHENTICATION"] as const;
+const LANGUAGES = [
+  { code: "es", label: "Espanol (es)" },
+  { code: "en_US", label: "English (en_US)" },
+  { code: "pt_BR", label: "Portugues (pt_BR)" },
+] as const;
+
+const INITIAL_FORM = {
+  name: "",
+  category: "MARKETING" as string,
+  language: "es" as string,
+  headerText: "",
+  bodyText: "",
+  footerText: "",
+  buttons: [] as TemplateButton[],
 };
 
 function ComponentPreview({ component }: { component: any }) {
@@ -148,6 +178,349 @@ function ComponentPreview({ component }: { component: any }) {
   return null;
 }
 
+function CreateTemplateForm({
+  sessionId,
+  onClose,
+  onSuccess,
+}: {
+  sessionId: string;
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
+  const { t } = useI18n();
+  const [form, setForm] = useState({ ...INITIAL_FORM });
+  const nameError = form.name && !/^[a-z0-9_]*$/.test(form.name);
+
+  const updateForm = useCallback(
+    <K extends keyof typeof INITIAL_FORM>(key: K, value: (typeof INITIAL_FORM)[K]) => {
+      setForm((prev) => ({ ...prev, [key]: value }));
+    },
+    []
+  );
+
+  const addButton = useCallback(() => {
+    if (form.buttons.length >= 3) return;
+    setForm((prev) => ({
+      ...prev,
+      buttons: [...prev.buttons, { type: "QUICK_REPLY", text: "" }],
+    }));
+  }, [form.buttons.length]);
+
+  const updateButton = useCallback((index: number, updates: Partial<TemplateButton>) => {
+    setForm((prev) => ({
+      ...prev,
+      buttons: prev.buttons.map((b, i) => (i === index ? { ...b, ...updates } : b)),
+    }));
+  }, []);
+
+  const removeButton = useCallback((index: number) => {
+    setForm((prev) => ({
+      ...prev,
+      buttons: prev.buttons.filter((_, i) => i !== index),
+    }));
+  }, []);
+
+  const createMutation = useMutation({
+    mutationFn: () => {
+      const components: any[] = [];
+
+      if (form.headerText.trim()) {
+        components.push({ type: "HEADER", format: "TEXT", text: form.headerText.trim() });
+      }
+
+      components.push({ type: "BODY", text: form.bodyText.trim() });
+
+      if (form.footerText.trim()) {
+        components.push({ type: "FOOTER", text: form.footerText.trim() });
+      }
+
+      const validButtons = form.buttons.filter((b) => b.text.trim());
+      if (validButtons.length > 0) {
+        components.push({
+          type: "BUTTONS",
+          buttons: validButtons.map((b) => {
+            if (b.type === "URL") {
+              return { type: "URL", text: b.text.trim(), url: b.url?.trim() || "" };
+            }
+            return { type: "QUICK_REPLY", text: b.text.trim() };
+          }),
+        });
+      }
+
+      return api.post("/meta-templates/create", {
+        sessionId,
+        name: form.name.trim(),
+        category: form.category,
+        language: form.language,
+        components,
+      });
+    },
+    onSuccess: () => {
+      toast.success(t("metaTemplates.createSuccess"));
+      onSuccess();
+      onClose();
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
+  const canSubmit =
+    form.name.trim() &&
+    !nameError &&
+    form.bodyText.trim() &&
+    !createMutation.isPending;
+
+  const bodyParams = form.bodyText.match(/\{\{\d+\}\}/g) || [];
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-lg">{t("metaTemplates.newTemplate")}</CardTitle>
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onClose}>
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {/* Row 1: Name, Category, Language */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div>
+            <label className="text-xs font-medium text-muted-foreground mb-1 block">
+              {t("metaTemplates.formName")}
+            </label>
+            <Input
+              placeholder="mi_plantilla"
+              value={form.name}
+              onChange={(e) => updateForm("name", e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""))}
+              className={nameError ? "border-red-500" : ""}
+            />
+            <p className="text-[10px] text-muted-foreground mt-0.5">
+              {t("metaTemplates.nameHint")}
+            </p>
+          </div>
+          <div>
+            <label className="text-xs font-medium text-muted-foreground mb-1 block">
+              {t("metaTemplates.formCategory")}
+            </label>
+            <div className="relative">
+              <select
+                value={form.category}
+                onChange={(e) => updateForm("category", e.target.value)}
+                className="h-9 w-full rounded-md border bg-background px-3 text-sm appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-ring"
+              >
+                {CATEGORIES.map((cat) => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+            </div>
+          </div>
+          <div>
+            <label className="text-xs font-medium text-muted-foreground mb-1 block">
+              {t("metaTemplates.formLanguage")}
+            </label>
+            <div className="relative">
+              <select
+                value={form.language}
+                onChange={(e) => updateForm("language", e.target.value)}
+                className="h-9 w-full rounded-md border bg-background px-3 text-sm appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-ring"
+              >
+                {LANGUAGES.map((lang) => (
+                  <option key={lang.code} value={lang.code}>{lang.label}</option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+            </div>
+          </div>
+        </div>
+
+        {/* Header (optional) */}
+        <div>
+          <label className="text-xs font-medium text-muted-foreground mb-1 block">
+            Header <span className="text-muted-foreground font-normal">({t("metaTemplates.optional")})</span>
+          </label>
+          <Input
+            placeholder={t("metaTemplates.headerPlaceholder")}
+            value={form.headerText}
+            onChange={(e) => updateForm("headerText", e.target.value)}
+            maxLength={60}
+          />
+          <p className="text-[10px] text-muted-foreground mt-0.5 text-right">
+            {form.headerText.length}/60
+          </p>
+        </div>
+
+        {/* Body (required) */}
+        <div>
+          <label className="text-xs font-medium text-muted-foreground mb-1 block">
+            Body <span className="text-red-500">*</span>
+          </label>
+          <Textarea
+            placeholder={t("metaTemplates.bodyPlaceholder")}
+            rows={4}
+            value={form.bodyText}
+            onChange={(e) => updateForm("bodyText", e.target.value)}
+            className="resize-none"
+            maxLength={1024}
+          />
+          <div className="flex items-center justify-between mt-0.5">
+            <div className="flex gap-1.5">
+              {bodyParams.length > 0 &&
+                bodyParams.map((p, i) => (
+                  <Badge key={i} variant="secondary" className="text-[10px] px-1.5 py-0">
+                    {p}
+                  </Badge>
+                ))}
+            </div>
+            <p className="text-[10px] text-muted-foreground">
+              {form.bodyText.length}/1024
+            </p>
+          </div>
+        </div>
+
+        {/* Footer (optional) */}
+        <div>
+          <label className="text-xs font-medium text-muted-foreground mb-1 block">
+            Footer <span className="text-muted-foreground font-normal">({t("metaTemplates.optional")})</span>
+          </label>
+          <Input
+            placeholder={t("metaTemplates.footerPlaceholder")}
+            value={form.footerText}
+            onChange={(e) => updateForm("footerText", e.target.value)}
+            maxLength={60}
+          />
+          <p className="text-[10px] text-muted-foreground mt-0.5 text-right">
+            {form.footerText.length}/60
+          </p>
+        </div>
+
+        {/* Buttons (optional) */}
+        <div>
+          <div className="flex items-center justify-between mb-1">
+            <label className="text-xs font-medium text-muted-foreground">
+              {t("metaTemplates.buttons")} <span className="text-muted-foreground font-normal">({t("metaTemplates.optional")}, max 3)</span>
+            </label>
+            {form.buttons.length < 3 && (
+              <Button variant="ghost" size="sm" className="h-6 text-xs px-2" onClick={addButton}>
+                <Plus className="h-3 w-3 mr-1" />
+                {t("metaTemplates.addButton")}
+              </Button>
+            )}
+          </div>
+          {form.buttons.length > 0 && (
+            <div className="space-y-2">
+              {form.buttons.map((btn, i) => (
+                <div key={i} className="flex items-start gap-2 rounded-lg border p-2.5">
+                  <div className="flex-1 space-y-2">
+                    <div className="flex gap-2">
+                      <div className="relative w-36">
+                        <select
+                          value={btn.type}
+                          onChange={(e) => updateButton(i, { type: e.target.value as "URL" | "QUICK_REPLY", url: "" })}
+                          className="h-8 w-full rounded-md border bg-background px-2 text-xs appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-ring"
+                        >
+                          <option value="QUICK_REPLY">{t("metaTemplates.quickReply")}</option>
+                          <option value="URL">URL</option>
+                        </select>
+                        <ChevronDown className="absolute right-1.5 top-1/2 h-3 w-3 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+                      </div>
+                      <Input
+                        placeholder={t("metaTemplates.buttonText")}
+                        value={btn.text}
+                        onChange={(e) => updateButton(i, { text: e.target.value })}
+                        className="h-8 text-xs flex-1"
+                        maxLength={25}
+                      />
+                    </div>
+                    {btn.type === "URL" && (
+                      <div className="flex items-center gap-1.5">
+                        <LinkIcon className="h-3 w-3 text-muted-foreground shrink-0" />
+                        <Input
+                          placeholder="https://ejemplo.com/{{1}}"
+                          value={btn.url || ""}
+                          onChange={(e) => updateButton(i, { url: e.target.value })}
+                          className="h-8 text-xs"
+                        />
+                      </div>
+                    )}
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 text-destructive shrink-0"
+                    onClick={() => removeButton(i)}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Live preview */}
+        {(form.headerText || form.bodyText || form.footerText || form.buttons.length > 0) && (
+          <div>
+            <label className="text-xs font-medium text-muted-foreground mb-1 block">
+              {t("metaTemplates.livePreview")}
+            </label>
+            <div className="rounded-xl border bg-[#e5ddd5] dark:bg-[#1a1a2e] p-4">
+              <div className="max-w-[320px] mx-auto rounded-lg bg-white dark:bg-[#202c33] p-3 shadow-sm space-y-1.5">
+                {form.headerText && (
+                  <p className="text-sm font-semibold">{form.headerText}</p>
+                )}
+                {form.bodyText && (
+                  <p className="text-sm whitespace-pre-wrap">{form.bodyText}</p>
+                )}
+                {form.footerText && (
+                  <p className="text-[11px] text-muted-foreground">{form.footerText}</p>
+                )}
+                {form.buttons.filter((b) => b.text.trim()).length > 0 && (
+                  <div className="border-t pt-1.5 space-y-1">
+                    {form.buttons
+                      .filter((b) => b.text.trim())
+                      .map((btn, i) => (
+                        <div
+                          key={i}
+                          className="flex items-center justify-center gap-1.5 py-1 text-xs text-blue-500 font-medium"
+                        >
+                          {btn.type === "URL" ? (
+                            <LinkIcon className="h-3 w-3" />
+                          ) : (
+                            <MessageCircle className="h-3 w-3" />
+                          )}
+                          {btn.text}
+                        </div>
+                      ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Actions */}
+        <div className="flex justify-end gap-2 pt-2">
+          <Button variant="outline" onClick={onClose}>
+            <X className="mr-1 h-4 w-4" />
+            {t("common.cancel")}
+          </Button>
+          <Button onClick={() => createMutation.mutate()} disabled={!canSubmit}>
+            {createMutation.isPending ? (
+              <RefreshCw className="mr-1 h-4 w-4 animate-spin" />
+            ) : (
+              <Check className="mr-1 h-4 w-4" />
+            )}
+            {createMutation.isPending
+              ? t("metaTemplates.creating")
+              : t("metaTemplates.createBtn")}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function MetaTemplatesPage() {
   const { t } = useI18n();
   const queryClient = useQueryClient();
@@ -157,6 +530,7 @@ export default function MetaTemplatesPage() {
   const [filterStatus, setFilterStatus] = useState<string>("");
   const [filterCategory, setFilterCategory] = useState<string>("");
   const [previewTemplate, setPreviewTemplate] = useState<MetaTemplate | null>(null);
+  const [showCreate, setShowCreate] = useState(false);
 
   const { data: sessionsData } = useQuery({
     queryKey: ["whatsapp-sessions"],
@@ -196,33 +570,29 @@ export default function MetaTemplatesPage() {
     if (search) {
       const q = search.toLowerCase();
       list = list.filter(
-        (t) =>
-          t.name.toLowerCase().includes(q) ||
-          t.language.toLowerCase().includes(q)
+        (tpl) =>
+          tpl.name.toLowerCase().includes(q) ||
+          tpl.language.toLowerCase().includes(q)
       );
     }
     if (filterStatus) {
-      list = list.filter((t) => t.status === filterStatus);
+      list = list.filter((tpl) => tpl.status === filterStatus);
     }
     if (filterCategory) {
-      list = list.filter((t) => t.category === filterCategory);
+      list = list.filter((tpl) => tpl.category === filterCategory);
     }
     return list;
   }, [allTemplates, search, filterStatus, filterCategory]);
 
-  const statuses = useMemo(
-    () => [...new Set(allTemplates.map((t) => t.status))].sort(),
-    [allTemplates]
-  );
   const categories = useMemo(
-    () => [...new Set(allTemplates.map((t) => t.category))].sort(),
+    () => [...new Set(allTemplates.map((tpl) => tpl.category))].sort(),
     [allTemplates]
   );
 
   const statusCounts = useMemo(() => {
     const counts: Record<string, number> = {};
-    for (const t of allTemplates) {
-      counts[t.status] = (counts[t.status] || 0) + 1;
+    for (const tpl of allTemplates) {
+      counts[tpl.status] = (counts[tpl.status] || 0) + 1;
     }
     return counts;
   }, [allTemplates]);
@@ -262,11 +632,21 @@ export default function MetaTemplatesPage() {
             onClick={() => syncMutation.mutate()}
             disabled={!activeSessionId || syncMutation.isPending}
             size="sm"
+            variant="outline"
           >
             <RefreshCw
               className={`mr-2 h-4 w-4 ${syncMutation.isPending ? "animate-spin" : ""}`}
             />
             {t("metaTemplates.sync")}
+          </Button>
+
+          <Button
+            onClick={() => { setShowCreate(true); }}
+            disabled={!activeSessionId}
+            size="sm"
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            {t("metaTemplates.newTemplate")}
           </Button>
         </div>
       </div>
@@ -288,6 +668,17 @@ export default function MetaTemplatesPage() {
 
       {metaSessions.length > 0 && (
         <>
+          {/* Create form */}
+          {showCreate && (
+            <CreateTemplateForm
+              sessionId={activeSessionId}
+              onClose={() => setShowCreate(false)}
+              onSuccess={() =>
+                queryClient.invalidateQueries({ queryKey: ["meta-templates"] })
+              }
+            />
+          )}
+
           {/* Status summary cards */}
           {allTemplates.length > 0 && (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">

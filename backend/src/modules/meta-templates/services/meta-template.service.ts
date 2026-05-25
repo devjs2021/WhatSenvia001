@@ -4,7 +4,76 @@ import { whatsappSessions } from "../../../infrastructure/database/schema/whatsa
 import { decrypt } from "../../../infrastructure/security/encryption.service.js";
 import { eq, and } from "drizzle-orm";
 
+interface CreateTemplateInput {
+  name: string;
+  category: string;
+  language: string;
+  components: any[];
+}
+
 export class MetaTemplateService {
+  async createTemplate(userId: string, sessionId: string, input: CreateTemplateInput) {
+    const [session] = await db
+      .select()
+      .from(whatsappSessions)
+      .where(and(eq(whatsappSessions.id, sessionId), eq(whatsappSessions.userId, userId)))
+      .limit(1);
+
+    if (!session || session.connectionType !== "meta_cloud") {
+      throw new Error("Meta Cloud session not found");
+    }
+
+    if (!session.metaAccessToken || !session.wabaId) {
+      throw new Error("Session missing access token or WABA ID");
+    }
+
+    const accessToken = decrypt(session.metaAccessToken);
+    const wabaId = session.wabaId;
+
+    const metaPayload = {
+      name: input.name,
+      category: input.category,
+      language: input.language,
+      components: input.components,
+    };
+
+    const response = await fetch(
+      `https://graph.facebook.com/v21.0/${wabaId}/message_templates`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(metaPayload),
+      }
+    );
+
+    const metaResponse: any = await response.json();
+
+    if (!response.ok) {
+      const msg = metaResponse.error?.message || "Failed to create template on Meta";
+      throw new Error(msg);
+    }
+
+    const [saved] = await db
+      .insert(metaTemplates)
+      .values({
+        userId,
+        wabaId,
+        metaTemplateId: metaResponse.id,
+        name: input.name,
+        status: metaResponse.status || "PENDING",
+        category: input.category,
+        language: input.language,
+        components: input.components,
+        lastSyncedAt: new Date(),
+      })
+      .returning();
+
+    return { template: saved, metaResponse };
+  }
+
   async syncTemplates(userId: string, sessionId: string): Promise<{ synced: number }> {
     const [session] = await db
       .select()

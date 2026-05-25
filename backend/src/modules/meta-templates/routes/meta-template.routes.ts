@@ -23,6 +23,32 @@ export async function metaTemplateRoutes(app: FastifyInstance) {
     }
   });
 
+  app.post("/create", async (request: FastifyRequest, reply: FastifyReply) => {
+    const userId = (request as any).user.id;
+    const { sessionId, name, category, language, components } = request.body as {
+      sessionId: string;
+      name: string;
+      category: string;
+      language: string;
+      components: any[];
+    };
+
+    if (!sessionId || !name || !category || !language || !components?.length) {
+      return reply.status(400).send({ error: "sessionId, name, category, language, and components are required" });
+    }
+
+    if (!/^[a-z0-9_]+$/.test(name)) {
+      return reply.status(400).send({ error: "Template name must contain only lowercase letters, numbers, and underscores" });
+    }
+
+    try {
+      const result = await service.createTemplate(userId, sessionId, { name, category, language, components });
+      return reply.send({ success: true, data: result });
+    } catch (err: any) {
+      return reply.status(400).send({ error: err.message });
+    }
+  });
+
   app.get("/", async (request: FastifyRequest, reply: FastifyReply) => {
     const userId = (request as any).user.id;
     const { sessionId } = request.query as { sessionId: string };
