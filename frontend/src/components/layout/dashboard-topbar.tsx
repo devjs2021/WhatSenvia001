@@ -26,6 +26,7 @@ const breadcrumbTitles: Record<string, string> = {
   "/chat-live": "Chat en Vivo",
   "/campaigns": "Campañas",
   "/templates": "Plantillas",
+  "/meta-templates": "Meta Templates",
   "/poll-results": "Encuestas",
   "/contacts": "Contactos",
   "/extract-contacts": "Extraer Contactos",

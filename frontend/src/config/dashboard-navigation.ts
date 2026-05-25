@@ -11,6 +11,7 @@ import {
   Settings,
   Crown,
   FileText,
+  FileCheck,
   MessageSquare,
   type LucideIcon,
 } from "lucide-react";
@@ -86,6 +87,7 @@ export const dashboardNavGroups: NavEntry[] = [
     children: [
       { nameKey: "Settings", href: "/settings", icon: Crown, feature: null },
       { nameKey: "Templates", href: "/templates", icon: FileText, feature: "templates" },
+      { nameKey: "Meta Templates", href: "/meta-templates", icon: FileCheck, feature: null },
     ],
   },
 ];
