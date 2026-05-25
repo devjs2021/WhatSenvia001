@@ -28,11 +28,11 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex bg-[#f5f5f5] dark:bg-gray-950">
+    <div className="min-h-screen flex bg-[#f0f0f0] dark:bg-gray-950">
       {/* Left — Form */}
       <div className="flex-1 flex flex-col items-center justify-center px-6 py-10 relative">
         {/* Language toggle */}
-        <div className="absolute top-5 right-5">
+        <div className="absolute top-5 right-5 lg:right-auto lg:left-5">
           <button
             type="button"
             onClick={() => setLocale(locale === "es" ? "en" : "es")}
@@ -45,29 +45,29 @@ export default function LoginPage() {
 
         <div className="w-full max-w-[400px] space-y-8">
           {/* Mobile illustration */}
-          <div className="lg:hidden flex justify-center">
+          <div className="lg:hidden flex flex-col items-center gap-4">
             <Image
-              src="/illustrations/login-hero.svg"
+              src="/illustrations/LogINpersonaje.png"
               alt="CallMesd"
-              width={220}
-              height={220}
-              className="w-52 h-auto"
+              width={240}
+              height={240}
+              className="w-56 h-auto"
               priority
             />
           </div>
 
           {/* Header */}
-          <div className="space-y-2">
-            <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-gray-900 dark:text-white">
+          <div className="space-y-3">
+            <h1 className="text-3xl md:text-[40px] font-extrabold tracking-tight text-gray-900 dark:text-white leading-[1.1]">
               {t("auth.welcomeBack")}
             </h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              {t("auth.enterCredentials")} <span className="font-semibold text-gray-700 dark:text-gray-300">CallMesd</span>
+            <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
+              {t("auth.enterCredentials")} <span className="font-bold text-gray-700 dark:text-gray-300">CallMesd</span>
             </p>
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-4">
             {/* Email */}
             <div>
               <input
@@ -95,11 +95,7 @@ export default function LoginPage() {
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
               >
-                {showPassword ? (
-                  <EyeOff className="h-4.5 w-4.5" />
-                ) : (
-                  <Eye className="h-4.5 w-4.5" />
-                )}
+                {showPassword ? <EyeOff className="h-[18px] w-[18px]" /> : <Eye className="h-[18px] w-[18px]" />}
               </button>
             </div>
 
@@ -107,7 +103,7 @@ export default function LoginPage() {
             <div className="flex justify-end">
               <button
                 type="button"
-                className="text-xs font-semibold text-gray-900 dark:text-gray-200 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
+                className="text-xs font-bold text-gray-900 dark:text-gray-200 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
               >
                 {t("auth.forgotPassword")}
               </button>
@@ -117,7 +113,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-gray-900 dark:bg-white hover:bg-gray-800 dark:hover:bg-gray-100 text-white dark:text-gray-900 font-semibold py-3.5 rounded-2xl text-sm transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="w-full bg-gray-900 dark:bg-white hover:bg-gray-800 dark:hover:bg-gray-100 text-white dark:text-gray-900 font-bold py-4 rounded-2xl text-sm tracking-wide transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {isLoading ? (
                 <>
@@ -135,14 +131,14 @@ export default function LoginPage() {
             {t("auth.noAccount")}{" "}
             <Link
               href="/auth/register"
-              className="font-semibold text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 transition-colors"
+              className="font-bold text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 transition-colors"
             >
               {t("auth.registerHere")}
             </Link>
           </p>
 
           {/* Footer */}
-          <div className="flex items-center justify-center gap-3 pt-4">
+          <div className="flex items-center justify-center gap-3 pt-2">
             <Link
               href="/privacy-policy"
               className="text-[11px] text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
@@ -160,16 +156,16 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* Right — Illustration */}
-      <div className="hidden lg:flex lg:w-[48%] relative items-center justify-center bg-[#f0faf0] dark:bg-emerald-950/20 rounded-l-[40px] overflow-hidden m-3 mr-3">
-        <div className="relative z-10 flex flex-col items-center gap-6 px-10 max-w-md">
-          {/* Illustration */}
-          <div className="w-full max-w-[380px]">
+      {/* Right — Illustration panel */}
+      <div className="hidden lg:flex lg:w-[50%] relative items-center justify-center bg-[#eef6ee] dark:bg-emerald-950/20 rounded-l-[48px] overflow-hidden m-3 mr-3">
+        <div className="relative z-10 flex flex-col items-center gap-8 px-10 max-w-lg">
+          {/* Character illustration */}
+          <div className="w-full max-w-[420px]">
             <Image
-              src="/illustrations/login-hero.svg"
-              alt="WhatsApp Business messaging"
-              width={420}
-              height={420}
+              src="/illustrations/LogINpersonaje.png"
+              alt="Personaje CallMesd con reloj"
+              width={500}
+              height={500}
               className="w-full h-auto"
               priority
             />
@@ -182,14 +178,17 @@ export default function LoginPage() {
             <span className="h-2 w-6 rounded-full bg-gray-900 dark:bg-white" />
           </div>
 
-          {/* Text below illustration */}
-          <div className="text-center space-y-1">
-            <p className="text-lg font-semibold text-gray-800 dark:text-gray-100 leading-snug">
-              {t("auth.smartSolution")}
+          {/* Phrase */}
+          <div className="text-center space-y-2 max-w-sm">
+            <h2 className="text-xl font-extrabold text-gray-900 dark:text-white leading-snug tracking-tight">
+              Se que tu tiempo vale
               <br />
-              <span className="text-gray-800 dark:text-gray-100">
-                con <span className="font-bold">CallMesd</span>
-              </span>
+              y por eso lo cuidamos
+            </h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
+              Tu tiempo y tu cuenta, protegidos en cada paso.
+              <br />
+              Esa es nuestra promesa con <span className="font-bold text-gray-700 dark:text-gray-300">CallMesd</span>.
             </p>
           </div>
         </div>
