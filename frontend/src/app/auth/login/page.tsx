@@ -96,16 +96,16 @@ export default function LoginPage() {
         </header>
 
         {/* ── Content ─────────────────────────────────────── */}
-        <main className="flex flex-col lg:flex-row items-start gap-12 lg:gap-16">
+        <main className="flex flex-col lg:flex-row lg:items-stretch items-center gap-8 lg:gap-12">
           {/* Left: Illustration */}
-          <section className="w-full lg:w-[58%] flex justify-center items-center relative lg:pt-4">
+          <section className="w-full lg:w-[55%] flex items-center justify-center relative">
             <div className="absolute w-80 h-80 bg-emerald-100/50 rounded-full blur-3xl -z-10 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
             <Image
               src="/illustrations/login-character.png"
               alt="CallMesd"
               width={700}
               height={700}
-              className="w-full h-auto object-contain scale-[1.35]"
+              className="h-full w-auto max-w-full object-contain"
               quality={100}
               unoptimized
               priority
@@ -113,7 +113,7 @@ export default function LoginPage() {
           </section>
 
           {/* Right: Form */}
-          <section className="w-full lg:w-[42%] flex flex-col justify-center">
+          <section className="w-full lg:w-[45%] flex flex-col justify-center">
             {/* Phrase */}
             <div className="mb-8">
               <h1
