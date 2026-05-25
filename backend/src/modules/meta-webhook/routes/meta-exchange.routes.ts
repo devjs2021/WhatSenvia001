@@ -5,6 +5,7 @@ import { db } from '../../../config/database.js'
 import { whatsappSessions } from '../../../infrastructure/database/schema/whatsapp-sessions.js'
 import { eq, and } from 'drizzle-orm'
 import { encrypt, decrypt } from '../../../infrastructure/security/encryption.service.js'
+import crypto from 'crypto'
 
 export async function metaExchangeRoutes(fastify: FastifyInstance) {
   fastify.addHook("preHandler", authGuard);
@@ -107,12 +108,41 @@ export async function metaExchangeRoutes(fastify: FastifyInstance) {
 
       fastify.log.info({ sessionId: session.id }, 'Meta Cloud session saved')
 
+      // 4. Auto-register phone number with Meta so it's ready to send/receive
+      let registered = false
+      const pin = crypto.randomInt(100000, 999999).toString()
+      try {
+        if (phone_number_id) {
+          const regRes = await fetch(
+            `https://graph.facebook.com/v21.0/${phone_number_id}/register`,
+            {
+              method: 'POST',
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ messaging_product: 'whatsapp', pin }),
+            }
+          )
+          const regData = await regRes.json() as any
+          registered = regRes.ok && regData.success === true
+          if (registered) {
+            fastify.log.info({ phone_number_id }, 'Phone number registered with Meta')
+          } else {
+            fastify.log.warn({ phone_number_id, error: regData.error }, 'Phone registration response')
+          }
+        }
+      } catch (err: any) {
+        fastify.log.warn({ error: err.message }, 'Phone auto-registration failed (non-blocking)')
+      }
+
       return reply.status(200).send({
         success: true,
         sessionId: session.id,
         waba_id,
         phone_number_id,
         phone: displayPhone || phone_number_id,
+        registered,
       })
 
     } catch (error) {
