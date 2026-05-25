@@ -375,7 +375,11 @@
     "addButton": "Agregar",
     "quickReply": "Respuesta Rapida",
     "buttonText": "Texto del boton",
-    "livePreview": "Vista previa"
+    "livePreview": "Vista previa",
+    "headerNone": "Sin header",
+    "mediaUrlPlaceholder": "URL del archivo (imagen, video o documento)",
+    "mediaUrlHint": "URL publica accesible. Meta la descargara durante la revision.",
+    "phoneNumber": "Telefono"
   },
   "testWhatsapp": {
     "title": "Prueba de WhatsApp Cloud API",

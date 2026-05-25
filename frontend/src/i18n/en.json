@@ -375,7 +375,11 @@
     "addButton": "Add",
     "quickReply": "Quick Reply",
     "buttonText": "Button text",
-    "livePreview": "Live preview"
+    "livePreview": "Live preview",
+    "headerNone": "No header",
+    "mediaUrlPlaceholder": "File URL (image, video or document)",
+    "mediaUrlHint": "Publicly accessible URL. Meta will download it during review.",
+    "phoneNumber": "Phone"
   },
   "testWhatsapp": {
     "title": "WhatsApp Cloud API Test",

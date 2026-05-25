@@ -28,6 +28,10 @@ import {
   Check,
   Link as LinkIcon,
   MessageCircle,
+  Image,
+  Video,
+  File,
+  Phone,
 } from "lucide-react";
 
 interface MetaTemplate {
@@ -52,10 +56,13 @@ interface WhatsAppSession {
 }
 
 interface TemplateButton {
-  type: "URL" | "QUICK_REPLY";
+  type: "URL" | "QUICK_REPLY" | "PHONE_NUMBER";
   text: string;
   url?: string;
+  phone_number?: string;
 }
+
+type HeaderFormat = "NONE" | "TEXT" | "IMAGE" | "VIDEO" | "DOCUMENT";
 
 const STATUS_COLORS: Record<string, string> = {
   APPROVED: "bg-green-100 text-green-700 border-green-200",
@@ -88,7 +95,9 @@ const INITIAL_FORM = {
   name: "",
   category: "MARKETING" as string,
   language: "es" as string,
+  headerFormat: "NONE" as HeaderFormat,
   headerText: "",
+  headerMediaUrl: "",
   bodyText: "",
   footerText: "",
   buttons: [] as TemplateButton[],
@@ -224,8 +233,26 @@ function CreateTemplateForm({
     mutationFn: () => {
       const components: any[] = [];
 
-      if (form.headerText.trim()) {
+      if (form.headerFormat === "TEXT" && form.headerText.trim()) {
         components.push({ type: "HEADER", format: "TEXT", text: form.headerText.trim() });
+      } else if (form.headerFormat === "IMAGE" && form.headerMediaUrl.trim()) {
+        components.push({
+          type: "HEADER",
+          format: "IMAGE",
+          example: { header_handle: [form.headerMediaUrl.trim()] },
+        });
+      } else if (form.headerFormat === "VIDEO" && form.headerMediaUrl.trim()) {
+        components.push({
+          type: "HEADER",
+          format: "VIDEO",
+          example: { header_handle: [form.headerMediaUrl.trim()] },
+        });
+      } else if (form.headerFormat === "DOCUMENT" && form.headerMediaUrl.trim()) {
+        components.push({
+          type: "HEADER",
+          format: "DOCUMENT",
+          example: { header_handle: [form.headerMediaUrl.trim()] },
+        });
       }
 
       components.push({ type: "BODY", text: form.bodyText.trim() });
@@ -241,6 +268,9 @@ function CreateTemplateForm({
           buttons: validButtons.map((b) => {
             if (b.type === "URL") {
               return { type: "URL", text: b.text.trim(), url: b.url?.trim() || "" };
+            }
+            if (b.type === "PHONE_NUMBER") {
+              return { type: "PHONE_NUMBER", text: b.text.trim(), phone_number: b.phone_number?.trim() || "" };
             }
             return { type: "QUICK_REPLY", text: b.text.trim() };
           }),
@@ -339,15 +369,59 @@ function CreateTemplateForm({
           <label className="text-xs font-medium text-muted-foreground mb-1 block">
             Header <span className="text-muted-foreground font-normal">({t("metaTemplates.optional")})</span>
           </label>
-          <Input
-            placeholder={t("metaTemplates.headerPlaceholder")}
-            value={form.headerText}
-            onChange={(e) => updateForm("headerText", e.target.value)}
-            maxLength={60}
-          />
-          <p className="text-[10px] text-muted-foreground mt-0.5 text-right">
-            {form.headerText.length}/60
-          </p>
+          <div className="flex gap-2 mb-2">
+            {(["NONE", "TEXT", "IMAGE", "VIDEO", "DOCUMENT"] as const).map((fmt) => {
+              const icons: Record<string, typeof Type> = { TEXT: Type, IMAGE: Image, VIDEO: Video, DOCUMENT: File };
+              const FmtIcon = icons[fmt];
+              return (
+                <button
+                  key={fmt}
+                  type="button"
+                  onClick={() => {
+                    setForm((prev) => ({ ...prev, headerFormat: fmt, headerText: "", headerMediaUrl: "" }));
+                  }}
+                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors border ${
+                    form.headerFormat === fmt
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-background text-muted-foreground border-border hover:bg-muted"
+                  }`}
+                >
+                  {FmtIcon && <FmtIcon className="h-3 w-3" />}
+                  {fmt === "NONE" ? t("metaTemplates.headerNone") : fmt}
+                </button>
+              );
+            })}
+          </div>
+          {form.headerFormat === "TEXT" && (
+            <>
+              <Input
+                placeholder={t("metaTemplates.headerPlaceholder")}
+                value={form.headerText}
+                onChange={(e) => updateForm("headerText", e.target.value)}
+                maxLength={60}
+              />
+              <p className="text-[10px] text-muted-foreground mt-0.5 text-right">
+                {form.headerText.length}/60
+              </p>
+            </>
+          )}
+          {(form.headerFormat === "IMAGE" || form.headerFormat === "VIDEO" || form.headerFormat === "DOCUMENT") && (
+            <>
+              <div className="flex items-center gap-1.5">
+                {form.headerFormat === "IMAGE" && <Image className="h-3.5 w-3.5 text-muted-foreground shrink-0" />}
+                {form.headerFormat === "VIDEO" && <Video className="h-3.5 w-3.5 text-muted-foreground shrink-0" />}
+                {form.headerFormat === "DOCUMENT" && <File className="h-3.5 w-3.5 text-muted-foreground shrink-0" />}
+                <Input
+                  placeholder={t("metaTemplates.mediaUrlPlaceholder")}
+                  value={form.headerMediaUrl}
+                  onChange={(e) => updateForm("headerMediaUrl", e.target.value)}
+                />
+              </div>
+              <p className="text-[10px] text-muted-foreground mt-0.5">
+                {t("metaTemplates.mediaUrlHint")}
+              </p>
+            </>
+          )}
         </div>
 
         {/* Body (required) */}
@@ -413,14 +487,15 @@ function CreateTemplateForm({
                 <div key={i} className="flex items-start gap-2 rounded-lg border p-2.5">
                   <div className="flex-1 space-y-2">
                     <div className="flex gap-2">
-                      <div className="relative w-36">
+                      <div className="relative w-40">
                         <select
                           value={btn.type}
-                          onChange={(e) => updateButton(i, { type: e.target.value as "URL" | "QUICK_REPLY", url: "" })}
+                          onChange={(e) => updateButton(i, { type: e.target.value as TemplateButton["type"], url: "", phone_number: "" })}
                           className="h-8 w-full rounded-md border bg-background px-2 text-xs appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-ring"
                         >
                           <option value="QUICK_REPLY">{t("metaTemplates.quickReply")}</option>
                           <option value="URL">URL</option>
+                          <option value="PHONE_NUMBER">{t("metaTemplates.phoneNumber")}</option>
                         </select>
                         <ChevronDown className="absolute right-1.5 top-1/2 h-3 w-3 -translate-y-1/2 text-muted-foreground pointer-events-none" />
                       </div>
@@ -443,6 +518,17 @@ function CreateTemplateForm({
                         />
                       </div>
                     )}
+                    {btn.type === "PHONE_NUMBER" && (
+                      <div className="flex items-center gap-1.5">
+                        <Phone className="h-3 w-3 text-muted-foreground shrink-0" />
+                        <Input
+                          placeholder="+573001234567"
+                          value={btn.phone_number || ""}
+                          onChange={(e) => updateButton(i, { phone_number: e.target.value })}
+                          className="h-8 text-xs"
+                        />
+                      </div>
+                    )}
                   </div>
                   <Button
                     variant="ghost"
@@ -459,24 +545,49 @@ function CreateTemplateForm({
         </div>
 
         {/* Live preview */}
-        {(form.headerText || form.bodyText || form.footerText || form.buttons.length > 0) && (
+        {(form.headerFormat !== "NONE" || form.bodyText || form.footerText || form.buttons.length > 0) && (
           <div>
             <label className="text-xs font-medium text-muted-foreground mb-1 block">
               {t("metaTemplates.livePreview")}
             </label>
             <div className="rounded-xl border bg-[#e5ddd5] dark:bg-[#1a1a2e] p-4">
-              <div className="max-w-[320px] mx-auto rounded-lg bg-white dark:bg-[#202c33] p-3 shadow-sm space-y-1.5">
-                {form.headerText && (
-                  <p className="text-sm font-semibold">{form.headerText}</p>
+              <div className="max-w-[320px] mx-auto rounded-lg bg-white dark:bg-[#202c33] overflow-hidden shadow-sm">
+                {/* Media header preview */}
+                {form.headerFormat === "IMAGE" && (
+                  <div className="bg-muted/60 flex items-center justify-center h-40">
+                    {form.headerMediaUrl ? (
+                      <img src={form.headerMediaUrl} alt="Header" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                    ) : (
+                      <Image className="h-10 w-10 text-muted-foreground/40" />
+                    )}
+                  </div>
                 )}
-                {form.bodyText && (
-                  <p className="text-sm whitespace-pre-wrap">{form.bodyText}</p>
+                {form.headerFormat === "VIDEO" && (
+                  <div className="bg-muted/60 flex items-center justify-center h-40">
+                    <Video className="h-10 w-10 text-muted-foreground/40" />
+                  </div>
                 )}
-                {form.footerText && (
-                  <p className="text-[11px] text-muted-foreground">{form.footerText}</p>
+                {form.headerFormat === "DOCUMENT" && (
+                  <div className="bg-muted/60 flex items-center justify-center h-16">
+                    <div className="flex items-center gap-2 text-muted-foreground/60">
+                      <File className="h-6 w-6" />
+                      <span className="text-xs">document.pdf</span>
+                    </div>
+                  </div>
                 )}
+                <div className="p-3 space-y-1.5">
+                  {form.headerFormat === "TEXT" && form.headerText && (
+                    <p className="text-sm font-semibold">{form.headerText}</p>
+                  )}
+                  {form.bodyText && (
+                    <p className="text-sm whitespace-pre-wrap">{form.bodyText}</p>
+                  )}
+                  {form.footerText && (
+                    <p className="text-[11px] text-muted-foreground">{form.footerText}</p>
+                  )}
+                </div>
                 {form.buttons.filter((b) => b.text.trim()).length > 0 && (
-                  <div className="border-t pt-1.5 space-y-1">
+                  <div className="border-t px-3 pb-2 pt-1.5 space-y-1">
                     {form.buttons
                       .filter((b) => b.text.trim())
                       .map((btn, i) => (
@@ -484,11 +595,9 @@ function CreateTemplateForm({
                           key={i}
                           className="flex items-center justify-center gap-1.5 py-1 text-xs text-blue-500 font-medium"
                         >
-                          {btn.type === "URL" ? (
-                            <LinkIcon className="h-3 w-3" />
-                          ) : (
-                            <MessageCircle className="h-3 w-3" />
-                          )}
+                          {btn.type === "URL" && <LinkIcon className="h-3 w-3" />}
+                          {btn.type === "PHONE_NUMBER" && <Phone className="h-3 w-3" />}
+                          {btn.type === "QUICK_REPLY" && <MessageCircle className="h-3 w-3" />}
                           {btn.text}
                         </div>
                       ))}
