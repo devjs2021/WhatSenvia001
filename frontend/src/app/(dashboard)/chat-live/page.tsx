@@ -43,6 +43,17 @@ interface ChatMessage {
   timestamp: string;
 }
 
+function normalizeMessage(raw: any): ChatMessage {
+  return {
+    id: raw.id,
+    phone: raw.phone,
+    content: raw.content,
+    fromMe: raw.fromMe ?? raw.direction === "outgoing",
+    source: raw.source ?? raw.senderType,
+    timestamp: raw.timestamp ?? raw.createdAt ?? new Date().toISOString(),
+  };
+}
+
 type CrmStatus = "Nuevo" | "Lead" | "Interesado" | "Cliente" | "VIP" | "Inactivo";
 
 const CRM_STATUSES: { label: CrmStatus; color: string }[] = [
@@ -110,7 +121,7 @@ export default function ChatLivePage() {
 
   useEffect(() => {
     if (messagesData?.data) {
-      setLocalMessages(messagesData.data);
+      setLocalMessages((messagesData.data as any[]).map(normalizeMessage));
     }
   }, [messagesData]);
 
@@ -134,7 +145,7 @@ export default function ChatLivePage() {
         const { event: eventName, data } = JSON.parse(event.data);
 
         if (eventName === "new_message") {
-          const msg = data as ChatMessage;
+          const msg = normalizeMessage(data);
 
           // Update conversations list
           setConversations((prev) => {
