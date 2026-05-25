@@ -136,6 +136,32 @@ export async function metaExchangeRoutes(fastify: FastifyInstance) {
         fastify.log.warn({ error: err.message }, 'Phone auto-registration failed (non-blocking)')
       }
 
+      // 5. Auto-subscribe app to WABA webhook so incoming messages arrive
+      let subscribed = false
+      try {
+        if (waba_id) {
+          const subRes = await fetch(
+            `https://graph.facebook.com/v21.0/${waba_id}/subscribed_apps`,
+            {
+              method: 'POST',
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
+                'Content-Type': 'application/json',
+              },
+            }
+          )
+          const subData = await subRes.json() as any
+          subscribed = subRes.ok && subData.success === true
+          if (subscribed) {
+            fastify.log.info({ waba_id }, 'App subscribed to WABA webhook')
+          } else {
+            fastify.log.warn({ waba_id, error: subData.error }, 'WABA webhook subscription response')
+          }
+        }
+      } catch (err: any) {
+        fastify.log.warn({ error: err.message }, 'WABA webhook subscription failed (non-blocking)')
+      }
+
       return reply.status(200).send({
         success: true,
         sessionId: session.id,
@@ -143,6 +169,7 @@ export async function metaExchangeRoutes(fastify: FastifyInstance) {
         phone_number_id,
         phone: displayPhone || phone_number_id,
         registered,
+        subscribed,
       })
 
     } catch (error) {
