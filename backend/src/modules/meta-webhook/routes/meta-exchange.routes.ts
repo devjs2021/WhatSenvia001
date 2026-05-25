@@ -235,4 +235,74 @@ export async function metaExchangeRoutes(fastify: FastifyInstance) {
       return reply.status(500).send({ error: err.message })
     }
   })
+
+  // Subscribe app to webhook for a phone number (diagnostic endpoint)
+  fastify.get('/api/meta/subscribe-webhook', async (
+    request: FastifyRequest<{ Querystring: { sessionId?: string } }>,
+    reply: FastifyReply
+  ) => {
+    const userId = (request as any).user.id
+    const { sessionId: qsSessionId } = request.query
+
+    // Find the meta_cloud session
+    const conditions = [eq(whatsappSessions.userId, userId)]
+    if (qsSessionId) {
+      conditions.push(eq(whatsappSessions.id, qsSessionId))
+    }
+    const [session] = await db
+      .select()
+      .from(whatsappSessions)
+      .where(and(...conditions, eq(whatsappSessions.connectionType, 'meta_cloud')))
+      .limit(1)
+
+    if (!session?.metaAccessToken || !session?.wabaId) {
+      return reply.status(404).send({ error: 'No Meta Cloud session found' })
+    }
+
+    const accessToken = decrypt(session.metaAccessToken)
+    const wabaId = session.wabaId
+    const phoneNumberId = session.metaPhoneNumberId
+
+    try {
+      // 1. Check current subscriptions on WABA
+      const checkRes = await fetch(
+        `https://graph.facebook.com/v21.0/${wabaId}/subscribed_apps`,
+        { headers: { Authorization: `Bearer ${accessToken}` } }
+      )
+      const checkData = await checkRes.json()
+
+      // 2. Subscribe the app to the WABA
+      const subRes = await fetch(
+        `https://graph.facebook.com/v21.0/${wabaId}/subscribed_apps`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      )
+      const subData = await subRes.json()
+
+      // 3. Also check phone number webhook fields
+      let phoneFields = null
+      if (phoneNumberId) {
+        const phoneRes = await fetch(
+          `https://graph.facebook.com/v21.0/${phoneNumberId}?fields=display_phone_number,verified_name,code_verification_status,quality_rating,status,is_official_business_account`,
+          { headers: { Authorization: `Bearer ${accessToken}` } }
+        )
+        phoneFields = await phoneRes.json()
+      }
+
+      return reply.send({
+        wabaId,
+        phoneNumberId,
+        currentSubscriptions: checkData,
+        subscribeResult: subData,
+        phoneStatus: phoneFields,
+      })
+    } catch (err: any) {
+      return reply.status(500).send({ error: err.message })
+    }
+  })
 }
