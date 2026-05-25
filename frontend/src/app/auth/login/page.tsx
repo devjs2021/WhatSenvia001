@@ -36,9 +36,9 @@ export default function LoginPage() {
   ];
 
   return (
-    <div className="min-h-screen grid lg:grid-cols-2">
+    <div className="min-h-screen grid lg:grid-cols-3 relative">
       {/* Language toggle */}
-      <div className="fixed top-6 right-6 z-10">
+      <div className="fixed top-6 right-6 z-20">
         <button
           type="button"
           onClick={() => setLocale(locale === 'es' ? 'en' : 'es')}
@@ -117,8 +117,8 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* Right Column — Form */}
-      <div className="flex items-center justify-center p-6 md:p-10">
+      {/* Center Column — Form (centered) */}
+      <div className="flex items-center justify-center p-6 md:p-10 lg:col-span-1">
         <div className="w-full max-w-md space-y-6">
 
           {/* Mobile logo */}
@@ -244,6 +244,35 @@ export default function LoginPage() {
             </Link>
           </div>
 
+        </div>
+      </div>
+
+      {/* Right Column — Illustration */}
+      <div className="hidden lg:flex flex-col items-center justify-center p-6 md:p-10 bg-gradient-to-bl from-emerald-50 via-white to-emerald-50/50 dark:from-emerald-950/20 dark:via-slate-900 dark:to-emerald-950/10 relative overflow-hidden">
+        {/* Decorative circles */}
+        <div className="absolute top-[-80px] left-[-80px] h-60 w-60 rounded-full bg-emerald-100/20 dark:bg-emerald-900/5" />
+        <div className="absolute bottom-[-120px] right-[-120px] h-80 w-80 rounded-full bg-emerald-100/30 dark:bg-emerald-900/10" />
+
+        <div className="relative z-10 flex flex-col items-center gap-6 max-w-md">
+          <div className="w-full max-w-sm">
+            <Image
+              src="/illustrations/person-computer.svg"
+              alt="Persona trabajando en su computadora con WhatsApp Business"
+              width={500}
+              height={500}
+              className="w-full h-auto drop-shadow-xl"
+              priority
+            />
+          </div>
+
+          <div className="text-center space-y-2">
+            <p className="text-sm font-medium tracking-[-0.02em] text-emerald-700 dark:text-emerald-400">
+              Gestiona tus campañas desde un solo lugar
+            </p>
+            <p className="text-xs font-normal tracking-normal text-slate-500 dark:text-slate-400">
+              Plataforma oficial de WhatsApp Business API
+            </p>
+          </div>
         </div>
       </div>
     </div>
