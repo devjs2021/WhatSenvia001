@@ -4,7 +4,6 @@ import {
   Smartphone,
   Bot,
   MessageCircle,
-  Zap,
   Users,
   Upload,
   UserPlus,
@@ -32,7 +31,7 @@ export interface DashboardNavItem {
 export interface DashboardNavGroup {
   nameKey: string;
   icon: LucideIcon;
-  href: string; // ruta principal del grupo (la primera página)
+  href: string;
   children: DashboardNavItem[];
 }
 
@@ -40,57 +39,56 @@ export type NavEntry = DashboardNavGroup;
 
 export const dashboardNavGroups: NavEntry[] = [
   {
-    nameKey: "navGroup.dashboard",
+    nameKey: "Dashboard",
     icon: LayoutDashboard,
     href: "/dashboard",
     children: [
-      { nameKey: "nav.dashboard", href: "/dashboard", icon: LayoutDashboard, feature: null },
+      { nameKey: "Dashboard", href: "/dashboard", icon: LayoutDashboard, feature: null },
     ],
   },
   {
-    nameKey: "navGroup.messaging",
+    nameKey: "Messaging",
     icon: Send,
     href: "/campaigns",
     children: [
-      { nameKey: "nav.bulkSend", href: "/campaigns", icon: Send, feature: "campaigns" },
-      { nameKey: "nav.connection", href: "/whatsapp", icon: Smartphone, feature: null },
-      { nameKey: "nav.botBuilder", href: "/bot-builder", icon: Bot, feature: "botBuilder" },
-      { nameKey: "nav.chatLive", href: "/chat-live", icon: MessageCircle, feature: "chatLive" },
-      { nameKey: "nav.testApiMeta", href: "/test-whatsapp", icon: Zap, feature: null },
+      { nameKey: "Bulk Send", href: "/campaigns", icon: Send, feature: "campaigns" },
+      { nameKey: "Connection", href: "/whatsapp", icon: Smartphone, feature: null },
+      { nameKey: "Bot Builder", href: "/bot-builder", icon: Bot, feature: "botBuilder" },
+      { nameKey: "Chat Live", href: "/chat-live", icon: MessageCircle, feature: "chatLive" },
     ],
   },
   {
-    nameKey: "navGroup.contacts",
+    nameKey: "Contacts",
     icon: Users,
     href: "/contacts",
     children: [
-      { nameKey: "nav.contacts", href: "/contacts", icon: Users, feature: null },
-      { nameKey: "nav.import", href: "/import", icon: Upload, feature: "import" },
-      { nameKey: "nav.extractContacts", href: "/extract-contacts", icon: UserPlus, feature: "contactExtraction" },
+      { nameKey: "Contacts", href: "/contacts", icon: Users, feature: null },
+      { nameKey: "Import", href: "/import", icon: Upload, feature: "import" },
+      { nameKey: "Extract", href: "/extract-contacts", icon: UserPlus, feature: "contactExtraction" },
     ],
   },
   {
-    nameKey: "navGroup.analytics",
+    nameKey: "Analytics",
     icon: BarChart3,
     href: "/poll-results",
     children: [
-      { nameKey: "nav.polls", href: "/poll-results", icon: BarChart3, feature: "polls" },
-      { nameKey: "nav.monitor", href: "/campaign-monitor", icon: Activity, feature: null },
-      { nameKey: "nav.reports", href: "/reports", icon: PieChart, feature: "reports" },
+      { nameKey: "Polls", href: "/poll-results", icon: BarChart3, feature: "polls" },
+      { nameKey: "Monitor", href: "/campaign-monitor", icon: Activity, feature: null },
+      { nameKey: "Reports", href: "/reports", icon: PieChart, feature: "reports" },
     ],
   },
   {
-    nameKey: "navGroup.settings",
+    nameKey: "Settings",
     icon: Settings,
     href: "/admin",
     children: [
-      { nameKey: "nav.adminPanel", href: "/admin", icon: Crown, feature: null },
-      { nameKey: "nav.templates", href: "/templates", icon: FileText, feature: "templates" },
-      { nameKey: "nav.metaTemplates", href: "/meta-templates", icon: FileCheck, feature: null },
-      { nameKey: "nav.control", href: "/campaign-control", icon: Shield, feature: "campaignControl" },
-      { nameKey: "nav.scheduled", href: "/scheduled", icon: Clock, feature: "scheduledCampaigns" },
-      { nameKey: "nav.messages", href: "/messages", icon: MessageSquare, feature: null },
-      { nameKey: "nav.settings", href: "/settings", icon: Settings, feature: null },
+      { nameKey: "Admin Panel", href: "/admin", icon: Crown, feature: null },
+      { nameKey: "Templates", href: "/templates", icon: FileText, feature: "templates" },
+      { nameKey: "Meta Templates", href: "/meta-templates", icon: FileCheck, feature: null },
+      { nameKey: "Campaign Control", href: "/campaign-control", icon: Shield, feature: "campaignControl" },
+      { nameKey: "Scheduled", href: "/scheduled", icon: Clock, feature: "scheduledCampaigns" },
+      { nameKey: "Messages", href: "/messages", icon: MessageSquare, feature: null },
+      { nameKey: "Settings", href: "/settings", icon: Settings, feature: null },
     ],
   },
 ];

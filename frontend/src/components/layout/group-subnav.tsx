@@ -3,12 +3,10 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { useI18n } from "@/i18n";
 import { findGroupByHref } from "@/config/dashboard-navigation";
 
 export function GroupSubNav() {
   const pathname = usePathname();
-  const { t } = useI18n();
 
   const group = findGroupByHref(pathname);
   if (!group || group.children.length <= 1) return null;
@@ -29,7 +27,7 @@ export function GroupSubNav() {
             )}
           >
             <child.icon className="w-4 h-4 shrink-0" strokeWidth={1.5} />
-            <span>{t(child.nameKey)}</span>
+            <span>{child.nameKey}</span>
           </Link>
         );
       })}

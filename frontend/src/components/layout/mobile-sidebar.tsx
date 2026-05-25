@@ -105,7 +105,7 @@ export function MobileSidebar({ open, onClose }: MobileSidebarProps) {
                 )}
               >
                 <group.icon className="w-5 h-5 shrink-0" strokeWidth={1.5} />
-                <span>{t(group.nameKey)}</span>
+                <span>{group.nameKey}</span>
               </Link>
             );
           })}

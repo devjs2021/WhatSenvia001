@@ -28,7 +28,7 @@ function getLicenseStatus(user: any, t: (key: string, params?: Record<string, an
 
 export function DashboardSidebar() {
   const pathname = usePathname();
-  const { user, hasFeature } = useAuth();
+  const { user } = useAuth();
   const { t } = useI18n();
 
   const licenseStatus = getLicenseStatus(user, t);
@@ -65,7 +65,7 @@ export function DashboardSidebar() {
                 )}
               >
                 <group.icon className="w-5 h-5 shrink-0" strokeWidth={1.5} />
-                <span>{t(group.nameKey)}</span>
+                <span>{group.nameKey}</span>
               </Link>
             );
           })}
@@ -81,7 +81,7 @@ export function DashboardSidebar() {
             !licenseStatus && "bg-emerald-500"
           )} />
           <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
-            {t('dashboard.accountHealth') || "Salud de Cuenta"}
+            {t('dashboard.accountHealth') || "Account Health"}
           </span>
         </div>
         <div>
@@ -94,21 +94,21 @@ export function DashboardSidebar() {
               </p>
               <p className="text-[11px] text-slate-500 mt-0.5">
                 {licenseStatus.type === "warning"
-                  ? t('license.renewSoon') || "Renueva pronto para evitar interrupciones."
+                  ? t('license.renewSoon') || "Renew soon to avoid interruptions."
                   : licenseStatus.type === "expired"
-                  ? t('license.renewNow') || "Renueva tu licencia para continuar."
-                  : t('license.active') || "Todo en orden."}
+                  ? t('license.renewNow') || "Renew your license to continue."
+                  : t('license.active') || "All good."}
               </p>
             </>
           ) : (
             <>
               <p className="text-sm font-semibold text-slate-900">
-                {user?.role === "admin" ? t('license.admin') || "Administrador" : "Excelente protección"}
+                {user?.role === "admin" ? t('license.admin') || "Administrator" : "Excellent protection"}
               </p>
               <p className="text-[11px] text-slate-500 mt-0.5">
                 {user?.role === "admin"
-                  ? t('license.adminDesc') || "Control total del sistema."
-                  : "Límites optimizados para evitar spam de Meta."}
+                  ? t('license.adminDesc') || "Full system control."
+                  : "Optimized limits to avoid Meta spam."}
               </p>
             </>
           )}
