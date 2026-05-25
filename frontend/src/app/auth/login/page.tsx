@@ -86,20 +86,20 @@ export default function LoginPage() {
         {/* ── Content ─────────────────────────────────────── */}
         <main className="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
           {/* Left: Illustration */}
-          <section className="w-full lg:w-1/2 flex justify-center relative">
-            <div className="absolute w-72 h-72 bg-emerald-100/40 rounded-full blur-3xl -z-10 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+          <section className="w-full lg:w-[55%] flex justify-center relative min-h-[320px] lg:min-h-[480px]">
+            <div className="absolute w-80 h-80 bg-emerald-100/50 rounded-full blur-3xl -z-10 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
             <Image
-              src="/illustrations/LogINpersonaje.png"
+              src="/illustrations/login-character.png"
               alt="CallMesd"
-              width={420}
-              height={420}
-              className="w-full max-w-[380px] h-auto object-contain drop-shadow-[0_4px_20px_rgba(0,0,0,0.01)]"
+              width={560}
+              height={560}
+              className="w-full max-w-[480px] h-auto object-contain drop-shadow-[0_4px_20px_rgba(0,0,0,0.01)]"
               priority
             />
           </section>
 
           {/* Right: Form */}
-          <section className="w-full lg:w-1/2 flex flex-col justify-center">
+          <section className="w-full lg:w-[45%] flex flex-col justify-center">
             {/* Phrase */}
             <div className="mb-8">
               <h1
