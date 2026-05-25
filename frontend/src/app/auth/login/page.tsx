@@ -123,22 +123,20 @@ export default function LoginPage() {
               >
                 {locale === "es" ? (
                   <>
-                    Se que eres valiosa, y por eso cuidamos de{" "}
-                    <span className="text-emerald-500">ti</span> y de tu{" "}
-                    <span className="text-emerald-500">tiempo</span>.
+                    Entendemos el valor de tu{" "}
+                    <span className="text-emerald-500">tiempo</span>, por eso
+                    cuidamos de <span className="text-emerald-500">ti</span>.
                   </>
                 ) : (
                   <>
-                    We know you&apos;re valuable, that&apos;s why we protect{" "}
-                    <span className="text-emerald-500">you</span> and your{" "}
-                    <span className="text-emerald-500">time</span>.
+                    We understand the value of your{" "}
+                    <span className="text-emerald-500">time</span>, that&apos;s
+                    why we take care of{" "}
+                    <span className="text-emerald-500">you</span>.
                   </>
                 )}
               </h1>
-              <div className="flex flex-wrap items-center gap-3 mt-4">
-                <p className="text-slate-400 text-sm">
-                  {t("auth.enterCredentials")}
-                </p>
+              <div className="mt-4">
                 <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-50 border border-slate-200 text-slate-500 select-none">
                   <svg
                     className="w-4 h-4 text-[#0064E0] fill-current"
