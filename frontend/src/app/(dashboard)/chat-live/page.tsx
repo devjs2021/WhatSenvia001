@@ -92,8 +92,9 @@ export default function ChatLivePage() {
   });
 
   const sessions = sessionsData?.data || [];
-  const connectedSession = sessions.find((s) => s.status === "connected");
-  const sessionId = connectedSession?.id;
+  const connectedSessions = sessions.filter((s) => s.status === "connected");
+  const [selectedSessionId, setSelectedSessionId] = useState<string>("");
+  const sessionId = selectedSessionId || connectedSessions[0]?.id;
 
   // Fetch conversations
   const { data: conversationsData } = useQuery({
@@ -290,8 +291,26 @@ export default function ChatLivePage() {
     <div className="flex h-[calc(100vh-theme(spacing.28))] gap-0 overflow-hidden rounded-lg border bg-card">
       {/* ── Left Panel: Conversations ─────────────────────────────── */}
       <div className={`flex w-full md:w-80 flex-shrink-0 flex-col border-r ${selectedPhone ? "hidden md:flex" : "flex"}`}>
-        {/* Search */}
-        <div className="border-b p-3">
+        {/* Session selector + Search */}
+        <div className="border-b p-3 space-y-2">
+          {connectedSessions.length > 1 && (
+            <select
+              className="w-full rounded-md border border-input bg-transparent px-3 py-1.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-ring"
+              value={sessionId || ""}
+              onChange={(e) => {
+                setSelectedSessionId(e.target.value);
+                setSelectedPhone(null);
+                setLocalMessages([]);
+                setConversations([]);
+              }}
+            >
+              {connectedSessions.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name} {s.phone ? `· ${s.phone}` : ""} {s.connectionType === "meta_cloud" ? "(Meta)" : ""}
+                </option>
+              ))}
+            </select>
+          )}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
