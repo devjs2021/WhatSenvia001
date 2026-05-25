@@ -86,16 +86,18 @@ export default function LoginPage() {
         {/* ── Content ─────────────────────────────────────── */}
         <main className="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
           {/* Left: Illustration */}
-          <section className="w-full lg:w-[55%] flex justify-center relative min-h-[320px] lg:min-h-[480px]">
+          <section className="w-full lg:w-[55%] flex justify-center items-center relative">
             <div className="absolute w-80 h-80 bg-emerald-100/50 rounded-full blur-3xl -z-10 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
-            <Image
-              src="/illustrations/login-character.png"
-              alt="CallMesd"
-              width={560}
-              height={560}
-              className="w-full max-w-[480px] h-auto object-contain drop-shadow-[0_4px_20px_rgba(0,0,0,0.01)]"
-              priority
-            />
+            <div className="w-full max-w-[500px] aspect-square overflow-hidden rounded-3xl">
+              <Image
+                src="/illustrations/login-character.png"
+                alt="CallMesd"
+                width={800}
+                height={800}
+                className="w-full h-full object-cover scale-[1.6] translate-y-[5%]"
+                priority
+              />
+            </div>
           </section>
 
           {/* Right: Form */}
