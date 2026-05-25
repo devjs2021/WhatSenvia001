@@ -98,7 +98,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 
   return (
     <>
-      <div className="flex h-14 items-center gap-2 border-b px-4">
+      <div className="flex h-14 items-center gap-2.5 px-4">
         <Image src="/logo.png" alt="CallMesd" width={30} height={30} className="rounded-full" />
         <span className="text-sm font-bold tracking-tight">CallMesd</span>
       </div>
@@ -144,10 +144,10 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
               href={item.href}
               onClick={onNavigate}
               className={cn(
-                "flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors",
+                "flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-sm font-medium transition-all duration-150",
                 isActive
-                  ? "bg-primary/10 text-primary"
-                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                  ? "bg-primary/5 text-primary"
+                  : "text-gray-500 dark:text-gray-400 hover:bg-gray-100/50 dark:hover:bg-gray-800/50 hover:text-gray-700 dark:hover:text-gray-200"
               )}
             >
               <item.icon className="h-3.5 w-3.5 shrink-0" />
@@ -163,10 +163,10 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
               href="/admin"
               onClick={onNavigate}
               className={cn(
-                "flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors",
+                "flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-sm font-medium transition-all duration-150",
                 pathname.startsWith("/admin")
-                  ? "bg-primary/10 text-primary"
-                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                  ? "bg-primary/5 text-primary"
+                  : "text-gray-500 dark:text-gray-400 hover:bg-gray-100/50 dark:hover:bg-gray-800/50 hover:text-gray-700 dark:hover:text-gray-200"
               )}
             >
               <Crown className="h-3.5 w-3.5 shrink-0" />
@@ -181,7 +181,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
           href={supportUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center gap-2 rounded-lg bg-green-50 dark:bg-green-900/20 px-2.5 py-1.5 text-xs font-medium text-green-700 hover:bg-green-100 transition-colors dark:text-green-400"
+          className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-100/50 dark:hover:bg-gray-800/50 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
         >
           <Headphones className="h-3.5 w-3.5" />
           {t('nav.support')}
@@ -202,7 +202,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         </div>
       </div>
 
-      <div className="border-t px-3 py-3">
+      <div className="px-3 py-3">
         <div className="flex items-center justify-between">
           <div className="min-w-0">
             <p className="text-xs font-semibold truncate">{user?.name || t('auth.user')}</p>
@@ -229,7 +229,7 @@ export function MobileHeader() {
   return (
     <>
       {/* Mobile top bar */}
-      <div className="md:hidden flex items-center justify-between border-b bg-card px-4 py-3">
+      <div className="md:hidden flex items-center justify-between px-4 py-3">
         <div className="flex items-center gap-2">
           <Image src="/logo.png" alt="CallMesd" width={28} height={28} className="rounded-full" />
           <span className="text-sm font-bold tracking-tight">CallMesd</span>
@@ -246,7 +246,7 @@ export function MobileHeader() {
       {open && (
         <div className="fixed inset-0 z-50 md:hidden">
           <div className="absolute inset-0 bg-black/50" onClick={() => setOpen(false)} />
-          <aside className="absolute left-0 top-0 bottom-0 w-64 bg-card flex flex-col shadow-xl animate-in slide-in-from-left duration-200">
+          <aside className="absolute left-0 top-0 bottom-0 w-64 bg-gray-50 dark:bg-gray-950 flex flex-col animate-in slide-in-from-left duration-200">
             <div className="absolute right-2 top-2 z-10">
               <button
                 onClick={() => setOpen(false)}
@@ -265,7 +265,7 @@ export function MobileHeader() {
 
 export function Sidebar() {
   return (
-    <aside className="hidden md:flex h-screen w-56 flex-col border-r bg-card">
+    <aside className="hidden md:flex h-screen w-56 flex-col border-r border-gray-200/60 dark:border-gray-800/60 bg-gray-50 dark:bg-gray-950">
       <SidebarContent />
     </aside>
   );
