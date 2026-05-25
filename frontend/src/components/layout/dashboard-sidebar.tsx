@@ -1,12 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 import { useI18n } from "@/i18n";
-import { dashboardNavigation, adminNavItem } from "@/config/dashboard-navigation";
-import { Clock, AlertTriangle } from "lucide-react";
+import { dashboardNavGroups, adminNavItem } from "@/config/dashboard-navigation";
+import { Clock, AlertTriangle, ChevronDown } from "lucide-react";
 
 function getLicenseStatus(user: any, t: (key: string, params?: Record<string, any>) => string) {
   if (!user || user.role === "admin") return null;
@@ -31,15 +32,32 @@ export function DashboardSidebar() {
   const { user, hasFeature, isAdmin } = useAuth();
   const { t } = useI18n();
 
-  const visibleNav = dashboardNavigation.filter(
-    (item) => !item.feature || hasFeature(item.feature)
-  );
+  // Determinar qué grupo(s) deben estar expandidos por defecto
+  const defaultExpanded = dashboardNavGroups
+    .filter((group) =>
+      group.children.some((child) => pathname === child.href || pathname.startsWith(child.href + "/"))
+    )
+    .map((g) => g.nameKey);
+
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set(defaultExpanded));
+
+  const toggleGroup = (nameKey: string) => {
+    setExpandedGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(nameKey)) {
+        next.delete(nameKey);
+      } else {
+        next.add(nameKey);
+      }
+      return next;
+    });
+  };
 
   const licenseStatus = getLicenseStatus(user, t);
 
   return (
     <aside className="w-64 border-r border-slate-100 bg-white flex flex-col justify-between p-6 shrink-0 hidden md:flex sticky top-0 h-screen">
-      <div className="space-y-8">
+      <div className="space-y-6">
         {/* Logotipo ClickSend */}
         <div className="flex items-center gap-2">
           <div className="h-8 w-8 rounded-lg bg-emerald-500 flex items-center justify-center">
@@ -50,28 +68,73 @@ export function DashboardSidebar() {
           </span>
         </div>
 
-        {/* Navegación principal */}
+        {/* Navegación por grupos */}
         <nav className="space-y-1">
-          {visibleNav.map((item) => {
-            const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+          {dashboardNavGroups.map((group) => {
+            const isExpanded = expandedGroups.has(group.nameKey);
+            const hasActiveChild = group.children.some(
+              (child) => pathname === child.href || pathname.startsWith(child.href + "/")
+            );
+
             return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-colors duration-150",
-                  isActive
-                    ? "text-emerald-600 bg-emerald-50/50"
-                    : "text-slate-500 hover:text-slate-900 hover:bg-slate-50"
-                )}
-              >
-                <item.icon className="w-5 h-5 shrink-0" strokeWidth={1.5} />
-                <span>{t(item.nameKey)}</span>
-              </Link>
+              <div key={group.nameKey}>
+                {/* Cabecera del grupo (colapsable) */}
+                <button
+                  onClick={() => toggleGroup(group.nameKey)}
+                  className={cn(
+                    "w-full flex items-center justify-between px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors duration-150",
+                    hasActiveChild
+                      ? "text-emerald-600 bg-emerald-50/50"
+                      : "text-slate-500 hover:text-slate-900 hover:bg-slate-50"
+                  )}
+                >
+                  <div className="flex items-center gap-3">
+                    <group.icon className="w-5 h-5 shrink-0" strokeWidth={1.5} />
+                    <span>{t(group.nameKey)}</span>
+                  </div>
+                  <ChevronDown
+                    className={cn(
+                      "w-4 h-4 transition-transform duration-200",
+                      isExpanded && "rotate-180"
+                    )}
+                    strokeWidth={2}
+                  />
+                </button>
+
+                {/* Hijos del grupo */}
+                <div
+                  className={cn(
+                    "overflow-hidden transition-all duration-200 ease-in-out",
+                    isExpanded ? "max-h-96 opacity-100 mt-1" : "max-h-0 opacity-0"
+                  )}
+                >
+                  <div className="ml-3 border-l border-slate-100 pl-3 space-y-0.5">
+                    {group.children.map((child) => {
+                      const isChildActive =
+                        pathname === child.href || pathname.startsWith(child.href + "/");
+                      return (
+                        <Link
+                          key={child.href}
+                          href={child.href}
+                          className={cn(
+                            "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium transition-colors duration-150",
+                            isChildActive
+                              ? "text-emerald-600 bg-emerald-50/60"
+                              : "text-slate-400 hover:text-slate-700 hover:bg-slate-50"
+                          )}
+                        >
+                          <child.icon className="w-4 h-4 shrink-0" strokeWidth={1.5} />
+                          <span>{t(child.nameKey)}</span>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
             );
           })}
 
-          {/* Admin link */}
+          {/* Admin link (siempre visible, fuera de grupos) */}
           {isAdmin() && (
             <Link
               href={adminNavItem.href}
