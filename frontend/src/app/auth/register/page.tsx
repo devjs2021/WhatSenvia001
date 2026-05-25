@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -11,10 +11,22 @@ import { Eye, EyeOff, Mail, Lock, User, Building2, UserPlus, Globe } from "lucid
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { register, isLoading } = useAuth();
+  const { register, isLoading, token, user, loadUser } = useAuth();
   const { locale, setLocale, t } = useI18n();
   const [form, setForm] = useState({ name: "", email: "", password: "", company: "" });
   const [showPassword, setShowPassword] = useState(false);
+
+  useEffect(() => {
+    if (token) {
+      if (user) {
+        router.replace("/contacts");
+      } else {
+        loadUser().then(() => {
+          if (useAuth.getState().user) router.replace("/contacts");
+        });
+      }
+    }
+  }, [token, user, router, loadUser]);
 
   function update(field: string, value: string) {
     setForm((prev) => ({ ...prev, [field]: value }));

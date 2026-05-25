@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -11,11 +11,23 @@ import { Eye, EyeOff, Globe, ArrowRight, User, Lock } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, isLoading } = useAuth();
+  const { login, isLoading, token, user, loadUser } = useAuth();
   const { locale, setLocale, t } = useI18n();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+
+  useEffect(() => {
+    if (token) {
+      if (user) {
+        router.replace("/contacts");
+      } else {
+        loadUser().then(() => {
+          if (useAuth.getState().user) router.replace("/contacts");
+        });
+      }
+    }
+  }, [token, user, router, loadUser]);
 
   async function handleSubmit(e: React.SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
