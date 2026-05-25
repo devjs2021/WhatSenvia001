@@ -127,6 +127,9 @@ export async function metaWebhookRoutes(app: FastifyInstance) {
                     createdAt: timestamp,
                   }).returning()
                   console.log(`✅ Mensaje guardado en chat_messages (session: ${session.id})`)
+                  console.log('🔍 DEBUG webhook - sessionId para broadcast:', session.id)
+                  console.log('🔍 DEBUG webhook - saved keys:', Object.keys(saved))
+                  console.log('🔍 DEBUG webhook - saved.phone:', saved.phone, 'saved.content:', saved.content)
 
                   chatBroadcast.broadcast(session.id, 'new_message', saved)
                 } catch (err: any) {
