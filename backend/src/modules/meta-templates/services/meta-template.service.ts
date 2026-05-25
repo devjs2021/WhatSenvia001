@@ -188,8 +188,7 @@ export class MetaTemplateService {
       .where(
         and(
           eq(metaTemplates.userId, userId),
-          eq(metaTemplates.wabaId, session.wabaId),
-          eq(metaTemplates.status, "APPROVED")
+          eq(metaTemplates.wabaId, session.wabaId)
         )
       );
   }
