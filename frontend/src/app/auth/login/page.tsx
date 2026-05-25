@@ -7,7 +7,7 @@ import Image from "next/image";
 import { useAuth } from "@/hooks/use-auth";
 import { useI18n } from "@/i18n";
 import { toast } from "sonner";
-import { Eye, EyeOff, Globe } from "lucide-react";
+import { Eye, EyeOff, Globe, ArrowRight, User, Lock } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -28,170 +28,295 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex bg-[#f0f0f0] dark:bg-gray-950">
-      {/* Left — Form */}
-      <div className="flex-1 flex flex-col items-center justify-center px-6 py-10 relative">
-        {/* Language toggle */}
-        <div className="absolute top-5 right-5 lg:right-auto lg:left-5">
-          <button
-            type="button"
-            onClick={() => setLocale(locale === "es" ? "en" : "es")}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-xs font-medium text-gray-500 dark:text-gray-400 hover:shadow-sm transition-all"
-          >
-            <Globe className="h-3.5 w-3.5" />
-            {locale === "es" ? "EN" : "ES"}
-          </button>
-        </div>
-
-        <div className="w-full max-w-[400px] space-y-8">
-          {/* Mobile illustration */}
-          <div className="lg:hidden flex flex-col items-center gap-4">
+    <div
+      className="bg-[#F8FAFC] min-h-screen flex items-center justify-center p-4 md:p-8 antialiased"
+      style={{ fontFamily: '"Inter", system-ui, sans-serif' }}
+    >
+      <div className="bg-white border border-slate-100 rounded-[32px] shadow-[0_8px_30px_rgb(0,0,0,0.02)] w-full max-w-6xl p-6 md:p-12 flex flex-col gap-10 relative overflow-hidden">
+        {/* ── Header ──────────────────────────────────────── */}
+        <header className="w-full flex flex-col sm:flex-row justify-between items-center gap-4 pb-4 border-b border-slate-100">
+          <div className="flex items-center gap-2.5">
             <Image
-              src="/illustrations/LogINpersonaje.png"
+              src="/logo.png"
               alt="CallMesd"
-              width={240}
-              height={240}
-              className="w-56 h-auto"
-              priority
+              width={28}
+              height={28}
+              className="rounded-full"
             />
+            <span
+              className="text-2xl font-extrabold tracking-tight text-slate-900"
+              style={{
+                fontFamily: '"Plus Jakarta Sans", system-ui, sans-serif',
+              }}
+            >
+              Call<span className="text-emerald-600">Mesd</span>
+            </span>
           </div>
 
-          {/* Header */}
-          <div className="space-y-3">
-            <h1 className="text-3xl md:text-[40px] font-extrabold tracking-tight text-gray-900 dark:text-white leading-[1.1]">
-              {t("auth.welcomeBack")}
-            </h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
-              {t("auth.enterCredentials")} <span className="font-bold text-gray-700 dark:text-gray-300">CallMesd</span>
-            </p>
-          </div>
-
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Email */}
-            <div>
-              <input
-                type="email"
-                placeholder={t("auth.email")}
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="w-full rounded-2xl border border-gray-300 dark:border-gray-700 bg-transparent px-5 py-3.5 text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-400 focus:outline-none focus:border-gray-900 dark:focus:border-gray-300 transition-colors"
-              />
-            </div>
-
-            {/* Password */}
-            <div className="relative">
-              <input
-                type={showPassword ? "text" : "password"}
-                placeholder={t("auth.password")}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="w-full rounded-2xl border border-gray-300 dark:border-gray-700 bg-transparent px-5 pr-12 py-3.5 text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-400 focus:outline-none focus:border-gray-900 dark:focus:border-gray-300 transition-colors"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-              >
-                {showPassword ? <EyeOff className="h-[18px] w-[18px]" /> : <Eye className="h-[18px] w-[18px]" />}
-              </button>
-            </div>
-
-            {/* Forgot password */}
-            <div className="flex justify-end">
-              <button
-                type="button"
-                className="text-xs font-bold text-gray-900 dark:text-gray-200 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
-              >
-                {t("auth.forgotPassword")}
-              </button>
-            </div>
-
-            {/* Submit */}
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full bg-gray-900 dark:bg-white hover:bg-gray-800 dark:hover:bg-gray-100 text-white dark:text-gray-900 font-bold py-4 rounded-2xl text-sm tracking-wide transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-            >
-              {isLoading ? (
-                <>
-                  <div className="h-4 w-4 rounded-full border-2 border-white/30 dark:border-gray-900/30 border-t-white dark:border-t-gray-900 animate-spin" />
-                  {t("common.loading")}
-                </>
-              ) : (
-                t("auth.login")
-              )}
-            </button>
-          </form>
-
-          {/* Register link */}
-          <p className="text-center text-sm text-gray-500 dark:text-gray-400">
-            {t("auth.noAccount")}{" "}
-            <Link
-              href="/auth/register"
-              className="font-bold text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 transition-colors"
-            >
-              {t("auth.registerHere")}
-            </Link>
-          </p>
-
-          {/* Footer */}
-          <div className="flex items-center justify-center gap-3 pt-2">
+          <nav className="flex flex-wrap justify-center items-center gap-x-6 gap-y-2 text-sm font-medium text-slate-500">
             <Link
               href="/privacy-policy"
-              className="text-[11px] text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+              className="hover:text-emerald-600 transition-colors"
             >
               {t("nav.privacyPolicy")}
             </Link>
-            <span className="text-gray-300 dark:text-gray-700">·</span>
             <Link
               href="/terms-of-service"
-              className="text-[11px] text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+              className="hover:text-emerald-600 transition-colors"
             >
               {t("nav.termsOfService")}
             </Link>
-          </div>
-        </div>
-      </div>
+          </nav>
 
-      {/* Right — Illustration panel */}
-      <div className="hidden lg:flex lg:w-[50%] relative items-center justify-center bg-[#eef6ee] dark:bg-emerald-950/20 rounded-l-[48px] overflow-hidden m-3 mr-3">
-        <div className="relative z-10 flex flex-col items-center gap-8 px-10 max-w-lg">
-          {/* Character illustration */}
-          <div className="w-full max-w-[420px]">
+          <div className="hidden lg:flex items-center gap-3 text-slate-400">
+            <button
+              type="button"
+              onClick={() => setLocale(locale === "es" ? "en" : "es")}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-slate-100 text-xs font-medium hover:text-slate-600 hover:border-slate-200 transition-all"
+            >
+              <Globe className="h-3.5 w-3.5" />
+              {locale === "es" ? "EN" : "ES"}
+            </button>
+            <div className="w-8 h-8 rounded-full border border-slate-100 flex items-center justify-center bg-slate-50">
+              <User className="h-4 w-4 text-slate-500" strokeWidth={1.5} />
+            </div>
+          </div>
+        </header>
+
+        {/* ── Content ─────────────────────────────────────── */}
+        <main className="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
+          {/* Left: Illustration */}
+          <section className="w-full lg:w-1/2 flex justify-center relative">
+            <div className="absolute w-72 h-72 bg-emerald-100/40 rounded-full blur-3xl -z-10 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
             <Image
               src="/illustrations/LogINpersonaje.png"
-              alt="Personaje CallMesd con reloj"
-              width={500}
-              height={500}
-              className="w-full h-auto"
+              alt="CallMesd"
+              width={420}
+              height={420}
+              className="w-full max-w-[380px] h-auto object-contain drop-shadow-[0_4px_20px_rgba(0,0,0,0.01)]"
               priority
             />
-          </div>
+          </section>
 
-          {/* Carousel dots */}
-          <div className="flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full bg-gray-300 dark:bg-gray-600" />
-            <span className="h-2 w-2 rounded-full bg-gray-300 dark:bg-gray-600" />
-            <span className="h-2 w-6 rounded-full bg-gray-900 dark:bg-white" />
-          </div>
+          {/* Right: Form */}
+          <section className="w-full lg:w-1/2 flex flex-col justify-center">
+            {/* Phrase */}
+            <div className="mb-8">
+              <h1
+                className="text-2xl md:text-3xl font-extrabold tracking-tight text-slate-900 leading-snug"
+                style={{
+                  fontFamily:
+                    '"Plus Jakarta Sans", system-ui, sans-serif',
+                }}
+              >
+                {locale === "es" ? (
+                  <>
+                    Se que eres valiosa, y por eso cuidamos de{" "}
+                    <span className="text-emerald-500">ti</span> y de tu{" "}
+                    <span className="text-emerald-500">tiempo</span>.
+                  </>
+                ) : (
+                  <>
+                    We know you&apos;re valuable, that&apos;s why we protect{" "}
+                    <span className="text-emerald-500">you</span> and your{" "}
+                    <span className="text-emerald-500">time</span>.
+                  </>
+                )}
+              </h1>
+              <div className="flex flex-wrap items-center gap-3 mt-4">
+                <p className="text-slate-400 text-sm">
+                  {t("auth.enterCredentials")}
+                </p>
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-50 border border-slate-200 text-slate-500 select-none">
+                  <svg
+                    className="w-4 h-4 text-[#0064E0] fill-current"
+                    viewBox="0 0 24 24"
+                  >
+                    <path d="M16.4 6c-1.8 0-3.4 1-4.4 2.5C11 7 9.4 6 7.6 6 4.5 6 2 8.5 2 11.6s2.5 5.6 5.6 5.6c1.8 0 3.4-1 4.4-2.5 1 1.5 2.6 2.5 4.4 2.5 3.1 0 5.6-2.5 5.6-5.6S19.5 6 16.4 6zm-8.8 9.2c-2 0-3.6-1.6-3.6-3.6S5.6 8 7.6 8c1.3 0 2.5.7 3.1 1.8-.8 1.4-.8 3.2 0 4.6-.6 1.1-1.8 1.8-3.1 1.8zm8.8 0c-1.3 0-2.5-.7-3.1-1.8.8-1.4.8-3.2 0-4.6.6-1.1 1.8-1.8 3.1-1.8 2 0 3.6 1.6 3.6 3.6s-1.6 3.6-3.6 3.6z" />
+                  </svg>
+                  <span className="text-slate-600 font-bold text-[10px] tracking-wider uppercase">
+                    {locale === "es"
+                      ? "Verificados por Meta"
+                      : "Verified by Meta"}
+                  </span>
+                </div>
+              </div>
+            </div>
 
-          {/* Phrase */}
-          <div className="text-center space-y-2 max-w-sm">
-            <h2 className="text-xl font-extrabold text-gray-900 dark:text-white leading-snug tracking-tight">
-              Se que tu tiempo vale
-              <br />
-              y por eso lo cuidamos
-            </h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
-              Tu tiempo y tu cuenta, protegidos en cada paso.
-              <br />
-              Esa es nuestra promesa con <span className="font-bold text-gray-700 dark:text-gray-300">CallMesd</span>.
-            </p>
-          </div>
-        </div>
+            {/* Form */}
+            <form
+              onSubmit={handleSubmit}
+              className="space-y-5 max-w-[420px]"
+            >
+              {/* Email */}
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest">
+                  {t("auth.email")}
+                </label>
+                <div className="relative">
+                  <span className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-slate-400">
+                    <User className="h-5 w-5" strokeWidth={1.5} />
+                  </span>
+                  <input
+                    type="email"
+                    placeholder="nombre@empresa.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    className="w-full bg-white border border-slate-200 rounded-2xl pl-12 pr-4 py-3.5 text-sm text-slate-800 placeholder-slate-300 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 transition-all font-medium"
+                  />
+                </div>
+              </div>
+
+              {/* Password */}
+              <div className="space-y-1.5">
+                <div className="flex justify-between items-center">
+                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest">
+                    {t("auth.password")}
+                  </label>
+                  <button
+                    type="button"
+                    className="text-xs font-semibold text-slate-400 hover:text-emerald-600 transition-colors"
+                  >
+                    {t("auth.forgotPassword")}
+                  </button>
+                </div>
+                <div className="relative">
+                  <span className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-slate-400">
+                    <Lock className="h-5 w-5" strokeWidth={1.5} />
+                  </span>
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    placeholder="••••••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    className="w-full bg-white border border-slate-200 rounded-2xl pl-12 pr-12 py-3.5 text-sm text-slate-800 placeholder-slate-300 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 transition-all font-medium"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 hover:text-slate-600 transition-colors"
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-5 w-5" strokeWidth={1.5} />
+                    ) : (
+                      <Eye className="h-5 w-5" strokeWidth={1.5} />
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* Submit */}
+              <div className="pt-2">
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm py-4 px-6 rounded-2xl shadow-[0_4px_12px_rgba(16,185,129,0.15)] hover:shadow-[0_6px_20px_rgba(16,185,129,0.25)] transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {isLoading ? (
+                    <>
+                      <div className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                      {t("common.loading")}
+                    </>
+                  ) : (
+                    <>
+                      <span>
+                        {locale === "es"
+                          ? "Iniciar Sesion de forma segura"
+                          : "Sign in securely"}
+                      </span>
+                      <ArrowRight className="h-4 w-4" strokeWidth={2} />
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {/* Divider */}
+              <div className="relative flex py-2 items-center">
+                <div className="flex-grow border-t border-slate-100" />
+                <span className="flex-shrink mx-4 text-xs font-semibold text-slate-300 uppercase tracking-widest">
+                  {locale === "es" ? "O continua con" : "Or continue with"}
+                </span>
+                <div className="flex-grow border-t border-slate-100" />
+              </div>
+
+              {/* Social login */}
+              <div className="grid grid-cols-3 gap-3">
+                <button
+                  type="button"
+                  onClick={() =>
+                    toast.info(
+                      locale === "es"
+                        ? "Proximamente"
+                        : "Coming soon"
+                    )
+                  }
+                  className="flex justify-center items-center py-3 px-4 border border-slate-100 hover:border-slate-200 rounded-xl bg-white hover:bg-slate-50 transition-colors"
+                >
+                  <svg
+                    className="w-5 h-5 text-slate-500"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                  >
+                    <path d="M12.24 10.285V14.4h6.887c-.275 1.565-1.88 4.604-6.887 4.604-4.33 0-7.866-3.577-7.866-8s3.536-8 7.866-8c2.46 0 4.105 1.025 5.047 1.926l3.258-3.133C18.444 1.244 15.618 0 12.24 0 5.581 0 0 5.37 0 12s5.581 12 12.24 12c6.96 0 11.57-4.84 11.57-11.72 0-.79-.085-1.4-.19-1.995H12.24z" />
+                  </svg>
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    toast.info(
+                      locale === "es"
+                        ? "Proximamente"
+                        : "Coming soon"
+                    )
+                  }
+                  className="flex justify-center items-center py-3 px-4 border border-slate-100 hover:border-slate-200 rounded-xl bg-white hover:bg-slate-50 transition-colors"
+                >
+                  <svg
+                    className="w-5 h-5 text-slate-500"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                  >
+                    <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.779-1.75-1.75s.784-1.75 1.75-1.75 1.75.779 1.75 1.75-.784 1.75-1.75 1.75zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" />
+                  </svg>
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    toast.info(
+                      locale === "es"
+                        ? "Proximamente"
+                        : "Coming soon"
+                    )
+                  }
+                  className="flex justify-center items-center py-3 px-4 border border-slate-100 hover:border-slate-200 rounded-xl bg-white hover:bg-slate-50 transition-colors"
+                >
+                  <svg
+                    className="w-5 h-5 text-slate-500"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                  >
+                    <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 4.17c.66-.81 1.11-1.93.99-3.06-.96.04-2.13.64-2.82 1.45-.6.69-1.12 1.83-.98 2.94 1.07.08 2.15-.52 2.81-1.33z" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Register link */}
+              <div className="text-center pt-2">
+                <p className="text-xs font-semibold text-slate-400">
+                  {t("auth.noAccount")}{" "}
+                  <Link
+                    href="/auth/register"
+                    className="text-emerald-600 hover:text-emerald-700 font-bold transition-colors"
+                  >
+                    {t("auth.registerHere")}
+                  </Link>
+                </p>
+              </div>
+            </form>
+          </section>
+        </main>
       </div>
     </div>
   );
