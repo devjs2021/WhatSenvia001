@@ -98,14 +98,14 @@ export default function LoginPage() {
         {/* ── Content ─────────────────────────────────────── */}
         <main className="flex flex-col lg:flex-row lg:items-stretch items-center gap-8 lg:gap-12">
           {/* Left: Illustration */}
-          <section className="w-full lg:w-[55%] flex items-center justify-center relative">
+          <section className="w-full lg:w-[55%] flex items-center justify-center relative overflow-hidden">
             <div className="absolute w-80 h-80 bg-emerald-100/50 rounded-full blur-3xl -z-10 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
             <Image
               src="/illustrations/login-character.png"
               alt="CallMesd"
               width={700}
               height={700}
-              className="h-full w-auto max-w-full object-contain"
+              className="h-full w-auto max-w-none object-contain scale-[1.4]"
               quality={100}
               unoptimized
               priority
