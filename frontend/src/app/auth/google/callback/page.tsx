@@ -28,15 +28,14 @@ export default function GoogleCallbackPage() {
     const redirectUri = window.location.origin + "/auth/google/callback";
 
     api.post<{
-      user: any;
-      token: string;
-      refreshToken: string;
-      isNewUser: boolean;
+      success: boolean;
+      data: { user: any; token: string; refreshToken: string; isNewUser: boolean };
     }>("/auth/google", { code, redirectUri })
       .then((res) => {
-        localStorage.setItem("token", res.token);
-        localStorage.setItem("refreshToken", res.refreshToken);
-        useAuth.setState({ user: res.user, token: res.token });
+        const { user, token, refreshToken } = res.data;
+        localStorage.setItem("token", token);
+        localStorage.setItem("refreshToken", refreshToken);
+        useAuth.setState({ user, token });
         router.replace("/contacts");
       })
       .catch((err: any) => {
