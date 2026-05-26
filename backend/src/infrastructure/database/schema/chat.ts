@@ -8,6 +8,8 @@ export const chatMessages = pgTable(
     phone: varchar("phone", { length: 20 }).notNull(),
     remoteJid: varchar("remote_jid", { length: 100 }),
     content: text("content").notNull(),
+    mediaUrl: varchar("media_url", { length: 500 }),
+    mediaType: varchar("media_type", { length: 50 }),
     direction: varchar("direction", { length: 10 }).notNull().$type<"incoming" | "outgoing">(),
     senderType: varchar("sender_type", { length: 10 }).notNull().$type<"user" | "bot" | "human">(),
     whatsappMessageId: varchar("whatsapp_message_id", { length: 100 }),

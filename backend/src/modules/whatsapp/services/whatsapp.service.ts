@@ -90,7 +90,6 @@ export class WhatsAppService {
           },
           onMessageStatus: async () => {},
           onMessage: async (msg) => {
-            // Save incoming message to chat and broadcast
             try {
               const chatMsg = await chatService.saveMessage({
                 sessionId: session.id,
@@ -101,6 +100,8 @@ export class WhatsAppService {
                 senderType: "user",
                 whatsappMessageId: msg.messageId,
                 pushName: msg.pushName,
+                mediaUrl: msg.mediaUrl,
+                mediaType: msg.mediaType,
               });
               chatBroadcast.broadcast(session.id, "new_message", chatMsg);
             } catch (chatErr: any) {
@@ -232,7 +233,6 @@ export class WhatsAppService {
         },
 
         onMessage: async (msg: any) => {
-          // Save incoming message to chat and broadcast
           try {
             const chatMsg = await chatService.saveMessage({
               sessionId,
@@ -243,6 +243,8 @@ export class WhatsAppService {
               senderType: "user",
               whatsappMessageId: msg.messageId,
               pushName: msg.pushName,
+              mediaUrl: msg.mediaUrl,
+              mediaType: msg.mediaType,
             });
             chatBroadcast.broadcast(sessionId, "new_message", chatMsg);
           } catch (chatErr: any) {

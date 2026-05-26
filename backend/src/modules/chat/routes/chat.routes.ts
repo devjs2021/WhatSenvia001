@@ -2,6 +2,7 @@ import { FastifyInstance } from "fastify";
 import { authGuard, licenseGuard } from "../../../shared/middleware/auth.middleware.js";
 import { chatService } from "../services/chat.service.js";
 import { chatBroadcast } from "../websocket/chat-broadcast.js";
+import { mediaStorageService } from "../services/media-storage.service.js";
 
 export async function chatRoutes(app: FastifyInstance) {
   // WebSocket endpoint (no preHandler for WS)
@@ -42,7 +43,9 @@ export async function chatRoutes(app: FastifyInstance) {
   app.get("/conversations", { preHandler: [authGuard, licenseGuard("chatLive")] }, async (req) => {
     const { sessionId } = req.query as any;
     const userId = (req as any).user.id;
-    if (!sessionId) throw new Error("sessionId required");
+    if (!sessionId || sessionId === "all") {
+      return chatService.getAllConversations(userId);
+    }
     return chatService.getConversations(sessionId, userId);
   });
 
@@ -60,13 +63,22 @@ export async function chatRoutes(app: FastifyInstance) {
     );
   });
 
-  app.post("/send", { preHandler: [authGuard, licenseGuard("chatLive")] }, async (req) => {
-    const { sessionId, phone, text } = req.body as any;
-    const userId = (req as any).user.id;
-    if (!sessionId || !phone || !text)
-      throw new Error("sessionId, phone, text required");
+  app.post("/upload", { preHandler: [authGuard, licenseGuard("chatLive")] }, async (req) => {
+    const data = await req.file();
+    if (!data) throw new Error("No file uploaded");
+    const buffer = await data.toBuffer();
+    return mediaStorageService.saveUploadedFile(buffer, data.filename, data.mimetype);
+  });
 
-    const saved = await chatService.sendMessage(sessionId, phone, text, userId);
+  app.post("/send", { preHandler: [authGuard, licenseGuard("chatLive")] }, async (req) => {
+    const { sessionId, phone, text, mediaUrl, mediaType } = req.body as any;
+    const userId = (req as any).user.id;
+    if (!sessionId || !phone) throw new Error("sessionId and phone required");
+    if (!text && !mediaUrl) throw new Error("text or mediaUrl required");
+
+    const saved = await chatService.sendMessage(
+      sessionId, phone, text || "", userId, mediaUrl, mediaType
+    );
     chatBroadcast.broadcast(sessionId, "new_message", saved);
     return saved;
   });

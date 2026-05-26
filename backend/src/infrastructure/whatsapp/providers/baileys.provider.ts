@@ -123,7 +123,7 @@ export class BaileysProvider implements IWhatsAppProvider {
     });
 
     // Incoming messages handler
-    socket.ev.on("messages.upsert", ({ messages: msgs, type }) => {
+    socket.ev.on("messages.upsert", async ({ messages: msgs, type }) => {
       if (type !== "notify") return;
 
       for (const msg of msgs) {
@@ -135,29 +135,56 @@ export class BaileysProvider implements IWhatsAppProvider {
           continue;
         }
 
-        // Handle text messages
         if (!msg.message) continue;
         const jid = msg.key.remoteJid || "";
         if (!jid || jid === "status@broadcast") continue;
         const isGroup = jid.endsWith("@g.us");
         const from = jid.replace("@s.whatsapp.net", "").replace("@g.us", "");
 
+        const imageMsg = msg.message.imageMessage;
+        const videoMsg = msg.message.videoMessage;
+        const audioMsg = msg.message.audioMessage;
+        const docMsg = msg.message.documentMessage;
+        const hasMedia = !!(imageMsg || videoMsg || audioMsg || docMsg);
+
         const text =
           msg.message.conversation ||
           msg.message.extendedTextMessage?.text ||
+          imageMsg?.caption ||
+          videoMsg?.caption ||
+          docMsg?.caption ||
           msg.message.buttonsResponseMessage?.selectedDisplayText ||
           msg.message.listResponseMessage?.singleSelectReply?.selectedRowId ||
           "";
 
-        if (text && events.onMessage) {
+        if ((text || hasMedia) && events.onMessage) {
           const cleanFrom = from.replace("@lid", "");
+          let mediaUrl: string | undefined;
+          let mediaType: "image" | "video" | "audio" | "document" | undefined;
+
+          if (hasMedia) {
+            try {
+              const { mediaStorageService } = await import("../../../modules/chat/services/media-storage.service.js");
+              const result = await mediaStorageService.downloadBaileysMedia(msg);
+              if (result) {
+                mediaUrl = result.url;
+                mediaType = result.mediaType;
+              }
+            } catch (err: any) {
+              console.error("[MEDIA] Failed to download Baileys media:", err.message);
+              mediaType = imageMsg ? "image" : videoMsg ? "video" : audioMsg ? "audio" : "document";
+            }
+          }
+
           events.onMessage({
             from: cleanFrom,
             remoteJid: jid,
-            message: text,
+            message: text || (mediaType ? `[${mediaType}]` : ""),
             messageId: msg.key.id || "",
             isGroup,
             pushName: msg.pushName || undefined,
+            mediaUrl,
+            mediaType,
           });
         }
       }

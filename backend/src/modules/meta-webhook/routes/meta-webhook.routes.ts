@@ -8,6 +8,8 @@ import { eq } from 'drizzle-orm'
 import { chatBroadcast } from '../../chat/websocket/chat-broadcast.js'
 import { flowExecutor } from '../../bot-builder/services/flow-executor.service.js'
 import { chatService } from '../../chat/services/chat.service.js'
+import { mediaStorageService } from '../../chat/services/media-storage.service.js'
+import { decrypt } from '../../../infrastructure/security/encryption.service.js'
 
 interface WebhookQuery {
   'hub.mode': string
@@ -104,19 +106,50 @@ export async function metaWebhookRoutes(app: FastifyInstance) {
             if (value.messages && value.messages.length > 0) {
               for (const message of value.messages) {
                 const contactName = value.contacts?.[0]?.profile?.name || 'Desconocido'
-                const messageContent = message.text?.body || `[${message.type}]`
+                let messageContent = message.text?.body || ''
                 const timestamp = new Date(parseInt(message.timestamp) * 1000)
+
+                let mediaUrl: string | undefined
+                let mediaType: string | undefined
+                const mediaTypes = ['image', 'video', 'audio', 'document'] as const
+                if (mediaTypes.includes(message.type as any)) {
+                  const mediaObj = (message as any)[message.type]
+                  if (mediaObj?.id && session.metaAccessToken) {
+                    try {
+                      const accessToken = decrypt(session.metaAccessToken)
+                      const result = await mediaStorageService.downloadMetaMedia(
+                        mediaObj.id,
+                        accessToken,
+                        mediaObj.mime_type || ''
+                      )
+                      if (result) {
+                        mediaUrl = result.url
+                        mediaType = result.mediaType
+                      }
+                    } catch (err: any) {
+                      console.error('[MEDIA] Failed to download Meta media:', err.message)
+                    }
+                    if (!messageContent) {
+                      messageContent = message.type === 'document' && mediaObj.filename
+                        ? mediaObj.filename
+                        : `[${message.type}]`
+                    }
+                  } else if (!messageContent) {
+                    messageContent = `[${message.type}]`
+                  }
+                }
+                if (!messageContent) messageContent = `[${message.type}]`
 
                 console.log('📩 Mensaje entrante Meta:', {
                   de: message.from,
                   nombre: contactName,
                   tipo: message.type,
                   texto: messageContent,
+                  media: mediaUrl || null,
                   sessionId: session.id,
                   timestamp: timestamp.toISOString()
                 })
 
-                // Guardar en chat_messages
                 try {
                   const [saved] = await db.insert(chatMessages).values({
                     sessionId: session.id,
@@ -127,6 +160,8 @@ export async function metaWebhookRoutes(app: FastifyInstance) {
                     whatsappMessageId: message.id,
                     pushName: contactName,
                     createdAt: timestamp,
+                    mediaUrl,
+                    mediaType,
                   }).returning()
                   console.log(`✅ Mensaje guardado en chat_messages (session: ${session.id})`)
 

@@ -6,6 +6,8 @@ import helmet from "@fastify/helmet";
 import websocket from "@fastify/websocket";
 import multipart from "@fastify/multipart";
 import formbody from "@fastify/formbody";
+import fastifyStatic from "@fastify/static";
+import path from "path";
 import { env } from "./config/env.js";
 import { db } from "./config/database.js";
 import { redis } from "./config/redis.js";
@@ -81,6 +83,16 @@ async function bootstrap() {
   await app.register(multipart, { limits: { fileSize: 10 * 1024 * 1024 } });
 
   await app.register(formbody);
+
+  // Serve uploaded media files
+  const uploadsDir = path.join(process.cwd(), "uploads");
+  const fs = await import("fs");
+  fs.mkdirSync(uploadsDir, { recursive: true });
+  await app.register(fastifyStatic, {
+    root: uploadsDir,
+    prefix: "/uploads/",
+    decorateReply: false,
+  });
 
   // Auth decorator
   app.decorate("authenticate", async function (request: any, reply: any) {
@@ -225,6 +237,14 @@ async function bootstrap() {
     await db.execute(sql`ALTER TABLE whatsapp_sessions ADD COLUMN IF NOT EXISTS meta_business_id VARCHAR(100)`);
   } catch (err: any) {
     app.log.warn(`Auto-migration (whatsapp_sessions) note: ${err.message}`);
+  }
+
+  // Auto-migration: ensure media columns exist on chat_messages
+  try {
+    await db.execute(sql`ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS media_url VARCHAR(500)`);
+    await db.execute(sql`ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS media_type VARCHAR(50)`);
+  } catch (err: any) {
+    app.log.warn(`Auto-migration (chat_messages media) note: ${err.message}`);
   }
 
   // Start queue workers

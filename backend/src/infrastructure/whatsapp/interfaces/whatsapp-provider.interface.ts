@@ -28,6 +28,8 @@ export interface IncomingMessage {
   messageId: string;
   isGroup: boolean;
   pushName?: string; // contact name from WhatsApp
+  mediaUrl?: string;
+  mediaType?: "image" | "video" | "audio" | "document";
 }
 
 export interface PollVote {
