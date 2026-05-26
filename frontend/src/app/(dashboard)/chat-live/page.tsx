@@ -397,8 +397,12 @@ export default function ChatLivePage() {
           <div className="flex-1 min-w-0">
             {!selectedContact ? (
               <DashboardCard>
-                <div className="flex flex-col items-center justify-center py-20 text-center">
-                  <MessageSquare className="h-12 w-12 text-slate-300 mb-3" />
+                <div className="flex flex-col items-center justify-center py-16 text-center">
+                  <img
+                    src="/illustrations/PersonaEscribiendo.png"
+                    alt="Persona escribiendo"
+                    className="h-40 w-auto mb-4 opacity-90"
+                  />
                   <h3 className="font-display text-lg font-bold text-slate-900">Selecciona un contacto</h3>
                   <p className="text-sm text-slate-400 mt-1">
                     Elige un contacto para ver la conversacion
@@ -428,9 +432,16 @@ export default function ChatLivePage() {
                 {/* Messages */}
                 <div className="max-h-[400px] overflow-y-auto space-y-3 px-1 py-2">
                   {messages.length === 0 ? (
-                    <p className="text-sm text-slate-400 text-center py-8">
-                      No hay mensajes en esta conversacion. Envia el primero!
-                    </p>
+                    <div className="flex flex-col items-center justify-center py-8 text-center">
+                      <img
+                        src="/illustrations/PersonaEscribiendo.png"
+                        alt="Persona escribiendo"
+                        className="h-28 w-auto mb-3 opacity-80"
+                      />
+                      <p className="text-sm text-slate-400">
+                        No hay mensajes en esta conversacion. Envia el primero!
+                      </p>
+                    </div>
                   ) : (
                     messages.map((msg, i) => {
                       const isOutgoing = msg.direction === "outgoing";

@@ -795,7 +795,7 @@ export default function CampaignsPage() {
               ) : (
                 <Send className="h-4 w-4" />
               )}
-              {isSending ? t('campaigns.sending') : t('campaigns.sendCampaign')}
+              {isSending ? t('campaigns.sending') : 'Enviar'}
             </button>
           </div>
         </>
