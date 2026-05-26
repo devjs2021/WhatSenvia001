@@ -1,50 +1,27 @@
 "use client";
 
 import { create } from "zustand";
+import esJson from "./es.json";
+import enJson from "./en.json";
 
 type Locale = "es" | "en";
 
+function flatten(obj: Record<string, any>, prefix = ""): Record<string, string> {
+  const result: Record<string, string> = {};
+  for (const [key, value] of Object.entries(obj)) {
+    const fullKey = prefix ? `${prefix}.${key}` : key;
+    if (typeof value === "string") {
+      result[fullKey] = value;
+    } else if (typeof value === "object" && value !== null) {
+      Object.assign(result, flatten(value, fullKey));
+    }
+  }
+  return result;
+}
+
 const translations: Record<Locale, Record<string, string>> = {
-  es: {
-    "nav.privacyPolicy": "Política de Privacidad",
-    "nav.termsOfService": "Términos del Servicio",
-    "auth.email": "Correo electrónico",
-    "auth.password": "Contraseña",
-    "auth.passwordPlaceholder": "••••••••",
-    "auth.passwordMinChars": "Mínimo 8 caracteres",
-    "auth.name": "Nombre completo",
-    "auth.namePlaceholder": "Juan Pérez",
-    "auth.company": "Empresa",
-    "auth.companyPlaceholder": "Tu empresa (opcional)",
-    "auth.login": "Iniciar sesión",
-    "auth.loginError": "Error al iniciar sesión",
-    "auth.registerError": "Error al registrarse",
-    "auth.noAccount": "¿No tienes cuenta?",
-    "auth.registerHere": "Regístrate aquí",
-    "auth.hasAccount": "¿Ya tienes cuenta?",
-    "auth.loginHere": "Inicia sesión aquí",
-    "common.loading": "Cargando...",
-  },
-  en: {
-    "nav.privacyPolicy": "Privacy Policy",
-    "nav.termsOfService": "Terms of Service",
-    "auth.email": "Email",
-    "auth.password": "Password",
-    "auth.passwordPlaceholder": "••••••••",
-    "auth.passwordMinChars": "Min 8 characters",
-    "auth.name": "Full name",
-    "auth.namePlaceholder": "John Doe",
-    "auth.company": "Company",
-    "auth.companyPlaceholder": "Your company (optional)",
-    "auth.login": "Sign in",
-    "auth.loginError": "Login error",
-    "auth.registerError": "Registration error",
-    "auth.noAccount": "Don't have an account?",
-    "auth.registerHere": "Register here",
-    "auth.hasAccount": "Already have an account?",
-    "auth.loginHere": "Login here",
-    "common.loading": "Loading...",
-  },
+  es: flatten(esJson),
+  en: flatten(enJson),
 };
 
 interface I18nState {

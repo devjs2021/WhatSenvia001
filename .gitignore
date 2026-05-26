@@ -9,3 +9,6 @@ sessions/
 
 # Production env
 .env.prod
+
+# Google OAuth secrets
+client_secret_*.json
