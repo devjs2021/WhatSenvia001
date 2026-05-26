@@ -42,17 +42,23 @@ export async function metaExchangeRoutes(fastify: FastifyInstance) {
       // 2. Obtener el número de teléfono real desde el phone_number_id
       let displayPhone = ''
       let businessId = waba_id
-      try {
-        if (phone_number_id) {
-          const phoneRes = await fetch(
-            `https://graph.facebook.com/v21.0/${phone_number_id}?fields=display_phone_number,verified_name`,
-            { headers: { Authorization: `Bearer ${accessToken}` } }
-          )
-          const phoneData = await phoneRes.json() as any
-          displayPhone = phoneData.display_phone_number || ''
+      if (phone_number_id) {
+        for (let attempt = 0; attempt < 2; attempt++) {
+          try {
+            const phoneRes = await fetch(
+              `https://graph.facebook.com/v21.0/${phone_number_id}?fields=display_phone_number,verified_name`,
+              { headers: { Authorization: `Bearer ${accessToken}` } }
+            )
+            const phoneData = await phoneRes.json() as any
+            if (phoneData.display_phone_number) {
+              displayPhone = phoneData.display_phone_number
+              break
+            }
+            if (attempt === 0) await new Promise(r => setTimeout(r, 1000))
+          } catch (err) {
+            fastify.log.warn(`Could not fetch phone number data from Meta (attempt ${attempt + 1})`)
+          }
         }
-      } catch (err) {
-        fastify.log.warn('Could not fetch phone number data from Meta')
       }
 
       // 3. Guardar o actualizar sesión en BD

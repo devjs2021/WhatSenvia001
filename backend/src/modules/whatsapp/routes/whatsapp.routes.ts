@@ -9,6 +9,7 @@ import {
   deleteSession,
 } from "../controllers/whatsapp.controller.js";
 import { getWhatsAppProvider } from "../../../infrastructure/whatsapp/whatsapp.factory.js";
+import { chatService } from "../../chat/services/chat.service.js";
 
 export async function whatsappRoutes(app: FastifyInstance) {
   app.addHook("preHandler", authGuard);
@@ -19,6 +20,34 @@ export async function whatsappRoutes(app: FastifyInstance) {
   app.post("/sessions/:id/disconnect", disconnectSession);
   app.get("/sessions/:id/status", getSessionStatus);
   app.delete("/sessions/:id", deleteSession);
+
+  // --- Test send ---
+  app.post("/test-send", async (req) => {
+    const { sessionId, phone, message } = req.body as { sessionId: string; phone: string; message: string };
+    const userId = (req as any).user.id;
+    try {
+      const provider = await getWhatsAppProvider(sessionId);
+      const result = await provider.sendMessage(sessionId, { phone: phone.replace(/\D/g, ""), message });
+      if (result.success) {
+        await chatService.saveMessage({
+          sessionId,
+          phone: phone.replace(/\D/g, ""),
+          content: message,
+          direction: "outgoing",
+          senderType: "human",
+          whatsappMessageId: result.messageId,
+        });
+      }
+      return {
+        success: result.success,
+        message: result.success ? `Mensaje enviado a ${phone}` : (result.error || "Error al enviar"),
+        messageId: result.messageId,
+        timestamp: new Date().toISOString(),
+      };
+    } catch (err: any) {
+      return { success: false, message: err.message, timestamp: new Date().toISOString() };
+    }
+  });
 
   // --- Contact extraction & number verification ---
 

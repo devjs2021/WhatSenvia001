@@ -4,6 +4,7 @@ import { campaigns } from "../../../infrastructure/database/schema/campaigns.js"
 import { contacts } from "../../../infrastructure/database/schema/contacts.js";
 import { eq } from "drizzle-orm";
 import { getWhatsAppProvider } from "../../../infrastructure/whatsapp/whatsapp.factory.js";
+import { decrypt } from "../../../infrastructure/security/encryption.service.js";
 import QRCode from "qrcode";
 import { flowExecutor } from "../../bot-builder/services/flow-executor.service.js";
 import { PollService } from "../../polls/services/poll.service.js";
@@ -50,12 +51,34 @@ export class WhatsAppService {
 
     for (const session of sessions) {
       try {
-        // Meta Cloud sessions don't need real reconnection — just mark as connected
         if (session.connectionType === "meta_cloud") {
           console.log(`Meta Cloud session "${session.name}" is already connected via API`);
+          const updateFields: Record<string, any> = { lastConnectedAt: new Date(), updatedAt: new Date() };
+
+          // Re-fetch display phone if current phone looks like an internal ID
+          if (session.metaAccessToken && session.metaPhoneNumberId) {
+            const needsPhoneFix = !session.phone || !session.phone.startsWith("+");
+            if (needsPhoneFix) {
+              try {
+                const accessToken = decrypt(session.metaAccessToken);
+                const res = await fetch(
+                  `https://graph.facebook.com/v21.0/${session.metaPhoneNumberId}?fields=display_phone_number`,
+                  { headers: { Authorization: `Bearer ${accessToken}` } }
+                );
+                const data = await res.json() as any;
+                if (data.display_phone_number) {
+                  updateFields.phone = data.display_phone_number;
+                  console.log(`Updated Meta session "${session.name}" phone: ${data.display_phone_number}`);
+                }
+              } catch (err: any) {
+                console.warn(`Could not fetch display phone for Meta session "${session.name}":`, err.message);
+              }
+            }
+          }
+
           await db
             .update(whatsappSessions)
-            .set({ lastConnectedAt: new Date(), updatedAt: new Date() })
+            .set(updateFields)
             .where(eq(whatsappSessions.id, session.id));
           continue;
         }

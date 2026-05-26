@@ -41,9 +41,8 @@ export async function getWhatsAppProvider(sessionId: string): Promise<IWhatsAppP
     if (!session.metaAccessToken || !session.metaPhoneNumberId) {
       throw new Error(`Meta Cloud session ${sessionId} is missing access token or phone number ID`);
     }
-    // Desencriptar token antes de usarlo
     const decryptedToken = decrypt(session.metaAccessToken);
-    provider = new MetaCloudProvider(decryptedToken, session.metaPhoneNumberId);
+    provider = new MetaCloudProvider(decryptedToken, session.metaPhoneNumberId, session.phone || undefined);
   } else {
     // Baileys: use a single shared instance (handles multiple sessions internally)
     if (!baileysInstance) {

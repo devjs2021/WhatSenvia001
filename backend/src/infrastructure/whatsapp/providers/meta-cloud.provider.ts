@@ -18,14 +18,27 @@ export class MetaCloudProvider implements IWhatsAppProvider {
   private readonly baseUrl = "https://graph.facebook.com/v21.0";
   private readonly accessToken: string;
   private readonly phoneNumberId: string;
+  private displayPhone: string;
 
-  constructor(accessToken: string, phoneNumberId: string) {
+  constructor(accessToken: string, phoneNumberId: string, displayPhone?: string) {
     this.accessToken = accessToken;
     this.phoneNumberId = phoneNumberId;
+    this.displayPhone = displayPhone || "";
   }
 
   async connect(_sessionId: string, events: WhatsAppConnectionEvents): Promise<void> {
-    events.onConnected(this.phoneNumberId);
+    if (!this.displayPhone) {
+      try {
+        const res = await fetch(`${this.baseUrl}/${this.phoneNumberId}?fields=display_phone_number`, {
+          headers: { Authorization: `Bearer ${this.accessToken}` },
+        });
+        const data: any = await res.json();
+        if (data.display_phone_number) {
+          this.displayPhone = data.display_phone_number;
+        }
+      } catch {}
+    }
+    events.onConnected(this.displayPhone || this.phoneNumberId);
     logger.info("Meta Cloud API provider connected");
   }
 
@@ -105,7 +118,7 @@ export class MetaCloudProvider implements IWhatsAppProvider {
 
   getSessionInfo(_sessionId: string): { phone?: string; status: string } | null {
     return {
-      phone: this.phoneNumberId,
+      phone: this.displayPhone || this.phoneNumberId,
       status: this.isConnected("") ? "connected" : "disconnected",
     };
   }
