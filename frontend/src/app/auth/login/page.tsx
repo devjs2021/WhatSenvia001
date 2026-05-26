@@ -279,6 +279,17 @@ export default function LoginPage() {
                       </>
                     )}
                   </h1>
+                  <p className="mt-3 text-sm text-slate-500 font-medium">
+                    {locale === "es" ? (
+                      <>
+                        <span className="text-emerald-500">Entendemos</span> lo más valioso, por eso cuidamos de <span className="text-emerald-500">ti</span> y tu <span className="text-emerald-500">tiempo</span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-emerald-500">We understand</span> what matters most, that's why we take care of <span className="text-emerald-500">you</span> and your <span className="text-emerald-500">time</span>
+                      </>
+                    )}
+                  </p>
                   <div className="mt-4">
                     <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-50 border border-slate-200 text-slate-500 select-none">
                       <svg
