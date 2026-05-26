@@ -35,6 +35,7 @@ import { consumptionRoutes } from "./modules/consumption/consumption.routes.js";
 import { startMessageWorker } from "./infrastructure/queue/message.queue.js";
 import { startCampaignWorker } from "./infrastructure/queue/campaign.queue.js";
 import { startScheduledChecker } from "./infrastructure/queue/scheduled-checker.js";
+import { startTemplateSyncJob } from "./infrastructure/queue/template-sync.js";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 import { seedTemplates } from "./modules/bot-builder/services/seed-templates.js";
 import { WhatsAppService } from "./modules/whatsapp/services/whatsapp.service.js";
@@ -261,6 +262,7 @@ async function bootstrap() {
   startMessageWorker();
   startCampaignWorker();
   startScheduledChecker();
+  startTemplateSyncJob();
   app.log.info("Queue workers started");
 
   // Seed bot templates
