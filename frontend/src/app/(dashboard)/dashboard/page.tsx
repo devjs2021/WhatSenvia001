@@ -6,6 +6,7 @@ import { useI18n } from "@/i18n";
 import {
   Users, Send, BarChart3, Bot, CheckCircle2, XCircle, Clock,
   Smartphone, Activity, MessageSquare, TrendingUp, Wifi, WifiOff,
+  Loader2,
 } from "lucide-react";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { DashboardKPIs } from "@/components/dashboard/dashboard-kpis";
@@ -45,7 +46,14 @@ export default function DashboardPage() {
     refetchInterval: 30000,
   });
 
+  const { data: msgStatsData, isLoading: msgStatsLoading } = useQuery({
+    queryKey: ["message-stats"],
+    queryFn: () => api.get<{ success: boolean; data: Record<string, number> }>("/messages/stats"),
+    refetchInterval: 30000,
+  });
+
   const stats = data?.data;
+  const msgStats = msgStatsData?.data;
 
   const statusLabels: Record<string, string> = {
     draft: t('campaigns.draft'),
@@ -150,149 +158,44 @@ export default function DashboardPage() {
         description="Total de mensajes despachados sin bloqueos."
       />
 
-      {/* Grid de 2 columnas: Status + Quick Actions */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Message Status Bars */}
-        <DashboardCard className="lg:col-span-2" padding="lg">
-          <DashboardCardHeader>
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-xl bg-slate-50 flex items-center justify-center">
-                <Activity className="w-4 h-4 text-slate-500" strokeWidth={1.5} />
-              </div>
-              <DashboardCardTitle>{t('messages.status')}</DashboardCardTitle>
+      {/* Message Stats */}
+      <DashboardCard padding="lg">
+        <DashboardCardHeader>
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-xl bg-slate-50 flex items-center justify-center">
+              <MessageSquare className="w-4 h-4 text-slate-500" strokeWidth={1.5} />
             </div>
-          </DashboardCardHeader>
-          <div className="space-y-3">
-            {msgBars.map(({ label, value, color }) => (
-              <div key={label} className="flex items-center gap-3">
-                <span className="text-xs font-semibold text-slate-400 w-20 shrink-0">{label}</span>
-                <div className="flex-1 h-6 bg-slate-50 rounded-full overflow-hidden">
-                  <div
-                    className={`h-full ${color} rounded-full transition-all duration-500 flex items-center justify-end pr-2`}
-                    style={{ width: `${Math.max((value / maxMsg) * 100, value > 0 ? 6 : 0)}%` }}
-                  >
-                    {value > 0 && <span className="text-[10px] font-bold text-white">{value.toLocaleString()}</span>}
-                  </div>
-                </div>
-                {value === 0 && <span className="text-xs text-slate-300 w-4">0</span>}
-              </div>
-            ))}
+            <DashboardCardTitle>Message Status</DashboardCardTitle>
           </div>
-        </DashboardCard>
-
-        {/* Quick Stats */}
-        <DashboardCard padding="lg">
-          <DashboardCardHeader>
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-xl bg-slate-50 flex items-center justify-center">
-                <TrendingUp className="w-4 h-4 text-slate-500" strokeWidth={1.5} />
-              </div>
-              <DashboardCardTitle>{t('dashboard.quickActions')}</DashboardCardTitle>
-            </div>
-          </DashboardCardHeader>
-          <div className="space-y-2">
-            {[
-              { icon: CheckCircle2, label: t('dashboard.success'), value: totalSent.toLocaleString(), bg: "bg-emerald-50", color: "text-emerald-600", val: "text-emerald-700" },
-              { icon: XCircle, label: t('common.error'), value: ms.failed.toLocaleString(), bg: "bg-red-50", color: "text-red-500", val: "text-red-700" },
-              { icon: Clock, label: t('messages.queued'), value: (ms.queued + ms.sending).toLocaleString(), bg: "bg-amber-50", color: "text-amber-500", val: "text-amber-700" },
-              { icon: Smartphone, label: t('dashboard.session'), value: `${overview.connectedSessions}/${overview.totalSessions}`, bg: "bg-blue-50", color: "text-blue-500", val: "text-blue-700" },
-            ].map(({ icon: Icon, label, value, bg, color, val }) => (
-              <div key={label} className={`flex items-center justify-between ${bg} rounded-xl px-3 py-2.5`}>
-                <div className="flex items-center gap-2">
-                  <Icon className={`w-3.5 h-3.5 ${color}`} strokeWidth={1.5} />
-                  <span className="text-xs font-medium text-slate-600">{label}</span>
-                </div>
-                <span className={`text-sm font-bold ${val}`}>{value}</span>
-              </div>
-            ))}
+        </DashboardCardHeader>
+        {msgStatsLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="w-5 h-5 text-slate-300 animate-spin" />
           </div>
-        </DashboardCard>
-      </div>
-
-      {/* Grid de 2 columnas: Recent Campaigns + Recent Messages */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Recent Campaigns */}
-        <DashboardCard padding="lg">
-          <DashboardCardHeader>
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-xl bg-slate-50 flex items-center justify-center">
-                <Send className="w-4 h-4 text-slate-500" strokeWidth={1.5} />
-              </div>
-              <DashboardCardTitle>{t('dashboard.recentCampaigns')}</DashboardCardTitle>
-            </div>
-          </DashboardCardHeader>
-          {stats.recentCampaigns.length === 0 ? (
-            <div className="py-8 text-center">
-              <Send className="w-8 h-8 text-slate-200 mx-auto mb-2" strokeWidth={1.5} />
-              <p className="text-xs text-slate-400">{t('dashboard.noCampaigns')}</p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {stats.recentCampaigns.map((c) => (
-                <div key={c.id} className="flex items-center justify-between py-2.5 px-3 rounded-xl hover:bg-slate-50 transition-colors">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-slate-900 truncate">{c.name}</p>
-                    <div className="flex items-center gap-1.5 mt-0.5">
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${statusColors[c.status]}`}>
-                        {statusLabels[c.status] || c.status}
-                      </span>
-                      <span className="text-[10px] text-slate-400">{new Date(c.createdAt).toLocaleDateString()}</span>
-                    </div>
-                  </div>
-                  <div className="text-right ml-3">
-                    <p className="text-sm font-bold text-slate-900">{c.sentCount}/{c.totalContacts}</p>
-                    <p className="text-[10px] text-slate-400">{t('messages.sent')}</p>
-                  </div>
+        ) : msgStats ? (
+          <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
+            {Object.entries(msgStats).map(([status, count]) => {
+              const statusStyles: Record<string, string> = {
+                queued: "bg-amber-50 border-amber-100 text-amber-700",
+                sending: "bg-blue-50 border-blue-100 text-blue-700",
+                sent: "bg-sky-50 border-sky-100 text-sky-700",
+                delivered: "bg-emerald-50 border-emerald-100 text-emerald-700",
+                read: "bg-emerald-100 border-emerald-200 text-emerald-800",
+                failed: "bg-red-50 border-red-100 text-red-700",
+              };
+              return (
+                <div
+                  key={status}
+                  className={`flex flex-col items-center justify-center rounded-xl border p-3 ${statusStyles[status] || "bg-slate-50 border-slate-100 text-slate-600"}`}
+                >
+                  <span className="text-xl font-bold">{count}</span>
+                  <span className="text-[10px] font-semibold uppercase tracking-wider mt-0.5">{status}</span>
                 </div>
-              ))}
-            </div>
-          )}
-        </DashboardCard>
-
-        {/* Recent Messages */}
-        <DashboardCard padding="lg">
-          <DashboardCardHeader>
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-xl bg-slate-50 flex items-center justify-center">
-                <MessageSquare className="w-4 h-4 text-slate-500" strokeWidth={1.5} />
-              </div>
-              <DashboardCardTitle>{t('dashboard.recentMessages')}</DashboardCardTitle>
-            </div>
-          </DashboardCardHeader>
-          {stats.recentMessages.length === 0 ? (
-            <div className="py-8 text-center">
-              <MessageSquare className="w-8 h-8 text-slate-200 mx-auto mb-2" strokeWidth={1.5} />
-              <p className="text-xs text-slate-400">{t('dashboard.noMessages')}</p>
-            </div>
-          ) : (
-            <div className="space-y-1.5">
-              {stats.recentMessages.map((msg) => (
-                <div key={msg.id} className="flex items-center gap-3 py-2 px-3 rounded-xl hover:bg-slate-50 transition-colors">
-                  <div className="shrink-0">
-                    {["sent","delivered","read"].includes(msg.status)
-                      ? <CheckCircle2 className="w-4 h-4 text-emerald-500" strokeWidth={1.5} />
-                      : msg.status === "failed"
-                        ? <XCircle className="w-4 h-4 text-red-500" strokeWidth={1.5} />
-                        : <Clock className="w-4 h-4 text-amber-500" strokeWidth={1.5} />}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-[10px] font-mono text-slate-400">{msg.phone}</span>
-                      <span className="text-[10px] bg-slate-50 text-slate-500 px-1.5 py-0.5 rounded-full font-semibold">
-                        {msgStatusLabels[msg.status] || msg.status}
-                      </span>
-                    </div>
-                    <p className="text-xs text-slate-600 truncate mt-0.5">{msg.content}</p>
-                  </div>
-                  <span className="text-[10px] text-slate-400 shrink-0">
-                    {new Date(msg.createdAt).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-        </DashboardCard>
-      </div>
+              );
+            })}
+          </div>
+        ) : null}
+      </DashboardCard>
     </div>
   );
 }

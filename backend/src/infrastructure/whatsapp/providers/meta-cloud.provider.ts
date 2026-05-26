@@ -126,7 +126,24 @@ export class MetaCloudProvider implements IWhatsAppProvider {
     throw new Error("Number verification is not supported by Meta Cloud API");
   }
 
-  async sendPresenceUpdate(_sessionId: string, _type: "composing" | "paused", _jid: string) {
-    // Not supported by Meta Cloud API
+  async sendPresenceUpdate(_sessionId: string, type: "composing" | "paused", _jid: string) {
+    try {
+      // Meta Cloud API soporta typing indicator via messages endpoint
+      const url = `${this.baseUrl}/${this.phoneNumberId}/messages`;
+      const body = {
+        messaging_product: "whatsapp",
+        status: type === "composing" ? "typing_on" : "typing_off",
+      };
+      await fetch(url, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${this.accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+      });
+    } catch {
+      // Non-critical, silently ignore
+    }
   }
 }

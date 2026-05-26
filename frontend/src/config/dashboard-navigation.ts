@@ -51,7 +51,6 @@ export const dashboardNavGroups: NavEntry[] = [
       { nameKey: "Connection", href: "/whatsapp", icon: Smartphone, feature: null },
       { nameKey: "Bot Builder", href: "/bot-builder", icon: Bot, feature: "botBuilder" },
       { nameKey: "Chat Live", href: "/chat-live", icon: MessageCircle, feature: "chatLive" },
-      { nameKey: "Messages", href: "/messages", icon: MessageSquare, feature: null },
     ],
   },
   {

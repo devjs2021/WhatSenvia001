@@ -6,6 +6,8 @@ import { chatMessages } from '../../../infrastructure/database/schema/chat.js'
 import { messages } from '../../../infrastructure/database/schema/messages.js'
 import { eq } from 'drizzle-orm'
 import { chatBroadcast } from '../../chat/websocket/chat-broadcast.js'
+import { flowExecutor } from '../../bot-builder/services/flow-executor.service.js'
+import { chatService } from '../../chat/services/chat.service.js'
 
 interface WebhookQuery {
   'hub.mode': string
@@ -127,13 +129,25 @@ export async function metaWebhookRoutes(app: FastifyInstance) {
                     createdAt: timestamp,
                   }).returning()
                   console.log(`✅ Mensaje guardado en chat_messages (session: ${session.id})`)
-                  console.log('🔍 DEBUG webhook - sessionId para broadcast:', session.id)
-                  console.log('🔍 DEBUG webhook - saved keys:', Object.keys(saved))
-                  console.log('🔍 DEBUG webhook - saved.phone:', saved.phone, 'saved.content:', saved.content)
 
                   chatBroadcast.broadcast(session.id, 'new_message', saved)
                 } catch (err: any) {
                   console.error('❌ Error guardando mensaje en chat_messages:', err.message)
+                }
+
+                // Ejecutar flowExecutor para bots automatizados (igual que Baileys)
+                try {
+                  await flowExecutor.handleIncomingMessage(session.id, {
+                    from: message.from,
+                    remoteJid: `${message.from}@s.whatsapp.net`,
+                    message: messageContent,
+                    messageId: message.id,
+                    isGroup: false,
+                    pushName: contactName,
+                  })
+                  console.log(`✅ Flow executor ejecutado para mensaje Meta (session: ${session.id})`)
+                } catch (err: any) {
+                  console.error('❌ Error en flow executor para Meta:', err.message)
                 }
               }
             }

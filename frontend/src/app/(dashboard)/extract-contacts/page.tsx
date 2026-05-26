@@ -42,6 +42,9 @@ export default function ExtractContactsPage() {
 
   const sessions = (sessionsData?.data || []).filter((s) => s.status === "connected");
 
+  const selectedSession = sessions.find((s) => s.id === selectedSessionId);
+  const isMetaCloud = selectedSession?.connectionType === "meta_cloud";
+
   const extractMutation = useMutation({
     mutationFn: (sessionId: string) =>
       api.post<ApiResponse<{ contacts: ExtractedContact[] }>>(`/whatsapp/sessions/${sessionId}/extract-contacts`),
@@ -137,6 +140,14 @@ export default function ExtractContactsPage() {
             {extractMutation.isPending ? "Extrayendo..." : "Extraer Contactos"}
           </button>
         </div>
+        {isMetaCloud && (
+          <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-2xl">
+            <p className="text-sm text-amber-700">
+              <strong>Nota:</strong> La extracción de contactos desde grupos solo está disponible para sesiones conectadas via Baileys (código QR). 
+              Las sesiones de Meta Cloud API no soportan esta funcionalidad.
+            </p>
+          </div>
+        )}
       </DashboardCard>
 
       {/* Filters */}

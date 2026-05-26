@@ -3,10 +3,12 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 import { useI18n } from "@/i18n";
 import { findGroupByHref } from "@/config/dashboard-navigation";
+import { api } from "@/lib/api";
 import {
   Headphones,
   Globe,
@@ -61,6 +63,20 @@ export function DashboardTopbar({ onMobileMenuToggle }: DashboardTopbarProps) {
   // Grupo activo para el sub-nav
   const activeGroup = findGroupByHref(pathname);
 
+  // Consultar sesiones de WhatsApp para saber si hay conexión a Meta
+  const { data: sessionsData } = useQuery({
+    queryKey: ["whatsapp-sessions-status"],
+    queryFn: () => api.get<{ success: boolean; data: { id: string; connectionType: string; status: string }[] }>("/whatsapp/sessions"),
+    refetchInterval: 60000,
+  });
+
+  const hasMetaConnection = (sessionsData?.data || []).some(
+    (s: any) =>
+      s.connectionType === "meta_cloud" &&
+      s.status === "connected" &&
+      s.metaAccessToken
+  );
+
   return (
     <header className="border-b border-slate-100 bg-white shrink-0">
       <div className="flex items-center justify-between px-6 md:px-10 h-20">
@@ -107,17 +123,31 @@ export function DashboardTopbar({ onMobileMenuToggle }: DashboardTopbarProps) {
         {/* Acciones rápidas & Perfil */}
         <div className="flex items-center gap-4 shrink-0">
           {/* Estado Conectado a Meta */}
-          <div className="hidden sm:flex items-center gap-2 bg-emerald-50 border border-emerald-100 px-3 py-1.5 rounded-full">
-            <svg
-              className="w-4 h-4 text-emerald-600 fill-current"
-              viewBox="0 0 24 24"
-            >
-              <path d="M16.4 6c-1.8 0-3.4 1-4.4 2.5C11 7 9.4 6 7.6 6 4.5 6 2 8.5 2 11.6s2.5 5.6 5.6 5.6c1.8 0 3.4-1 4.4-2.5 1 1.5 2.6 2.5 4.4 2.5 3.1 0 5.6-2.5 5.6-5.6S19.5 6 16.4 6zm-8.8 9.2c-2 0-3.6-1.6-3.6-3.6S5.6 8 7.6 8c1.3 0 2.5.7 3.1 1.8-.8 1.4-.8 3.2 0 4.6-.6 1.1-1.8 1.8-3.1 1.8zm8.8 0c-1.3 0-2.5-.7-3.1-1.8.8-1.4.8-3.2 0-4.6.6-1.1 1.8-1.8 3.1-1.8 2 0 3.6 1.6 3.6 3.6s-1.6 3.6-3.6 3.6z" />
-            </svg>
-            <span className="text-[11px] font-bold text-emerald-700 uppercase tracking-wider">
-              Conectado a Meta
-            </span>
-          </div>
+          {hasMetaConnection ? (
+            <div className="hidden sm:flex items-center gap-2 bg-emerald-50 border border-emerald-100 px-3 py-1.5 rounded-full">
+              <svg
+                className="w-4 h-4 text-emerald-600 fill-current"
+                viewBox="0 0 24 24"
+              >
+                <path d="M16.4 6c-1.8 0-3.4 1-4.4 2.5C11 7 9.4 6 7.6 6 4.5 6 2 8.5 2 11.6s2.5 5.6 5.6 5.6c1.8 0 3.4-1 4.4-2.5 1 1.5 2.6 2.5 4.4 2.5 3.1 0 5.6-2.5 5.6-5.6S19.5 6 16.4 6zm-8.8 9.2c-2 0-3.6-1.6-3.6-3.6S5.6 8 7.6 8c1.3 0 2.5.7 3.1 1.8-.8 1.4-.8 3.2 0 4.6-.6 1.1-1.8 1.8-3.1 1.8zm8.8 0c-1.3 0-2.5-.7-3.1-1.8.8-1.4.8-3.2 0-4.6.6-1.1 1.8-1.8 3.1-1.8 2 0 3.6 1.6 3.6 3.6s-1.6 3.6-3.6 3.6z" />
+              </svg>
+              <span className="text-[11px] font-bold text-emerald-700 uppercase tracking-wider">
+                Conectado a Meta
+              </span>
+            </div>
+          ) : (
+            <div className="hidden sm:flex items-center gap-2 bg-red-50 border border-red-100 px-3 py-1.5 rounded-full">
+              <svg
+                className="w-4 h-4 text-red-500 fill-current"
+                viewBox="0 0 24 24"
+              >
+                <path d="M16.4 6c-1.8 0-3.4 1-4.4 2.5C11 7 9.4 6 7.6 6 4.5 6 2 8.5 2 11.6s2.5 5.6 5.6 5.6c1.8 0 3.4-1 4.4-2.5 1 1.5 2.6 2.5 4.4 2.5 3.1 0 5.6-2.5 5.6-5.6S19.5 6 16.4 6zm-8.8 9.2c-2 0-3.6-1.6-3.6-3.6S5.6 8 7.6 8c1.3 0 2.5.7 3.1 1.8-.8 1.4-.8 3.2 0 4.6-.6 1.1-1.8 1.8-3.1 1.8zm8.8 0c-1.3 0-2.5-.7-3.1-1.8.8-1.4.8-3.2 0-4.6.6-1.1 1.8-1.8 3.1-1.8 2 0 3.6 1.6 3.6 3.6s-1.6 3.6-3.6 3.6z" />
+              </svg>
+              <span className="text-[11px] font-bold text-red-600 uppercase tracking-wider">
+                Desconectado
+              </span>
+            </div>
+          )}
 
           {/* Soporte */}
           <a

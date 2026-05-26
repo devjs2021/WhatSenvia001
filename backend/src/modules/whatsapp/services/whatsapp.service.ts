@@ -50,6 +50,16 @@ export class WhatsAppService {
 
     for (const session of sessions) {
       try {
+        // Meta Cloud sessions don't need real reconnection — just mark as connected
+        if (session.connectionType === "meta_cloud") {
+          console.log(`Meta Cloud session "${session.name}" is already connected via API`);
+          await db
+            .update(whatsappSessions)
+            .set({ lastConnectedAt: new Date(), updatedAt: new Date() })
+            .where(eq(whatsappSessions.id, session.id));
+          continue;
+        }
+
         await db
           .update(whatsappSessions)
           .set({ status: "connecting", updatedAt: new Date() })
