@@ -6,9 +6,15 @@ import { licenses } from "../../../infrastructure/database/schema/licenses.js";
 import { LICENSE_PLANS } from "../../../infrastructure/database/schema/licenses.js";
 import { refreshTokens } from "../../../infrastructure/database/schema/refresh-tokens.js";
 import { eq, and, lt } from "drizzle-orm";
-import type { RegisterInput, LoginInput } from "../schemas/auth.schema.js";
+import type { RegisterInput, LoginInput, GoogleAuthInput, ResetPasswordInput } from "../schemas/auth.schema.js";
+import { env } from "../../../config/env.js";
+import { sendPasswordResetCode } from "../../../infrastructure/email/email.service.js";
 
 const REFRESH_TOKEN_EXPIRY_DAYS = 30;
+const RESET_CODE_EXPIRY_MINUTES = 15;
+
+// In-memory store for reset codes (in production, use Redis)
+const resetCodes = new Map<string, { code: string; expiresAt: Date }>();
 
 export class AuthService {
   async register(input: RegisterInput) {
@@ -98,6 +104,185 @@ export class AuthService {
           }
         : null,
     };
+  }
+
+  async googleAuth(input: GoogleAuthInput) {
+    // Verify Google credential token
+    let payload: any;
+    try {
+      // Verify with Google's tokeninfo endpoint
+      const response = await fetch(
+        `https://oauth2.googleapis.com/tokeninfo?id_token=${input.credential}`
+      );
+      if (!response.ok) {
+        throw new Error("Invalid Google credential");
+      }
+      payload = await response.json();
+    } catch (err: any) {
+      throw new Error("Invalid Google credential: " + err.message);
+    }
+
+    const { email, name, sub: googleId } = payload;
+
+    if (!email) {
+      throw new Error("Google account must have an email");
+    }
+
+    // Only allow @gmail.com accounts
+    if (!email.endsWith("@gmail.com")) {
+      throw new Error("Only @gmail.com accounts are allowed");
+    }
+
+    // Check if user already exists
+    const [existingUser] = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, email))
+      .limit(1);
+
+    if (existingUser) {
+      if (!existingUser.isActive) {
+        throw new Error("Account is deactivated");
+      }
+
+      // Update googleId if not set
+      if (!existingUser.facebookId) {
+        await db
+          .update(users)
+          .set({ facebookId: googleId, updatedAt: new Date() })
+          .where(eq(users.id, existingUser.id));
+      }
+
+      // Get active license
+      const [license] = await db
+        .select()
+        .from(licenses)
+        .where(and(eq(licenses.userId, existingUser.id), eq(licenses.status, "active")))
+        .limit(1);
+
+      return {
+        user: {
+          id: existingUser.id,
+          email: existingUser.email,
+          name: existingUser.name,
+          company: existingUser.company,
+          role: existingUser.role,
+          license: license
+            ? {
+                plan: license.plan,
+                status: license.status,
+                expiresAt: license.expiresAt,
+                features: license.features,
+              }
+            : null,
+        },
+        isNewUser: false,
+      };
+    }
+
+    // Create new user
+    const randomPassword = crypto.randomBytes(32).toString("hex");
+    const hashedPassword = await bcrypt.hash(randomPassword, 12);
+
+    const [newUser] = await db
+      .insert(users)
+      .values({
+        email,
+        password: hashedPassword,
+        name: name || email.split("@")[0],
+        role: "user",
+        facebookId: googleId,
+      })
+      .returning({
+        id: users.id,
+        email: users.email,
+        name: users.name,
+        company: users.company,
+        role: users.role,
+        createdAt: users.createdAt,
+      });
+
+    // Auto-create demo license
+    const preset = LICENSE_PLANS.demo;
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + preset.durationDays);
+
+    await db.insert(licenses).values({
+      userId: newUser.id,
+      plan: "demo",
+      status: "active",
+      startsAt: new Date(),
+      expiresAt,
+      maxSessions: preset.maxSessions,
+      maxContacts: preset.maxContacts,
+      maxCampaignsPerDay: preset.maxCampaignsPerDay,
+      maxMessagesPerDay: preset.maxMessagesPerDay,
+      features: preset.features,
+      notes: "Auto-created demo license via Google OAuth",
+    });
+
+    return {
+      user: {
+        ...newUser,
+        license: {
+          plan: "demo",
+          status: "active",
+          expiresAt,
+          features: preset.features,
+        },
+      },
+      isNewUser: true,
+    };
+  }
+
+  async forgotPassword(email: string) {
+    // Check if user exists (don't reveal if they don't)
+    const [user] = await db.select().from(users).where(eq(users.email, email)).limit(1);
+    if (!user) {
+      return; // Don't reveal if email exists
+    }
+
+    // Check if user registered with Google (no password)
+    if (user.facebookId && !user.password) {
+      return; // Google users can't reset password
+    }
+
+    // Generate 6-digit code
+    const code = crypto.randomInt(100000, 999999).toString();
+    const expiresAt = new Date();
+    expiresAt.setMinutes(expiresAt.getMinutes() + RESET_CODE_EXPIRY_MINUTES);
+
+    // Store code
+    resetCodes.set(email, { code, expiresAt });
+
+    // Send email
+    await sendPasswordResetCode(email, code);
+  }
+
+  async resetPassword(input: ResetPasswordInput) {
+    const stored = resetCodes.get(input.email);
+    if (!stored) {
+      throw new Error("No reset code requested or code expired");
+    }
+
+    if (new Date() > stored.expiresAt) {
+      resetCodes.delete(input.email);
+      throw new Error("Reset code has expired");
+    }
+
+    if (stored.code !== input.code) {
+      throw new Error("Invalid reset code");
+    }
+
+    // Update password
+    const hashedPassword = await bcrypt.hash(input.password, 12);
+    await db
+      .update(users)
+      .set({ password: hashedPassword, updatedAt: new Date() })
+      .where(eq(users.email, input.email));
+
+    // Clean up
+    resetCodes.delete(input.email);
   }
 
   async getProfile(userId: string) {

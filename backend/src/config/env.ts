@@ -34,6 +34,14 @@ const envSchema = z.object({
   META_APP_SECRET: z.string().optional(),
 
   ENCRYPTION_KEY: z.string().length(64, "ENCRYPTION_KEY must be exactly 64 hex characters (32 bytes)").optional(),
+
+  // Google OAuth
+  GOOGLE_CLIENT_ID: z.string().optional(),
+  GOOGLE_CLIENT_SECRET: z.string().optional(),
+
+  // Email (Resend for password reset)
+  RESEND_API_KEY: z.string().optional(),
+  APP_URL: z.string().default("http://localhost:3000"),
 });
 
 const parsed = envSchema.safeParse(process.env);

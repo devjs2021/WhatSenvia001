@@ -1,7 +1,7 @@
 import crypto from "crypto";
 import { FastifyRequest, FastifyReply } from "fastify";
 import { AuthService } from "../services/auth.service.js";
-import { registerSchema, loginSchema } from "../schemas/auth.schema.js";
+import { registerSchema, loginSchema, googleAuthSchema, forgotPasswordSchema, resetPasswordSchema } from "../schemas/auth.schema.js";
 import { success, error } from "../../../shared/utils/api-response.js";
 import { env } from "../../../config/env.js";
 
@@ -36,6 +36,51 @@ export async function loginController(request: FastifyRequest, reply: FastifyRep
     return success(reply, { user, token, refreshToken });
   } catch (err: any) {
     return error(reply, err.message, 401);
+  }
+}
+
+export async function googleAuthController(request: FastifyRequest, reply: FastifyReply) {
+  const parsed = googleAuthSchema.safeParse(request.body);
+  if (!parsed.success) {
+    return error(reply, parsed.error.errors[0].message, 422);
+  }
+
+  try {
+    const result = await authService.googleAuth(parsed.data);
+    const token = await reply.jwtSign({ id: result.user.id, email: result.user.email, name: result.user.name, role: result.user.role });
+    const refreshToken = await authService.createRefreshToken(result.user.id, request.headers["user-agent"]);
+    return success(reply, { user: result.user, token, refreshToken, isNewUser: result.isNewUser });
+  } catch (err: any) {
+    return error(reply, err.message, 401);
+  }
+}
+
+export async function forgotPasswordController(request: FastifyRequest, reply: FastifyReply) {
+  const parsed = forgotPasswordSchema.safeParse(request.body);
+  if (!parsed.success) {
+    return error(reply, parsed.error.errors[0].message, 422);
+  }
+
+  try {
+    await authService.forgotPassword(parsed.data.email);
+    // Always return success to avoid email enumeration
+    return success(reply, { message: "If the email exists, a reset code has been sent" });
+  } catch (err: any) {
+    return success(reply, { message: "If the email exists, a reset code has been sent" });
+  }
+}
+
+export async function resetPasswordController(request: FastifyRequest, reply: FastifyReply) {
+  const parsed = resetPasswordSchema.safeParse(request.body);
+  if (!parsed.success) {
+    return error(reply, parsed.error.errors[0].message, 422);
+  }
+
+  try {
+    await authService.resetPassword(parsed.data);
+    return success(reply, { message: "Password reset successfully" });
+  } catch (err: any) {
+    return error(reply, err.message, 400);
   }
 }
 
