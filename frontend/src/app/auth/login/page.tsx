@@ -118,11 +118,11 @@ export default function LoginPage() {
         isNewUser: boolean;
       }>("/auth/google", { credential });
 
-      localStorage.setItem("token", res.data.token);
-      localStorage.setItem("refreshToken", res.data.refreshToken);
-      useAuth.setState({ user: res.data.user, token: res.data.token });
+      localStorage.setItem("token", res.token);
+      localStorage.setItem("refreshToken", res.refreshToken);
+      useAuth.setState({ user: res.user, token: res.token });
 
-      if (res.data.isNewUser) {
+      if (res.isNewUser) {
         toast.success(
           locale === "es"
             ? "Cuenta creada exitosamente con Google"
