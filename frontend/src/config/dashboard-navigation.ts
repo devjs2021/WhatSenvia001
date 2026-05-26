@@ -85,8 +85,6 @@ export const dashboardNavGroups: NavEntry[] = [
     href: "/settings",
     children: [
       { nameKey: "Settings", href: "/settings", icon: Crown, feature: null },
-      { nameKey: "Templates", href: "/templates", icon: FileText, feature: "templates" },
-      { nameKey: "Meta Templates", href: "/meta-templates", icon: FileCheck, feature: null },
     ],
   },
 ];

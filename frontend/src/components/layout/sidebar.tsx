@@ -65,8 +65,6 @@ const navigation = [
   { nameKey: 'nav.control', href: "/campaign-control", icon: Shield, feature: "campaignControl" },
   { nameKey: 'nav.monitor', href: "/campaign-monitor", icon: Activity, feature: null },
   { nameKey: 'nav.scheduled', href: "/scheduled", icon: Clock, feature: "scheduledCampaigns" },
-  { nameKey: 'nav.templates', href: "/templates", icon: FileText, feature: "templates" },
-  { nameKey: 'nav.metaTemplates', href: "/meta-templates", icon: FileCheck, feature: null },
   { nameKey: 'nav.polls', href: "/poll-results", icon: BarChart3, feature: "polls" },
   { nameKey: 'nav.contacts', href: "/contacts", icon: Users, feature: null },
   { nameKey: 'nav.extractContacts', href: "/extract-contacts", icon: UserPlus, feature: "contactExtraction" },

@@ -10,6 +10,7 @@ interface DashboardCardProps {
   variant?: CardVariant;
   className?: string;
   padding?: "sm" | "md" | "lg";
+  onClick?: () => void;
 }
 
 const variantStyles: Record<CardVariant, string> = {
@@ -34,6 +35,7 @@ export function DashboardCard({
   variant = "default",
   className,
   padding = "md",
+  onClick,
 }: DashboardCardProps) {
   return (
     <div
@@ -42,6 +44,10 @@ export function DashboardCard({
         variant !== "metric" && variant !== "table" && paddingStyles[padding],
         className
       )}
+      onClick={onClick}
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={onClick ? (e) => { if (e.key === "Enter" || e.key === " ") onClick(); } : undefined}
     >
       {children}
     </div>

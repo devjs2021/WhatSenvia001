@@ -29,6 +29,8 @@ import { DashboardCard, DashboardCardHeader, DashboardCardTitle, DashboardCardDe
 import CampaignControlTab from "./campaign-control-tab";
 import CampaignMonitorTab from "./campaign-monitor-tab";
 import ScheduledTab from "./scheduled-tab";
+import TemplatesTab from "./templates-tab";
+import MetaTemplatesTab from "./meta-templates-tab";
 
 interface Template {
   id: string;
@@ -61,13 +63,15 @@ type SendMode = "manual" | "lists";
 type ContentType = "text" | "poll";
 type SpeedPreset = "slow" | "normal" | "fast" | "turbo";
 
-type CampaignTab = "campaigns" | "control" | "monitor" | "scheduled";
+type CampaignTab = "campaigns" | "control" | "monitor" | "scheduled" | "templates" | "meta-templates";
 
 const tabConfig: Record<CampaignTab, { label: string; icon: any }> = {
   campaigns: { label: "Campanas", icon: Send },
   control: { label: "Control", icon: Shield },
   monitor: { label: "Monitor", icon: Radio },
   scheduled: { label: "Programados", icon: CalendarClock },
+  templates: { label: "Plantillas", icon: FileText },
+  "meta-templates": { label: "Meta Templates", icon: FileText },
 };
 
 export default function CampaignsPage() {
@@ -800,6 +804,8 @@ export default function CampaignsPage() {
       {activeTab === "control" && <CampaignControlTab />}
       {activeTab === "monitor" && <CampaignMonitorTab />}
       {activeTab === "scheduled" && <ScheduledTab />}
+      {activeTab === "templates" && <TemplatesTab />}
+      {activeTab === "meta-templates" && <MetaTemplatesTab />}
     </div>
   );
 }
