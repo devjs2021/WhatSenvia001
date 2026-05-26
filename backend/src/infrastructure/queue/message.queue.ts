@@ -7,6 +7,8 @@ import { campaigns } from "../database/schema/campaigns.js";
 import { getWhatsAppProvider } from "../whatsapp/whatsapp.factory.js";
 import { eq, sql } from "drizzle-orm";
 import { campaignBroadcast } from "../../modules/campaign-control/websocket/campaign-broadcast.js";
+import { getCountryFromPhone, getConversationRate, getCategoryFromTemplate } from "../../modules/consumption/meta-pricing.js";
+import { whatsappSessions } from "../database/schema/whatsapp-sessions.js";
 
 export interface MessageJobData {
   messageId: string;
@@ -17,6 +19,7 @@ export interface MessageJobData {
   mediaType?: "image" | "video" | "audio" | "document";
   campaignId?: string;
   messagesPerMinute?: number;
+  templateCategory?: string;
   template?: {
     name: string;
     language: string;
@@ -41,7 +44,7 @@ export function startMessageWorker() {
   const worker = new Worker<MessageJobData>(
     "messages",
     async (job: Job<MessageJobData>) => {
-      const { messageId, sessionId, phone, content, mediaUrl, mediaType, campaignId, messagesPerMinute, template } = job.data;
+      const { messageId, sessionId, phone, content, mediaUrl, mediaType, campaignId, messagesPerMinute, template, templateCategory } = job.data;
 
       logger.info({ messageId, phone }, "Processing message");
 
@@ -75,13 +78,34 @@ export function startMessageWorker() {
       });
 
       if (result.success) {
+        const updateFields: Record<string, any> = {
+          status: "sent",
+          whatsappMessageId: result.messageId,
+          sentAt: new Date(),
+        };
+
+        // Calculate estimated cost for Meta Cloud sessions
+        if (templateCategory) {
+          try {
+            const [session] = await db
+              .select({ connectionType: whatsappSessions.connectionType })
+              .from(whatsappSessions)
+              .where(eq(whatsappSessions.id, sessionId))
+              .limit(1);
+
+            if (session?.connectionType === "meta_cloud") {
+              const category = getCategoryFromTemplate(templateCategory);
+              const country = getCountryFromPhone(phone);
+              const cost = getConversationRate(country, category);
+              updateFields.estimatedCost = cost.toString();
+              updateFields.conversationCategory = category;
+            }
+          } catch {}
+        }
+
         await db
           .update(messages)
-          .set({
-            status: "sent",
-            whatsappMessageId: result.messageId,
-            sentAt: new Date(),
-          })
+          .set(updateFields)
           .where(eq(messages.id, messageId));
 
         if (campaignId) {

@@ -73,6 +73,7 @@ export function startCampaignWorker() {
       // Resolve meta template if this is a template campaign
       let metaTemplate: { name: string; language: string; components: any[] } | null = null;
       let paramMapping: Record<string, string[]> | null = null;
+      let templateCategory: string | undefined;
 
       if (campaign.isTemplateCampaign && campaign.metaTemplateId) {
         const [tpl] = await db
@@ -84,6 +85,7 @@ export function startCampaignWorker() {
         if (tpl) {
           metaTemplate = { name: tpl.name, language: tpl.language, components: (tpl.components as any[]) || [] };
           paramMapping = (campaign.templateParams as Record<string, string[]>) || null;
+          templateCategory = tpl.category;
         }
       }
 
@@ -154,6 +156,7 @@ export function startCampaignWorker() {
             mediaType: (campaign.mediaType as any) || undefined,
             campaignId,
             messagesPerMinute: messagesPerMinute || 8,
+            templateCategory,
             template: templateData,
           },
           { priority: 2 }

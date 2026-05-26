@@ -31,6 +31,7 @@ import { adminRoutes } from "./modules/admin/routes/admin.routes.js";
 import { metaTemplateRoutes } from "./modules/meta-templates/routes/meta-template.routes.js";
 import { metaWebhookRoutes } from "./modules/meta-webhook/routes/meta-webhook.routes.js";
 import { metaExchangeRoutes } from "./modules/meta-webhook/routes/meta-exchange.routes.js";
+import { consumptionRoutes } from "./modules/consumption/consumption.routes.js";
 import { startMessageWorker } from "./infrastructure/queue/message.queue.js";
 import { startCampaignWorker } from "./infrastructure/queue/campaign.queue.js";
 import { startScheduledChecker } from "./infrastructure/queue/scheduled-checker.js";
@@ -119,6 +120,7 @@ async function bootstrap() {
   await app.register(scheduledRoutes, { prefix: "/api/scheduled" });
   await app.register(adminRoutes, { prefix: "/api/admin" });
   await app.register(metaTemplateRoutes, { prefix: "/api/meta-templates" });
+  await app.register(consumptionRoutes, { prefix: "/api/consumption" });
 
   // Meta Webhook (sin prefijo /api porque Meta llama directamente a /meta-webhook)
   await app.register(metaWebhookRoutes);
@@ -237,6 +239,14 @@ async function bootstrap() {
     await db.execute(sql`ALTER TABLE whatsapp_sessions ADD COLUMN IF NOT EXISTS meta_business_id VARCHAR(100)`);
   } catch (err: any) {
     app.log.warn(`Auto-migration (whatsapp_sessions) note: ${err.message}`);
+  }
+
+  // Auto-migration: consumption tracking columns on messages
+  try {
+    await db.execute(sql`ALTER TABLE messages ADD COLUMN IF NOT EXISTS estimated_cost NUMERIC(10,6)`);
+    await db.execute(sql`ALTER TABLE messages ADD COLUMN IF NOT EXISTS conversation_category VARCHAR(20)`);
+  } catch (err: any) {
+    app.log.warn(`Auto-migration (messages consumption) note: ${err.message}`);
   }
 
   // Auto-migration: ensure media columns exist on chat_messages

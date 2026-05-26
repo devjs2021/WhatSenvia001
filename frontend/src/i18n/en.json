@@ -297,7 +297,16 @@
     "recentMessages": "Recent Messages",
     "noCampaigns": "No campaigns yet",
     "noMessages": "No messages yet",
-    "activeFlowsTitle": "Bot Flows"
+    "activeFlowsTitle": "Bot Flows",
+    "consumption": "Meta API Usage",
+    "consumptionDesc": "Estimated conversation cost this month",
+    "conversations": "conversations",
+    "estimatedCost": "Estimated cost",
+    "noMetaSessions": "No Meta sessions connected",
+    "marketing": "Marketing",
+    "utility": "Utility",
+    "authentication": "Authentication",
+    "service": "Service"
   },
   "privacy": {
     "title": "Privacy Policy",

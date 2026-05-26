@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, timestamp, text, index } from "drizzle-orm/pg-core";
+import { pgTable, uuid, varchar, timestamp, text, index, numeric } from "drizzle-orm/pg-core";
 import { users } from "./users";
 import { contacts } from "./contacts";
 import { campaigns } from "./campaigns";
@@ -20,6 +20,8 @@ export const messages = pgTable(
     status: varchar("status", { length: 20 }).notNull().default("queued").$type<MessageStatus>(),
     whatsappMessageId: varchar("whatsapp_message_id", { length: 100 }),
     errorMessage: text("error_message"),
+    estimatedCost: numeric("estimated_cost", { precision: 10, scale: 6 }),
+    conversationCategory: varchar("conversation_category", { length: 20 }),
     sentAt: timestamp("sent_at"),
     deliveredAt: timestamp("delivered_at"),
     readAt: timestamp("read_at"),

@@ -4,14 +4,13 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { useI18n } from "@/i18n";
 import {
-  Users, Send, BarChart3, Bot, CheckCircle2, XCircle, Clock,
-  Smartphone, Activity, MessageSquare, TrendingUp, Wifi, WifiOff,
-  Loader2,
+  Users, Send, BarChart3, MessageSquare, Wifi, WifiOff, Loader2,
 } from "lucide-react";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { DashboardKPIs } from "@/components/dashboard/dashboard-kpis";
 import { DashboardChart } from "@/components/dashboard/dashboard-chart";
 import { DashboardCard, DashboardCardHeader, DashboardCardTitle } from "@/components/ui/dashboard-card";
+import { ConsumptionCard } from "@/components/dashboard/consumption-card";
 
 interface DashboardData {
   overview: {
@@ -28,17 +27,9 @@ interface DashboardData {
   recentMessages: { id: string; phone: string; content: string; status: string; sentAt: string | null; createdAt: string }[];
 }
 
-const statusColors: Record<string, string> = {
-  draft: "bg-slate-100 text-slate-600",
-  scheduled: "bg-blue-100 text-blue-700",
-  running: "bg-amber-100 text-amber-700",
-  paused: "bg-orange-100 text-orange-700",
-  completed: "bg-emerald-100 text-emerald-700",
-  failed: "bg-red-100 text-red-700",
-};
 
 export default function DashboardPage() {
-  const { locale, t } = useI18n();
+  const { t } = useI18n();
 
   const { data, isLoading } = useQuery({
     queryKey: ["dashboard-stats"],
@@ -55,23 +46,6 @@ export default function DashboardPage() {
   const stats = data?.data;
   const msgStats = msgStatsData?.data;
 
-  const statusLabels: Record<string, string> = {
-    draft: t('campaigns.draft'),
-    scheduled: t('campaigns.scheduled'),
-    running: t('campaigns.running'),
-    paused: t('campaigns.paused'),
-    completed: t('campaigns.completed'),
-    failed: t('campaigns.failed'),
-  };
-
-  const msgStatusLabels: Record<string, string> = {
-    queued: t('messages.queued'),
-    sending: t('messages.sending'),
-    sent: t('messages.sent'),
-    delivered: t('messages.delivered'),
-    read: t('messages.read'),
-    failed: t('messages.failed'),
-  };
 
   if (isLoading) {
     return (
@@ -119,16 +93,6 @@ export default function DashboardPage() {
     },
   ];
 
-  const msgBars = [
-    { label: t('messages.sent'), value: ms.sent, color: "bg-blue-400" },
-    { label: t('messages.delivered'), value: ms.delivered, color: "bg-emerald-400" },
-    { label: t('messages.read'), value: ms.read, color: "bg-emerald-600" },
-    { label: t('messages.queued'), value: ms.queued, color: "bg-amber-400" },
-    { label: t('messages.failed'), value: ms.failed, color: "bg-red-400" },
-  ];
-
-  const maxMsg = Math.max(ms.sent, ms.delivered, ms.read, ms.queued, ms.failed, 1);
-
   return (
     <div className="space-y-8">
       {/* Encabezado */}
@@ -158,7 +122,10 @@ export default function DashboardPage() {
         description="Total de mensajes despachados sin bloqueos."
       />
 
-      {/* Message Stats */}
+      {/* Consumption + Message Stats */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <ConsumptionCard />
+
       <DashboardCard padding="lg">
         <DashboardCardHeader>
           <div className="flex items-center gap-2">
@@ -173,7 +140,7 @@ export default function DashboardPage() {
             <Loader2 className="w-5 h-5 text-slate-300 animate-spin" />
           </div>
         ) : msgStats ? (
-          <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
+          <div className="grid grid-cols-3 gap-3">
             {Object.entries(msgStats).map(([status, count]) => {
               const statusStyles: Record<string, string> = {
                 queued: "bg-amber-50 border-amber-100 text-amber-700",
@@ -196,6 +163,7 @@ export default function DashboardPage() {
           </div>
         ) : null}
       </DashboardCard>
+      </div>
     </div>
   );
 }

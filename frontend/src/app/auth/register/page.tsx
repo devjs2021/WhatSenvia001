@@ -19,10 +19,10 @@ export default function RegisterPage() {
   useEffect(() => {
     if (token) {
       if (user) {
-        router.replace("/contacts");
+        router.replace("/dashboard");
       } else {
         loadUser().then(() => {
-          if (useAuth.getState().user) router.replace("/contacts");
+          if (useAuth.getState().user) router.replace("/dashboard");
         });
       }
     }
@@ -36,7 +36,7 @@ export default function RegisterPage() {
     e.preventDefault();
     try {
       await register(form);
-      router.push("/contacts");
+      router.push("/dashboard");
     } catch (err: any) {
       toast.error(err.message || t('auth.registerError'));
     }

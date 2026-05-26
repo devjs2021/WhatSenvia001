@@ -36,7 +36,7 @@ export default function GoogleCallbackPage() {
         localStorage.setItem("token", token);
         localStorage.setItem("refreshToken", refreshToken);
         useAuth.setState({ user, token });
-        router.replace("/contacts");
+        router.replace("/dashboard");
       })
       .catch((err: any) => {
         setError(err.message || "Error al autenticar con Google");

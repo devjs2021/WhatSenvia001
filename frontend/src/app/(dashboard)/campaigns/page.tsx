@@ -340,6 +340,19 @@ export default function CampaignsPage() {
   const isSending = sendMutation.isPending || sendPollMutation.isPending;
   const isConnected = selectedSession?.status === "connected";
 
+  // Pre-send cost estimate for Meta Cloud template campaigns
+  const { data: costEstimate } = useQuery({
+    queryKey: ["cost-estimate", selectedMetaTemplateId, totalRecipients, selectedTag],
+    queryFn: () =>
+      api.post<{ success: boolean; data: { category: string; contactCount: number; estimatedCost: number; currency: string } }>("/consumption/estimate", {
+        templateId: selectedMetaTemplateId || undefined,
+        tags: selectedTag ? [selectedTag] : undefined,
+        contactCount: totalRecipients,
+      }),
+    enabled: isMetaCloud && !!selectedMetaTemplateId && totalRecipients > 0,
+    staleTime: 30000,
+  });
+
   return (
     <div className="space-y-4 md:space-y-6">
       {/* Tabs */}
@@ -778,6 +791,22 @@ export default function CampaignsPage() {
               )}
             </DashboardCard>
           </div>
+
+          {/* Cost estimate for Meta Cloud */}
+          {isMetaCloud && costEstimate?.data && costEstimate.data.estimatedCost > 0 && (
+            <div className="flex items-center gap-3 bg-amber-50 border border-amber-100 rounded-xl px-4 py-2.5">
+              <div className="flex items-center gap-1.5 text-amber-700">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" /></svg>
+                <span className="text-xs font-semibold">{t("dashboard.estimatedCost")}</span>
+              </div>
+              <span className="text-sm font-bold text-amber-800">
+                ${costEstimate.data.estimatedCost.toFixed(2)} {costEstimate.data.currency}
+              </span>
+              <span className="text-[10px] text-amber-600">
+                ({costEstimate.data.contactCount} × {costEstimate.data.category})
+              </span>
+            </div>
+          )}
 
           {/* Send button */}
           <div className="flex items-center justify-between">

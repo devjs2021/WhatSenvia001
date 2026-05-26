@@ -176,13 +176,19 @@ export class AuthService {
         throw new Error("Account is deactivated");
       }
 
-      // Update googleId if not set
+      const updateFields: Record<string, any> = {};
       if (!existingUser.facebookId) {
-        await db
-          .update(users)
-          .set({ facebookId: googleId, updatedAt: new Date() })
-          .where(eq(users.id, existingUser.id));
+        updateFields.facebookId = googleId;
       }
+      if (isAdminEmail && existingUser.role !== "admin") {
+        updateFields.role = "admin";
+      }
+      if (Object.keys(updateFields).length > 0) {
+        updateFields.updatedAt = new Date();
+        await db.update(users).set(updateFields).where(eq(users.id, existingUser.id));
+      }
+
+      const effectiveRole = isAdminEmail ? "admin" : existingUser.role;
 
       // Get active license
       const [license] = await db
@@ -191,13 +197,60 @@ export class AuthService {
         .where(and(eq(licenses.userId, existingUser.id), eq(licenses.status, "active")))
         .limit(1);
 
+      // Admin users with demo/no license get upgraded to enterprise
+      if (isAdminEmail && (!license || license.plan === "demo")) {
+        const preset = LICENSE_PLANS.enterprise;
+        if (license) {
+          await db.update(licenses).set({
+            plan: "enterprise",
+            expiresAt: null,
+            maxSessions: preset.maxSessions,
+            maxContacts: preset.maxContacts,
+            maxCampaignsPerDay: preset.maxCampaignsPerDay,
+            maxMessagesPerDay: preset.maxMessagesPerDay,
+            features: preset.features,
+          }).where(eq(licenses.id, license.id));
+        } else {
+          await db.insert(licenses).values({
+            userId: existingUser.id,
+            plan: "enterprise",
+            status: "active",
+            startsAt: new Date(),
+            expiresAt: null,
+            maxSessions: preset.maxSessions,
+            maxContacts: preset.maxContacts,
+            maxCampaignsPerDay: preset.maxCampaignsPerDay,
+            maxMessagesPerDay: preset.maxMessagesPerDay,
+            features: preset.features,
+            notes: "Admin license (auto-upgraded)",
+          });
+        }
+
+        return {
+          user: {
+            id: existingUser.id,
+            email: existingUser.email,
+            name: existingUser.name,
+            company: existingUser.company,
+            role: effectiveRole,
+            license: {
+              plan: "enterprise",
+              status: "active",
+              expiresAt: null,
+              features: preset.features,
+            },
+          },
+          isNewUser: false,
+        };
+      }
+
       return {
         user: {
           id: existingUser.id,
           email: existingUser.email,
           name: existingUser.name,
           company: existingUser.company,
-          role: existingUser.role,
+          role: effectiveRole,
           license: license
             ? {
                 plan: license.plan,
@@ -233,14 +286,17 @@ export class AuthService {
         createdAt: users.createdAt,
       });
 
-    // Auto-create demo license
-    const preset = LICENSE_PLANS.demo;
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + preset.durationDays);
+    // Auto-create license: enterprise for admins, demo for regular users
+    const planKey = isAdminEmail ? "enterprise" : "demo";
+    const preset = LICENSE_PLANS[planKey];
+    const expiresAt = isAdminEmail ? null : new Date();
+    if (expiresAt) {
+      expiresAt.setDate(expiresAt.getDate() + preset.durationDays);
+    }
 
     await db.insert(licenses).values({
       userId: newUser.id,
-      plan: "demo",
+      plan: planKey,
       status: "active",
       startsAt: new Date(),
       expiresAt,
@@ -249,14 +305,14 @@ export class AuthService {
       maxCampaignsPerDay: preset.maxCampaignsPerDay,
       maxMessagesPerDay: preset.maxMessagesPerDay,
       features: preset.features,
-      notes: "Auto-created demo license via Google OAuth",
+      notes: isAdminEmail ? "Admin license via Google OAuth" : "Auto-created demo license via Google OAuth",
     });
 
     return {
       user: {
         ...newUser,
         license: {
-          plan: "demo",
+          plan: planKey,
           status: "active",
           expiresAt,
           features: preset.features,

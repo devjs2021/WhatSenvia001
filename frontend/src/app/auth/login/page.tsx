@@ -27,10 +27,10 @@ export default function LoginPage() {
   useEffect(() => {
     if (token) {
       if (user) {
-        router.replace("/contacts");
+        router.replace("/dashboard");
       } else {
         loadUser().then(() => {
-          if (useAuth.getState().user) router.replace("/contacts");
+          if (useAuth.getState().user) router.replace("/dashboard");
         });
       }
     }
@@ -44,7 +44,7 @@ export default function LoginPage() {
     e.preventDefault();
     try {
       await login(form.email, form.password);
-      router.push("/contacts");
+      router.push("/dashboard");
     } catch (err: any) {
       toast.error(err.message || t("auth.loginError"));
     }
