@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { useI18n } from "@/i18n";
@@ -231,6 +231,10 @@ export default function CampaignsPage() {
 
   const isMetaCloud = selectedSession?.connectionType === "meta_cloud";
 
+  useEffect(() => {
+    if (isMetaCloud && contentType === "poll") setContentType("text");
+  }, [isMetaCloud]);
+
   const { data: metaTemplatesData, refetch: refetchMetaTemplates } = useQuery({
     queryKey: ["meta-templates", sessionId],
     queryFn: () => api.get<{ success: boolean; data: MetaTemplate[] }>(`/meta-templates?sessionId=${sessionId}`),
@@ -375,7 +379,7 @@ export default function CampaignsPage() {
                     <option value="">{t('campaigns.selectDevice')}</option>
                     {sessions.map((s) => (
                       <option key={s.id} value={s.id}>
-                        {s.name} {s.phone ? `· ${s.phone}` : ""}
+                        {s.connectionType === "meta_cloud" ? "Meta" : "WhatsApp"} {s.phone ? `· ${s.phone}` : `· ${s.name}`}
                       </option>
                     ))}
                   </select>
@@ -560,15 +564,20 @@ export default function CampaignsPage() {
                       {t('campaigns.text')}
                     </button>
                     <button
-                      onClick={() => setContentType("poll")}
+                      onClick={() => !isMetaCloud && setContentType("poll")}
+                      disabled={isMetaCloud}
+                      title={isMetaCloud ? "Encuestas solo disponibles con WhatsApp (Baileys)" : ""}
                       className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                        contentType === "poll"
-                          ? "bg-white text-slate-800 shadow-sm"
-                          : "text-slate-400 hover:text-slate-600"
+                        isMetaCloud
+                          ? "text-slate-300 cursor-not-allowed"
+                          : contentType === "poll"
+                            ? "bg-white text-slate-800 shadow-sm"
+                            : "text-slate-400 hover:text-slate-600"
                       }`}
                     >
                       <BarChart2 className="h-3.5 w-3.5" />
                       {t('campaigns.poll')}
+                      {isMetaCloud && <span className="text-[10px] ml-1 opacity-60">QR</span>}
                     </button>
                   </div>
                 </div>

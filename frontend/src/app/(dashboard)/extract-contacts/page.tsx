@@ -41,9 +41,8 @@ export default function ExtractContactsPage() {
   });
 
   const sessions = (sessionsData?.data || []).filter((s) => s.status === "connected");
+  const baileysSessions = sessions.filter((s) => s.connectionType !== "meta_cloud");
 
-  const selectedSession = sessions.find((s) => s.id === selectedSessionId);
-  const isMetaCloud = selectedSession?.connectionType === "meta_cloud";
 
   const extractMutation = useMutation({
     mutationFn: (sessionId: string) =>
@@ -120,12 +119,15 @@ export default function ExtractContactsPage() {
             onChange={(e) => setSelectedSessionId(e.target.value)}
             className="appearance-none bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 cursor-pointer max-w-md w-full"
           >
-            <option value="">Selecciona una sesion...</option>
-            {sessions.map((s) => (
+            <option value="">Selecciona una sesion WhatsApp...</option>
+            {baileysSessions.map((s) => (
               <option key={s.id} value={s.id}>
-                {s.name} ({s.phone || "sin numero"})
+                WhatsApp · {s.phone || s.name}
               </option>
             ))}
+            {baileysSessions.length === 0 && (
+              <option disabled>No hay sesiones WhatsApp (QR) conectadas</option>
+            )}
           </select>
           <button
             onClick={() => selectedSessionId && extractMutation.mutate(selectedSessionId)}
@@ -140,11 +142,11 @@ export default function ExtractContactsPage() {
             {extractMutation.isPending ? "Extrayendo..." : "Extraer Contactos"}
           </button>
         </div>
-        {isMetaCloud && (
+        {baileysSessions.length === 0 && sessions.length > 0 && (
           <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-2xl">
             <p className="text-sm text-amber-700">
-              <strong>Nota:</strong> La extracción de contactos desde grupos solo está disponible para sesiones conectadas via Baileys (código QR). 
-              Las sesiones de Meta Cloud API no soportan esta funcionalidad.
+              <strong>Nota:</strong> La extraccion de contactos solo funciona con sesiones WhatsApp conectadas via codigo QR (Baileys).
+              Las sesiones Meta Cloud no soportan esta funcion.
             </p>
           </div>
         )}

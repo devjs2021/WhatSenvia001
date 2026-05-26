@@ -44,6 +44,24 @@ export async function whatsappRoutes(app: FastifyInstance) {
     return Array.from(allContacts.values());
   });
 
+  app.post("/sessions/:id/extract-contacts", async (req) => {
+    const { id } = req.params as { id: string };
+    const provider = await getWhatsAppProvider(id);
+    const groups = await provider.getGroups(id);
+    const contactsMap = new Map<string, { phone: string; name?: string; pushName?: string; isBusiness?: boolean; isMyContact?: boolean }>();
+    for (const group of groups) {
+      try {
+        const participants = await provider.getGroupParticipants(id, group.id);
+        for (const p of participants) {
+          if (!contactsMap.has(p.phone)) {
+            contactsMap.set(p.phone, { phone: p.phone });
+          }
+        }
+      } catch {}
+    }
+    return { contacts: Array.from(contactsMap.values()) };
+  });
+
   app.post("/sessions/:id/check-number", async (req) => {
     const { id } = req.params as { id: string };
     const { phone } = req.body as { phone: string };

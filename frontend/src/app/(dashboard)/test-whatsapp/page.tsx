@@ -100,7 +100,7 @@ export default function TestWhatsAppPage() {
                 <option value="">Selecciona una sesion...</option>
                 {sessions.map((s) => (
                   <option key={s.id} value={s.id}>
-                    {s.name} ({s.phone || "sin numero"})
+                    {s.connectionType === "meta_cloud" ? "Meta" : "WhatsApp"} · {s.phone || s.name}
                   </option>
                 ))}
               </select>
@@ -233,13 +233,20 @@ export default function TestWhatsAppPage() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {sessions.map((s) => (
-              <div key={s.id} className="rounded-2xl border border-slate-100 p-3 flex items-center gap-3">
-                <div className="h-8 w-8 rounded-full bg-emerald-50 flex items-center justify-center">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+              <div key={s.id} className={`rounded-2xl border p-3 flex items-center gap-3 ${
+                s.connectionType === "meta_cloud" ? "border-blue-200 bg-blue-50/30" : "border-emerald-200 bg-emerald-50/30"
+              }`}>
+                <div className={`h-8 w-8 rounded-full flex items-center justify-center ${
+                  s.connectionType === "meta_cloud" ? "bg-blue-50" : "bg-emerald-50"
+                }`}>
+                  <CheckCircle2 className={`h-4 w-4 ${
+                    s.connectionType === "meta_cloud" ? "text-blue-500" : "text-emerald-500"
+                  }`} />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-slate-800">{s.name}</p>
-                  {s.phone && <p className="text-xs text-slate-400">{s.phone}</p>}
+                  <p className="text-sm font-medium text-slate-800">
+                    {s.connectionType === "meta_cloud" ? "Meta" : "WhatsApp"} · {s.phone || s.name}
+                  </p>
                 </div>
               </div>
             ))}
