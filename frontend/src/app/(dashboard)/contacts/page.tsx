@@ -381,7 +381,14 @@ export default function ContactsPage() {
                   {isLoading ? (
                     <tr><td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">{t('common.loading')}</td></tr>
                   ) : contacts.length === 0 ? (
-                    <tr><td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">{t('contacts.noContacts')}</td></tr>
+                    <tr>
+                      <td colSpan={6} className="px-4 py-12 text-center">
+                        <div className="flex flex-col items-center">
+                          <img src="/illustrations/PersonaContacto.png" alt="Contactos" className="h-36 w-auto mb-3 opacity-90" />
+                          <p className="text-muted-foreground">{t('contacts.noContacts')}</p>
+                        </div>
+                      </td>
+                    </tr>
                   ) : (
                     contacts.map((contact) => (
                       <tr key={contact.id} className="border-b hover:bg-muted/30 transition-colors">
@@ -550,7 +557,7 @@ export default function ContactsPage() {
           ) : lists.length === 0 ? (
             <Card>
               <CardContent className="py-16 text-center">
-                <List className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
+                <img src="/illustrations/PersonaContacto.png" alt="Listas" className="h-36 w-auto mx-auto mb-3 opacity-90" />
                 <p className="text-lg font-medium">{t('contacts.noContacts')}</p>
                 <p className="text-sm text-muted-foreground mt-1">
                   {t('contacts.manageContacts')}
