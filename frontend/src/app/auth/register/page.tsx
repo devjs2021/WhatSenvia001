@@ -42,10 +42,26 @@ export default function RegisterPage() {
     }
   }
 
-  async function handleGoogleLogin() {
-    toast.info(locale === "es" ? "Iniciando Google OAuth..." : "Starting Google OAuth...");
-    // Google OAuth will be handled by the login page
-    router.push("/auth/login");
+  function handleGoogleLogin() {
+    const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+    if (!clientId) {
+      toast.error(
+        locale === "es"
+          ? "Google OAuth no está configurado. Contacta al administrador."
+          : "Google OAuth is not configured. Contact the administrator."
+      );
+      return;
+    }
+    const redirectUri = window.location.origin + "/auth/google/callback";
+    const scope = "openid email profile";
+    const authUrl =
+      `https://accounts.google.com/o/oauth2/v2/auth?` +
+      `client_id=${encodeURIComponent(clientId)}` +
+      `&redirect_uri=${encodeURIComponent(redirectUri)}` +
+      `&response_type=code` +
+      `&scope=${encodeURIComponent(scope)}` +
+      `&prompt=select_account`;
+    window.location.href = authUrl;
   }
 
   return (
