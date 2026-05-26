@@ -57,23 +57,24 @@ export default function ChatLivePage() {
 
   const { data: contactsData } = useQuery({
     queryKey: ["chat-contacts", selectedSessionId],
-    queryFn: () => api.get<ApiResponse<ChatContact[]>>(`/chat/${selectedSessionId}/contacts`),
+    queryFn: () => api.get<ChatContact[]>(`/chat/conversations?sessionId=${selectedSessionId}`),
     enabled: !!selectedSessionId,
     refetchInterval: 10000,
   });
 
   const { data: messagesData } = useQuery({
     queryKey: ["chat-messages", selectedSessionId, selectedContact],
-    queryFn: () => api.get<ApiResponse<ChatMessage[]>>(`/chat/${selectedSessionId}/messages/${selectedContact}`),
+    queryFn: () => api.get<ChatMessage[]>(`/chat/messages?sessionId=${selectedSessionId}&phone=${selectedContact}`),
     enabled: !!selectedSessionId && !!selectedContact,
     refetchInterval: 5000,
   });
 
   const sendMutation = useMutation({
     mutationFn: () =>
-      api.post(`/chat/${selectedSessionId}/send`, {
+      api.post(`/chat/send`, {
+        sessionId: selectedSessionId,
         phone: selectedContact,
-        content: messageText.trim(),
+        text: messageText.trim(),
       }),
     onSuccess: () => {
       setMessageText("");
@@ -83,8 +84,8 @@ export default function ChatLivePage() {
     onError: (err: any) => toast.error(err.message),
   });
 
-  const contacts = contactsData?.data || [];
-  const messages = messagesData?.data || [];
+  const contacts = contactsData || [];
+  const messages = messagesData || [];
 
   const filteredContacts = contacts.filter((c) => {
     const phone = c.phone || "";
