@@ -51,7 +51,6 @@ export default function LoginPage() {
   }
 
   async function handleGoogleLogin() {
-    // Use Google Identity Services
     const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
     if (!clientId) {
       toast.error(
@@ -63,60 +62,64 @@ export default function LoginPage() {
     }
 
     try {
-      // Load Google Identity Services
-      await new Promise<void>((resolve, reject) => {
-        const script = document.createElement("script");
-        script.src = "https://accounts.google.com/gsi/client";
-        script.async = true;
-        script.defer = true;
-        script.onload = () => resolve();
-        script.onerror = () => reject(new Error("Failed to load Google script"));
-        document.body.appendChild(script);
-      });
+      // OAuth popup flow — no FedCM dependency
+      const redirectUri = window.location.origin + "/auth/google/callback";
+      const scope = "openid email profile";
+      const authUrl =
+        `https://accounts.google.com/o/oauth2/v2/auth?` +
+        `client_id=${encodeURIComponent(clientId)}` +
+        `&redirect_uri=${encodeURIComponent(redirectUri)}` +
+        `&response_type=code` +
+        `&scope=${encodeURIComponent(scope)}` +
+        `&prompt=select_account`;
 
-      // Create a promise-based Google sign-in
-      const credential = await new Promise<string>((resolve, reject) => {
-        const google = (window as any).google;
-        if (!google) {
-          reject(new Error("Google SDK not loaded"));
-          return;
-        }
+      const width = 500;
+      const height = 600;
+      const left = window.screenX + (window.innerWidth - width) / 2;
+      const top = window.screenY + (window.innerHeight - height) / 2;
 
-        google.accounts.id.initialize({
-          client_id: clientId,
-          callback: (response: any) => {
-            if (response.credential) {
-              resolve(response.credential);
-            } else {
-              reject(new Error("No credential received"));
-            }
-          },
-          cancel_on_tap_outside: false,
-        });
+      const popup = window.open(
+        authUrl,
+        "google-oauth",
+        `width=${width},height=${height},left=${left},top=${top},scrollbars=yes`
+      );
 
-        google.accounts.id.prompt((notification: any) => {
-          if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-            // Fallback: try rendering the button
-            const container = document.createElement("div");
-            container.style.display = "none";
-            document.body.appendChild(container);
-            google.accounts.id.renderButton(container, {
-              type: "standard",
-              theme: "outline",
-              size: "large",
-            });
-            container.querySelector("div")?.click();
+      if (!popup) {
+        toast.error(locale === "es" ? "El navegador bloqueó el popup" : "Browser blocked the popup");
+        return;
+      }
+
+      // Listen for the callback to send the code back
+      const code = await new Promise<string>((resolve, reject) => {
+        const timer = setInterval(() => {
+          if (popup.closed) {
+            clearInterval(timer);
+            reject(new Error("Popup closed"));
           }
-        });
+          try {
+            const url = new URL(popup.location.href);
+            if (url.pathname === "/auth/google/callback") {
+              clearInterval(timer);
+              const authCode = url.searchParams.get("code");
+              popup.close();
+              if (authCode) {
+                resolve(authCode);
+              } else {
+                reject(new Error(url.searchParams.get("error") || "No code received"));
+              }
+            }
+          } catch {
+            // Cross-origin — popup still on Google's domain, keep waiting
+          }
+        }, 200);
       });
 
-      // Send credential to backend
       const res = await api.post<{
         user: any;
         token: string;
         refreshToken: string;
         isNewUser: boolean;
-      }>("/auth/google", { credential });
+      }>("/auth/google", { code, redirectUri });
 
       localStorage.setItem("token", res.token);
       localStorage.setItem("refreshToken", res.refreshToken);
@@ -132,7 +135,9 @@ export default function LoginPage() {
 
       router.push("/contacts");
     } catch (err: any) {
-      toast.error(err.message || "Google login failed");
+      if (err.message !== "Popup closed") {
+        toast.error(err.message || "Google login failed");
+      }
     }
   }
 

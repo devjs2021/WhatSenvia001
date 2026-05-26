@@ -13,8 +13,10 @@ export const loginSchema = z.object({
 });
 
 export const googleAuthSchema = z.object({
-  credential: z.string().min(1, "Google credential is required"),
-});
+  credential: z.string().optional(),
+  code: z.string().optional(),
+  redirectUri: z.string().optional(),
+}).refine((d) => d.credential || d.code, { message: "credential or code is required" });
 
 export const forgotPasswordSchema = z.object({
   email: z.string().email("Invalid email"),

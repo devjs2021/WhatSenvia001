@@ -107,19 +107,46 @@ export class AuthService {
   }
 
   async googleAuth(input: GoogleAuthInput) {
-    // Verify Google credential token
     let payload: any;
-    try {
-      // Verify with Google's tokeninfo endpoint
-      const response = await fetch(
-        `https://oauth2.googleapis.com/tokeninfo?id_token=${input.credential}`
-      );
-      if (!response.ok) {
-        throw new Error("Invalid Google credential");
+
+    if (input.code) {
+      // OAuth popup flow: exchange authorization code for tokens
+      try {
+        const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            code: input.code,
+            client_id: env.GOOGLE_CLIENT_ID,
+            client_secret: env.GOOGLE_CLIENT_SECRET,
+            redirect_uri: input.redirectUri,
+            grant_type: "authorization_code",
+          }),
+        });
+        const tokenData = await tokenRes.json() as any;
+        if (!tokenRes.ok || !tokenData.access_token) {
+          throw new Error(tokenData.error_description || "Token exchange failed");
+        }
+        const userRes = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
+          headers: { Authorization: `Bearer ${tokenData.access_token}` },
+        });
+        if (!userRes.ok) throw new Error("Failed to get user info");
+        const userInfo = await userRes.json() as any;
+        payload = { email: userInfo.email, name: userInfo.name, sub: userInfo.id };
+      } catch (err: any) {
+        throw new Error("Google OAuth failed: " + err.message);
       }
-      payload = await response.json();
-    } catch (err: any) {
-      throw new Error("Invalid Google credential: " + err.message);
+    } else {
+      // Legacy One Tap flow: verify credential token
+      try {
+        const response = await fetch(
+          `https://oauth2.googleapis.com/tokeninfo?id_token=${input.credential}`
+        );
+        if (!response.ok) throw new Error("Invalid Google credential");
+        payload = await response.json();
+      } catch (err: any) {
+        throw new Error("Invalid Google credential: " + err.message);
+      }
     }
 
     const { email, name, sub: googleId } = payload;
