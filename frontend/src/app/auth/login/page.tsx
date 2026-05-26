@@ -269,11 +269,11 @@ export default function LoginPage() {
                   >
                     {locale === "es" ? (
                       <>
-                        <span className="text-emerald-500">Entendemos</span> lo más valioso, por eso cuidamos de <span className="text-emerald-500">ti</span> y tu <span className="text-emerald-500">tiempo</span>
+                        <span className="text-emerald-500">Entendemos</span> el valor de tu <span className="text-emerald-500">tiempo</span>, por eso cuidamos de <span className="text-emerald-500">ti</span>.
                       </>
                     ) : (
                       <>
-                        <span className="text-emerald-500">We understand</span> what matters most, that's why we take care of <span className="text-emerald-500">you</span> and your <span className="text-emerald-500">time</span>
+                        <span className="text-emerald-500">We understand</span> the value of your <span className="text-emerald-500">time</span>, that's why we take care of <span className="text-emerald-500">you</span>.
                       </>
                     )}
                   </h1>
