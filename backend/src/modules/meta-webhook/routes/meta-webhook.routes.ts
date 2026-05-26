@@ -42,6 +42,7 @@ interface WebhookBody {
           audio?: { id: string; mime_type: string }
           video?: { id: string; mime_type: string }
           document?: { id: string; filename: string; mime_type: string }
+          interactive?: { type: string; button_reply?: { id: string; title: string }; list_reply?: { id: string; title: string } }
         }>
         statuses?: Array<{
           id: string
@@ -106,7 +107,18 @@ export async function metaWebhookRoutes(app: FastifyInstance) {
             if (value.messages && value.messages.length > 0) {
               for (const message of value.messages) {
                 const contactName = value.contacts?.[0]?.profile?.name || 'Desconocido'
-                let messageContent = message.text?.body || ''
+                let messageContent = ''
+                // Handle interactive button responses
+                if (message.type === 'interactive') {
+                  const interactive = message.interactive
+                  if (interactive?.type === 'button_reply') {
+                    messageContent = interactive.button_reply?.id || interactive.button_reply?.title || ''
+                  } else if (interactive?.type === 'list_reply') {
+                    messageContent = interactive.list_reply?.id || interactive.list_reply?.title || ''
+                  }
+                } else {
+                  messageContent = message.text?.body || ''
+                }
                 const timestamp = new Date(parseInt(message.timestamp) * 1000)
 
                 let mediaUrl: string | undefined
@@ -174,7 +186,7 @@ export async function metaWebhookRoutes(app: FastifyInstance) {
                 try {
                   await flowExecutor.handleIncomingMessage(session.id, {
                     from: message.from,
-                    remoteJid: `${message.from}@s.whatsapp.net`,
+                    remoteJid: message.from,
                     message: messageContent,
                     messageId: message.id,
                     isGroup: false,

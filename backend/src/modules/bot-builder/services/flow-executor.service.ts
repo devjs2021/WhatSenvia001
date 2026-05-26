@@ -1,33 +1,22 @@
 import { db } from "../../../config/database.js";
-import { botFlows, botSettings, botAiConfig } from "../../../infrastructure/database/schema/bot-flows.js";
-import { eq, and } from "drizzle-orm";
+import { botFlows, botSettings, botAiConfig, botConversationStates } from "../../../infrastructure/database/schema/bot-flows.js";
+import { whatsappSessions } from "../../../infrastructure/database/schema/whatsapp-sessions.js";
+import { eq, and, lt } from "drizzle-orm";
 import { getWhatsAppProvider } from "../../../infrastructure/whatsapp/whatsapp.factory.js";
-import type { IWhatsAppProvider, IncomingMessage } from "../../../infrastructure/whatsapp/interfaces/whatsapp-provider.interface.js";
+import type { IncomingMessage } from "../../../infrastructure/whatsapp/interfaces/whatsapp-provider.interface.js";
 import { chatService } from "../../chat/services/chat.service.js";
 import { chatBroadcast } from "../../chat/websocket/chat-broadcast.js";
 
-// In-memory conversation state: phone -> { flowId, currentNodeId, variables, waitingForInput }
 interface ConversationState {
+  id?: string;
   flowId: string;
   sessionId: string;
-  remoteJid: string; // raw JID for replying (e.g. "573xxx@s.whatsapp.net" or "xxx@lid")
+  remoteJid: string;
   currentNodeId: string | null;
   variables: Record<string, string>;
-  waitingForInput?: string; // nodeId of ask node waiting for answer
+  waitingForInput?: string;
   lastActivity: number;
 }
-
-const conversations = new Map<string, ConversationState>();
-
-// Clean up stale conversations (older than 30 minutes)
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, state] of conversations) {
-    if (now - state.lastActivity > 30 * 60 * 1000) {
-      conversations.delete(key);
-    }
-  }
-}, 5 * 60 * 1000);
 
 interface FlowNode {
   id: string;
@@ -42,26 +31,96 @@ interface FlowEdge {
   sourceHandle?: string | null;
 }
 
+type ProviderType = "baileys" | "meta_cloud";
+
+// Clean up stale conversations (older than 30 minutes)
+setInterval(async () => {
+  try {
+    const cutoff = Date.now() - 30 * 60 * 1000;
+    await db.delete(botConversationStates).where(lt(botConversationStates.lastActivity, cutoff));
+  } catch {}
+}, 5 * 60 * 1000);
+
 export class FlowExecutorService {
-  /**
-   * Handle an incoming WhatsApp message.
-   * Finds matching active flows for the session and executes them.
-   */
+  // --- State persistence ---
+
+  private async getState(phone: string, sessionId: string): Promise<ConversationState | null> {
+    const [row] = await db
+      .select()
+      .from(botConversationStates)
+      .where(and(eq(botConversationStates.phone, phone), eq(botConversationStates.sessionId, sessionId)))
+      .limit(1);
+
+    if (!row) return null;
+    return {
+      id: row.id,
+      flowId: row.flowId,
+      sessionId: row.sessionId,
+      remoteJid: row.remoteJid,
+      currentNodeId: row.currentNodeId,
+      variables: (row.variables as Record<string, string>) || {},
+      waitingForInput: row.waitingForInput || undefined,
+      lastActivity: row.lastActivity,
+    };
+  }
+
+  private async saveState(phone: string, state: ConversationState) {
+    if (state.id) {
+      await db.update(botConversationStates).set({
+        flowId: state.flowId,
+        remoteJid: state.remoteJid,
+        currentNodeId: state.currentNodeId,
+        variables: state.variables,
+        waitingForInput: state.waitingForInput || null,
+        lastActivity: state.lastActivity,
+      }).where(eq(botConversationStates.id, state.id));
+    } else {
+      const [row] = await db.insert(botConversationStates).values({
+        phone,
+        sessionId: state.sessionId,
+        flowId: state.flowId,
+        remoteJid: state.remoteJid,
+        currentNodeId: state.currentNodeId,
+        variables: state.variables,
+        waitingForInput: state.waitingForInput || null,
+        lastActivity: state.lastActivity,
+      }).returning({ id: botConversationStates.id });
+      state.id = row.id;
+    }
+  }
+
+  private async deleteState(phone: string, sessionId: string) {
+    await db.delete(botConversationStates).where(
+      and(eq(botConversationStates.phone, phone), eq(botConversationStates.sessionId, sessionId))
+    );
+  }
+
+  // --- Provider detection ---
+
+  private async getProviderType(sessionId: string): Promise<ProviderType> {
+    const [session] = await db
+      .select({ connectionType: whatsappSessions.connectionType })
+      .from(whatsappSessions)
+      .where(eq(whatsappSessions.id, sessionId))
+      .limit(1);
+    return (session?.connectionType as ProviderType) || "baileys";
+  }
+
+  // --- Main entry ---
+
   async handleIncomingMessage(sessionId: string, incoming: IncomingMessage) {
     console.log(`[BOT] Incoming message from ${incoming.from}: "${incoming.message}" (session: ${sessionId}, group: ${incoming.isGroup})`);
-    if (incoming.isGroup) return; // Skip group messages
+    if (incoming.isGroup) return;
 
     const phone = incoming.from;
     const text = incoming.message.trim();
 
-    // Check if there's an ongoing conversation waiting for input
-    const existingState = conversations.get(phone);
-    if (existingState && existingState.sessionId === sessionId && existingState.waitingForInput) {
+    const existingState = await this.getState(phone, sessionId);
+    if (existingState && existingState.waitingForInput) {
       await this.handleWaitingInput(phone, text, existingState);
       return;
     }
 
-    // Find active flows assigned to this session
     const activeFlows = await db
       .select()
       .from(botFlows)
@@ -70,7 +129,6 @@ export class FlowExecutorService {
     console.log(`[BOT] Found ${activeFlows.length} active flows for session ${sessionId}`);
     if (activeFlows.length === 0) return;
 
-    // Check bot settings mode
     const userId = activeFlows[0].userId;
     const [settings] = await db
       .select()
@@ -80,7 +138,6 @@ export class FlowExecutorService {
 
     const mode = settings?.mode || "hybrid";
 
-    // Find a flow whose trigger matches the message
     for (const flow of activeFlows) {
       const nodes = (flow.nodes || []) as FlowNode[];
       const edges = (flow.edges || []) as FlowEdge[];
@@ -92,7 +149,6 @@ export class FlowExecutorService {
       console.log(`[BOT] Trigger "${triggerNode.data.triggerType}" match: ${matched} (isFirstMessage: ${!existingState})`);
       if (!matched) continue;
 
-      // Start executing from the trigger node
       const state: ConversationState = {
         flowId: flow.id,
         sessionId,
@@ -105,14 +161,12 @@ export class FlowExecutorService {
         },
         lastActivity: Date.now(),
       };
-      conversations.set(phone, state);
+      await this.saveState(phone, state);
 
-      // Follow edges from trigger and execute
       await this.executeFromNode(triggerNode.id, nodes, edges, state, phone);
       return;
     }
 
-    // No flow matched - if hybrid mode, try AI response
     if (mode === "ia_complete" || mode === "hybrid") {
       await this.handleAIResponse(userId, sessionId, incoming.remoteJid, text);
     }
@@ -146,7 +200,6 @@ export class FlowExecutorService {
     phone: string,
     sourceHandle?: string,
   ) {
-    // Find edges from this node
     const outEdges = edges.filter((e) => {
       if (e.source !== fromNodeId) return false;
       if (sourceHandle !== undefined) return e.sourceHandle === sourceHandle;
@@ -163,34 +216,26 @@ export class FlowExecutorService {
       const result = await this.executeNode(nextNode, state, phone);
 
       if (result === "wait") {
-        // Node is waiting for user input (ask node)
+        await this.saveState(phone, state);
         return;
       }
 
       if (result === "stop") {
-        // Node terminated the flow (transfer agent, go to flow terminal)
-        conversations.delete(phone);
+        await this.deleteState(phone, state.sessionId);
         return;
       }
 
-      // result is sourceHandle or undefined - continue to next nodes
       await this.executeFromNode(nextNode.id, nodes, edges, state, phone, result || undefined);
     }
   }
 
-  /**
-   * Execute a single node. Returns:
-   * - undefined: continue normally (follow default edges)
-   * - "wait": pause execution, waiting for user input
-   * - "stop": terminate the flow
-   * - string: a specific sourceHandle to follow (for conditions/buttons)
-   */
   private async executeNode(
     node: FlowNode,
     state: ConversationState,
     phone: string,
   ): Promise<string | undefined> {
     const jid = state.remoteJid;
+    const providerType = await this.getProviderType(state.sessionId);
 
     switch (node.type) {
       case "message": {
@@ -220,11 +265,8 @@ export class FlowExecutorService {
       case "buttons": {
         const text = this.replaceVariables(node.data.message || "", state.variables);
         const buttons = (node.data.buttons || []) as { text: string; emoji: string }[];
-        const buttonList = buttons
-          .map((b, i) => `${b.emoji || (i + 1)} ${b.text}`)
-          .join("\n");
-        const fullMessage = `${text}\n\n${buttonList}`;
-        await this.sendMessage(state.sessionId, jid, fullMessage);
+
+        await this.sendInteractiveButtons(state.sessionId, jid, text, buttons, providerType);
 
         state.waitingForInput = node.id;
         return "wait";
@@ -248,7 +290,7 @@ export class FlowExecutorService {
       }
 
       case "delay": {
-        const seconds = Math.min(node.data.seconds || 3, 30); // Cap at 30s
+        const seconds = Math.min(node.data.seconds || 3, 30);
         await new Promise((r) => setTimeout(r, seconds * 1000));
         return undefined;
       }
@@ -290,12 +332,11 @@ export class FlowExecutorService {
           state.variables,
         );
         await this.sendMessage(state.sessionId, jid, msg);
-        conversations.delete(phone);
+        await this.deleteState(phone, state.sessionId);
         return "stop";
       }
 
       case "goToFlow": {
-        // Load and execute the target flow
         const targetFlowId = node.data.targetFlowId;
         if (targetFlowId) {
           try {
@@ -311,12 +352,11 @@ export class FlowExecutorService {
               const triggerNode = targetNodes.find((n) => n.type === "trigger");
               if (triggerNode) {
                 state.flowId = targetFlowId;
+                await this.saveState(phone, state);
                 await this.executeFromNode(triggerNode.id, targetNodes, targetEdges, state, phone);
               }
             }
-          } catch {
-            // Silently fail
-          }
+          } catch {}
         }
         return "stop";
       }
@@ -326,6 +366,116 @@ export class FlowExecutorService {
     }
   }
 
+  // --- Interactive buttons: native for both providers ---
+
+  private async sendInteractiveButtons(
+    sessionId: string,
+    remoteJid: string,
+    text: string,
+    buttons: { text: string; emoji: string }[],
+    providerType: ProviderType,
+  ) {
+    const provider = await getWhatsAppProvider(sessionId);
+    const phone = remoteJid.replace(/@.*$/, "");
+
+    if (providerType === "meta_cloud") {
+      // Meta Cloud API: interactive reply buttons (max 3)
+      const metaButtons = buttons.slice(0, 3).map((b, i) => ({
+        type: "reply" as const,
+        reply: { id: `btn-${i}`, title: `${b.emoji || ""} ${b.text}`.trim().substring(0, 20) },
+      }));
+
+      const metaProvider = provider as any;
+      const url = `https://graph.facebook.com/v21.0/${metaProvider.phoneNumberId}/messages`;
+      const body = {
+        messaging_product: "whatsapp",
+        to: phone.replace(/[^0-9]/g, ""),
+        type: "interactive",
+        interactive: {
+          type: "button",
+          body: { text },
+          action: { buttons: metaButtons },
+        },
+      };
+
+      try {
+        const res = await fetch(url, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${metaProvider.accessToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(body),
+        });
+        const data: any = await res.json();
+
+        // Save to chat
+        try {
+          const buttonList = buttons.map((b, i) => `${b.emoji || (i + 1)} ${b.text}`).join("\n");
+          const chatMsg = await chatService.saveMessage({
+            sessionId,
+            phone,
+            remoteJid,
+            content: `${text}\n\n${buttonList}`,
+            direction: "outgoing",
+            senderType: "bot",
+            whatsappMessageId: data.messages?.[0]?.id,
+          });
+          chatBroadcast.broadcast(sessionId, "new_message", chatMsg);
+        } catch {}
+
+        return;
+      } catch {
+        // Fallback to text
+      }
+    }
+
+    if (providerType === "baileys") {
+      // Baileys: use native button message
+      const baileysProvider = provider as any;
+      const session = baileysProvider.sessions?.get(sessionId);
+      if (session?.socket) {
+        const jid = remoteJid.includes("@") ? remoteJid : `${remoteJid.replace(/[^0-9]/g, "")}@s.whatsapp.net`;
+        try {
+          const buttonMsg = {
+            text,
+            buttons: buttons.slice(0, 3).map((b, i) => ({
+              buttonId: `btn-${i}`,
+              buttonText: { displayText: `${b.emoji || ""} ${b.text}`.trim() },
+              type: 1,
+            })),
+            headerType: 1,
+          };
+          const result = await session.socket.sendMessage(jid, buttonMsg);
+
+          try {
+            const chatMsg = await chatService.saveMessage({
+              sessionId,
+              phone,
+              remoteJid,
+              content: `${text}\n\n${buttons.map((b, i) => `${b.emoji || (i + 1)} ${b.text}`).join("\n")}`,
+              direction: "outgoing",
+              senderType: "bot",
+              whatsappMessageId: result?.key?.id,
+            });
+            chatBroadcast.broadcast(sessionId, "new_message", chatMsg);
+          } catch {}
+
+          return;
+        } catch {
+          // Baileys buttons may not work on all versions, fallback to text
+        }
+      }
+    }
+
+    // Fallback: plain text buttons (works everywhere)
+    const buttonList = buttons.map((b, i) => `${b.emoji || (i + 1)} ${b.text}`).join("\n");
+    const fullMessage = `${text}\n\n${buttonList}`;
+    await this.sendMessage(sessionId, remoteJid, fullMessage);
+  }
+
+  // --- Handle waiting input ---
+
   private async handleWaitingInput(phone: string, text: string, state: ConversationState) {
     const flow = await db
       .select()
@@ -334,7 +484,7 @@ export class FlowExecutorService {
       .limit(1);
 
     if (!flow[0]) {
-      conversations.delete(phone);
+      await this.deleteState(phone, state.sessionId);
       return;
     }
 
@@ -343,7 +493,7 @@ export class FlowExecutorService {
     const waitingNode = nodes.find((n) => n.id === state.waitingForInput);
 
     if (!waitingNode) {
-      conversations.delete(phone);
+      await this.deleteState(phone, state.sessionId);
       return;
     }
 
@@ -352,33 +502,41 @@ export class FlowExecutorService {
     state.lastActivity = Date.now();
 
     if (waitingNode.type === "ask") {
-      // Store answer in variable
       const varName = waitingNode.data.variableName || "answer";
       state.variables[varName] = text;
-      // Continue flow from this node
+      await this.saveState(phone, state);
       await this.executeFromNode(waitingNode.id, nodes, edges, state, phone);
     } else if (waitingNode.type === "buttons") {
-      // Match button selection
       const buttons = (waitingNode.data.buttons || []) as { text: string; emoji: string }[];
       const lowerText = text.toLowerCase();
-      const matchedIndex = buttons.findIndex(
-        (b, i) =>
-          lowerText === b.text.toLowerCase() ||
-          lowerText === String(i + 1) ||
-          lowerText === b.emoji,
-      );
 
-      if (matchedIndex >= 0) {
+      // Match by: button ID (btn-0), text, index, or emoji
+      let matchedIndex = -1;
+      const btnIdMatch = text.match(/^btn-(\d+)$/);
+      if (btnIdMatch) {
+        matchedIndex = parseInt(btnIdMatch[1]);
+      } else {
+        matchedIndex = buttons.findIndex(
+          (b, i) =>
+            lowerText === b.text.toLowerCase() ||
+            lowerText === String(i + 1) ||
+            lowerText === b.emoji,
+        );
+      }
+
+      if (matchedIndex >= 0 && matchedIndex < buttons.length) {
         state.variables.button_selection = buttons[matchedIndex].text;
-        // Follow the specific button handle
+        await this.saveState(phone, state);
         await this.executeFromNode(waitingNode.id, nodes, edges, state, phone, `btn-${matchedIndex}`);
       } else {
-        // No match - follow default edge
         state.variables.button_selection = text;
+        await this.saveState(phone, state);
         await this.executeFromNode(waitingNode.id, nodes, edges, state, phone);
       }
     }
   }
+
+  // --- AI ---
 
   private async handleAIResponse(userId: string, sessionId: string, remoteJid: string, text: string) {
     try {
@@ -386,9 +544,7 @@ export class FlowExecutorService {
       if (aiResponse) {
         await this.sendMessage(sessionId, remoteJid, aiResponse);
       }
-    } catch {
-      // AI not configured or error - silently ignore
-    }
+    } catch {}
   }
 
   private async getAIResponse(userId: string, userMessage: string, extraContext?: string): Promise<string> {
@@ -480,25 +636,20 @@ export class FlowExecutorService {
     throw new Error("Proveedor no soportado");
   }
 
+  // --- Helpers ---
+
   private evaluateCondition(variable: string, operator: string, value: string): boolean {
     const lower = variable.toLowerCase();
     const lowerValue = value.toLowerCase();
 
     switch (operator) {
-      case "equals":
-        return lower === lowerValue;
-      case "not_equals":
-        return lower !== lowerValue;
-      case "contains":
-        return lower.includes(lowerValue);
-      case "starts_with":
-        return lower.startsWith(lowerValue);
-      case "greater_than":
-        return parseFloat(variable) > parseFloat(value);
-      case "less_than":
-        return parseFloat(variable) < parseFloat(value);
-      default:
-        return false;
+      case "equals": return lower === lowerValue;
+      case "not_equals": return lower !== lowerValue;
+      case "contains": return lower.includes(lowerValue);
+      case "starts_with": return lower.startsWith(lowerValue);
+      case "greater_than": return parseFloat(variable) > parseFloat(value);
+      case "less_than": return parseFloat(variable) < parseFloat(value);
+      default: return false;
     }
   }
 
@@ -509,10 +660,8 @@ export class FlowExecutorService {
   private async sendMessage(sessionId: string, remoteJid: string, text: string) {
     try {
       const p = await getWhatsAppProvider(sessionId);
-      // Pass remoteJid directly as phone — formatJid will detect the "@" and use it as-is
       const result = await p.sendMessage(sessionId, { phone: remoteJid, message: text });
 
-      // Save bot message to chat and broadcast
       try {
         const phone = remoteJid.replace(/@.*$/, "");
         const chatMsg = await chatService.saveMessage({

@@ -242,6 +242,27 @@ async function bootstrap() {
     app.log.warn(`Auto-migration (whatsapp_sessions) note: ${err.message}`);
   }
 
+  // Auto-migration: bot conversation states table
+  try {
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS bot_conversation_states (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        phone VARCHAR(30) NOT NULL,
+        session_id UUID NOT NULL REFERENCES whatsapp_sessions(id) ON DELETE CASCADE,
+        flow_id UUID NOT NULL REFERENCES bot_flows(id) ON DELETE CASCADE,
+        remote_jid VARCHAR(100) NOT NULL,
+        current_node_id VARCHAR(100),
+        variables JSONB DEFAULT '{}',
+        waiting_for_input VARCHAR(100),
+        last_activity BIGINT NOT NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT NOW()
+      )
+    `);
+    await db.execute(sql`CREATE INDEX IF NOT EXISTS bot_conv_phone_session_idx ON bot_conversation_states(phone, session_id)`);
+  } catch (err: any) {
+    app.log.warn(`Auto-migration (bot_conversation_states) note: ${err.message}`);
+  }
+
   // Auto-migration: consumption tracking columns on messages
   try {
     await db.execute(sql`ALTER TABLE messages ADD COLUMN IF NOT EXISTS estimated_cost NUMERIC(10,6)`);

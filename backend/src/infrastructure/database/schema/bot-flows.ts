@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, timestamp, text, boolean, jsonb, index } from "drizzle-orm/pg-core";
+import { pgTable, uuid, varchar, timestamp, text, boolean, jsonb, index, bigint } from "drizzle-orm/pg-core";
 import { users } from "./users";
 import { whatsappSessions } from "./whatsapp-sessions";
 
@@ -64,5 +64,25 @@ export const botFlows = pgTable(
   (table) => [
     index("bot_flows_user_id_idx").on(table.userId),
     index("bot_flows_status_idx").on(table.status),
+  ]
+);
+
+// Conversation state persistence (replaces in-memory Map)
+export const botConversationStates = pgTable(
+  "bot_conversation_states",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    phone: varchar("phone", { length: 30 }).notNull(),
+    sessionId: uuid("session_id").notNull().references(() => whatsappSessions.id, { onDelete: "cascade" }),
+    flowId: uuid("flow_id").notNull().references(() => botFlows.id, { onDelete: "cascade" }),
+    remoteJid: varchar("remote_jid", { length: 100 }).notNull(),
+    currentNodeId: varchar("current_node_id", { length: 100 }),
+    variables: jsonb("variables").$type<Record<string, string>>().default({}),
+    waitingForInput: varchar("waiting_for_input", { length: 100 }),
+    lastActivity: bigint("last_activity", { mode: "number" }).notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [
+    index("bot_conv_phone_session_idx").on(table.phone, table.sessionId),
   ]
 );

@@ -16,8 +16,8 @@ import { logger } from "../../../config/logger.js";
 export class MetaCloudProvider implements IWhatsAppProvider {
   readonly providerName = "meta-cloud";
   private readonly baseUrl = "https://graph.facebook.com/v21.0";
-  private readonly accessToken: string;
-  private readonly phoneNumberId: string;
+  readonly accessToken: string;
+  readonly phoneNumberId: string;
   private displayPhone: string;
 
   constructor(accessToken: string, phoneNumberId: string, displayPhone?: string) {
