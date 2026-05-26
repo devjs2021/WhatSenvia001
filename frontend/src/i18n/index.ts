@@ -50,7 +50,7 @@ const translations: Record<Locale, Record<string, string>> = {
 interface I18nState {
   locale: Locale;
   setLocale: (locale: Locale) => void;
-  t: (key: string) => string;
+  t: (key: string, params?: Record<string, string | number>) => string;
 }
 
 export const useI18n = create<I18nState>((set, get) => ({
@@ -59,8 +59,14 @@ export const useI18n = create<I18nState>((set, get) => ({
     localStorage.setItem("locale", locale);
     set({ locale });
   },
-  t: (key: string) => {
+  t: (key: string, params?: Record<string, string | number>) => {
     const { locale } = get();
-    return translations[locale]?.[key] || translations["en"]?.[key] || key;
+    let value = translations[locale]?.[key] || translations["en"]?.[key] || key;
+    if (params) {
+      for (const [k, v] of Object.entries(params)) {
+        value = value.replace(`{{${k}}}`, String(v));
+      }
+    }
+    return value;
   },
 }));

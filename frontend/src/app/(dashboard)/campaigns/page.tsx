@@ -536,7 +536,7 @@ export default function CampaignsPage() {
                     <p className="font-display text-3xl font-bold text-slate-900">{totalRecipients}</p>
                     <p className="text-xs text-slate-400 text-center">
                       {selectedListId
-                        ? t('campaigns.inList', { name: contactLists.find((l) => l.id === selectedListId)?.name })
+                        ? t('campaigns.inList', { name: contactLists.find((l) => l.id === selectedListId)?.name ?? '' })
                         : selectedTag ? t('campaigns.withTag', { tag: selectedTag }) : t('campaigns.inTotal')}
                     </p>
                   </div>
