@@ -50,7 +50,7 @@ export default function LoginPage() {
     }
   }
 
-  async function handleGoogleLogin() {
+  function handleGoogleLogin() {
     const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
     if (!clientId) {
       toast.error(
@@ -61,84 +61,17 @@ export default function LoginPage() {
       return;
     }
 
-    try {
-      // OAuth popup flow — no FedCM dependency
-      const redirectUri = window.location.origin + "/auth/google/callback";
-      const scope = "openid email profile";
-      const authUrl =
-        `https://accounts.google.com/o/oauth2/v2/auth?` +
-        `client_id=${encodeURIComponent(clientId)}` +
-        `&redirect_uri=${encodeURIComponent(redirectUri)}` +
-        `&response_type=code` +
-        `&scope=${encodeURIComponent(scope)}` +
-        `&prompt=select_account`;
+    const redirectUri = window.location.origin + "/auth/google/callback";
+    const scope = "openid email profile";
+    const authUrl =
+      `https://accounts.google.com/o/oauth2/v2/auth?` +
+      `client_id=${encodeURIComponent(clientId)}` +
+      `&redirect_uri=${encodeURIComponent(redirectUri)}` +
+      `&response_type=code` +
+      `&scope=${encodeURIComponent(scope)}` +
+      `&prompt=select_account`;
 
-      const width = 500;
-      const height = 600;
-      const left = window.screenX + (window.innerWidth - width) / 2;
-      const top = window.screenY + (window.innerHeight - height) / 2;
-
-      const popup = window.open(
-        authUrl,
-        "google-oauth",
-        `width=${width},height=${height},left=${left},top=${top},scrollbars=yes`
-      );
-
-      if (!popup) {
-        toast.error(locale === "es" ? "El navegador bloqueó el popup" : "Browser blocked the popup");
-        return;
-      }
-
-      // Listen for the callback to send the code back
-      const code = await new Promise<string>((resolve, reject) => {
-        const timer = setInterval(() => {
-          if (popup.closed) {
-            clearInterval(timer);
-            reject(new Error("Popup closed"));
-          }
-          try {
-            const url = new URL(popup.location.href);
-            if (url.pathname === "/auth/google/callback") {
-              clearInterval(timer);
-              const authCode = url.searchParams.get("code");
-              popup.close();
-              if (authCode) {
-                resolve(authCode);
-              } else {
-                reject(new Error(url.searchParams.get("error") || "No code received"));
-              }
-            }
-          } catch {
-            // Cross-origin — popup still on Google's domain, keep waiting
-          }
-        }, 200);
-      });
-
-      const res = await api.post<{
-        user: any;
-        token: string;
-        refreshToken: string;
-        isNewUser: boolean;
-      }>("/auth/google", { code, redirectUri });
-
-      localStorage.setItem("token", res.token);
-      localStorage.setItem("refreshToken", res.refreshToken);
-      useAuth.setState({ user: res.user, token: res.token });
-
-      if (res.isNewUser) {
-        toast.success(
-          locale === "es"
-            ? "Cuenta creada exitosamente con Google"
-            : "Account created successfully with Google"
-        );
-      }
-
-      router.push("/contacts");
-    } catch (err: any) {
-      if (err.message !== "Popup closed") {
-        toast.error(err.message || "Google login failed");
-      }
-    }
+    window.location.href = authUrl;
   }
 
   async function handleForgotPassword(e: React.FormEvent) {
