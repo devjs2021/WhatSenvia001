@@ -633,6 +633,28 @@ export class FlowExecutorService {
       return data.content?.[0]?.text || "Sin respuesta";
     }
 
+    if (config.provider === "deepseek") {
+      const res = await fetch("https://api.deepseek.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${config.apiKey}`,
+        },
+        body: JSON.stringify({
+          model: config.model,
+          messages: [
+            { role: "system", content: fullSystemPrompt },
+            { role: "user", content: userMessage },
+          ],
+          temperature: parseFloat(config.temperature || "0.7"),
+          max_tokens: parseInt(config.maxTokens || "1000"),
+        }),
+      });
+      if (!res.ok) throw new Error(`DeepSeek API error: ${res.status}`);
+      const data = await res.json() as any;
+      return data.choices?.[0]?.message?.content || "Sin respuesta";
+    }
+
     throw new Error("Proveedor no soportado");
   }
 

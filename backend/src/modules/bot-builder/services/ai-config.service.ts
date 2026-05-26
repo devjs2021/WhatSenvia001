@@ -28,6 +28,13 @@ const AI_PROVIDERS: Record<string, { name: string; models: { id: string; name: s
       { id: "claude-haiku-4-5-20251001", name: "Claude Haiku 4.5" },
     ],
   },
+  deepseek: {
+    name: "DeepSeek",
+    models: [
+      { id: "deepseek-chat", name: "DeepSeek V3 (Chat)" },
+      { id: "deepseek-reasoner", name: "DeepSeek R1 (Razonamiento)" },
+    ],
+  },
 };
 
 export class AiConfigService {
@@ -134,6 +141,26 @@ export class AiConfigService {
         return { success: true, message: "Conexion exitosa con Anthropic" };
       }
 
+      if (provider === "deepseek") {
+        const res = await fetch("https://api.deepseek.com/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify({
+            model,
+            messages: [{ role: "user", content: "Responde solo: OK" }],
+            max_tokens: 5,
+          }),
+        });
+        if (!res.ok) {
+          const err = await res.json() as any;
+          throw new Error(err.error?.message || `HTTP ${res.status}`);
+        }
+        return { success: true, message: "Conexion exitosa con DeepSeek" };
+      }
+
       return { success: false, message: "Proveedor no soportado" };
     } catch (err: any) {
       return { success: false, message: err.message || "Error de conexion" };
@@ -221,6 +248,28 @@ export class AiConfigService {
       if (!res.ok) throw new Error(`Anthropic API error: ${res.status}`);
       const data = await res.json() as any;
       return data.content?.[0]?.text || "Sin respuesta";
+    }
+
+    if (config.provider === "deepseek") {
+      const res = await fetch("https://api.deepseek.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${config.apiKey}`,
+        },
+        body: JSON.stringify({
+          model: config.model,
+          messages: [
+            { role: "system", content: fullSystemPrompt },
+            { role: "user", content: userMessage },
+          ],
+          temperature: parseFloat(config.temperature || "0.7"),
+          max_tokens: parseInt(config.maxTokens || "1000"),
+        }),
+      });
+      if (!res.ok) throw new Error(`DeepSeek API error: ${res.status}`);
+      const data = await res.json() as any;
+      return data.choices?.[0]?.message?.content || "Sin respuesta";
     }
 
     throw new Error("Proveedor no soportado");
