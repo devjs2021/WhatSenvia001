@@ -75,11 +75,12 @@ export class ChatService {
     if (userSessions.length === 0) return [];
 
     const sessionIds = userSessions.map((s) => s.id);
+    // Use ANY with a properly cast PostgreSQL array literal
     const result = await db.execute(sql`
       SELECT DISTINCT ON (phone)
         phone, push_name, content, media_url, media_type, direction, sender_type, created_at, status, session_id
       FROM chat_messages
-      WHERE session_id = ANY(${sessionIds})
+      WHERE session_id = ANY(ARRAY[${sql.join(sessionIds, sql`, `)}]::uuid[])
       ORDER BY phone, created_at DESC
     `);
 
