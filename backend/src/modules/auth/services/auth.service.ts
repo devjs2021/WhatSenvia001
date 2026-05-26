@@ -133,6 +133,10 @@ export class AuthService {
       throw new Error("Only @gmail.com accounts are allowed");
     }
 
+    // Determine if this email should be admin
+    const adminEmails = env.ADMIN_EMAILS.split(",").map((e) => e.trim().toLowerCase()).filter(Boolean);
+    const isAdminEmail = adminEmails.includes(email.toLowerCase());
+
     // Check if user already exists
     const [existingUser] = await db
       .select()
@@ -190,7 +194,7 @@ export class AuthService {
         email,
         password: hashedPassword,
         name: name || email.split("@")[0],
-        role: "user",
+        role: isAdminEmail ? "admin" : "user",
         facebookId: googleId,
       })
       .returning({

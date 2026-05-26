@@ -39,6 +39,9 @@ const envSchema = z.object({
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
 
+  // Admin emails (comma-separated) — users who auto-get admin role on Google OAuth
+  ADMIN_EMAILS: z.string().default(""),
+
   // Email (Resend for password reset)
   RESEND_API_KEY: z.string().optional(),
   APP_URL: z.string().default("http://localhost:3000"),
