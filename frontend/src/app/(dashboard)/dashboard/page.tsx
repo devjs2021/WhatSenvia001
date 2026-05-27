@@ -4,8 +4,9 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { useI18n } from "@/i18n";
 import {
-  Users, Send, BarChart3, MessageSquare, Wifi, WifiOff, Loader2,
+  Users, Send, BarChart3, MessageSquare, Wifi, WifiOff, Loader2, Smartphone, ArrowRight,
 } from "lucide-react";
+import Link from "next/link";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { DashboardKPIs } from "@/components/dashboard/dashboard-kpis";
 import { DashboardChart } from "@/components/dashboard/dashboard-chart";
@@ -112,6 +113,30 @@ export default function DashboardPage() {
           )}
         </div>
       </DashboardHeader>
+
+      {/* Quick Connect Shortcut */}
+      {overview.connectedSessions === 0 && (
+        <Link href="/whatsapp" className="block group">
+          <div className="relative overflow-hidden rounded-3xl border border-emerald-200 bg-gradient-to-r from-emerald-50 to-teal-50 p-5 md:p-6 transition-all hover:shadow-md hover:border-emerald-300">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-emerald-100 flex items-center justify-center">
+                  <Smartphone className="w-6 h-6 text-emerald-600" />
+                </div>
+                <div>
+                  <h3 className="font-display text-base font-bold text-slate-900">
+                    Conecta tu WhatsApp
+                  </h3>
+                  <p className="text-sm text-slate-500 mt-0.5">
+                    Vincula tu cuenta de WhatsApp Business para empezar a enviar mensajes
+                  </p>
+                </div>
+              </div>
+              <ArrowRight className="w-5 h-5 text-emerald-500 group-hover:translate-x-1 transition-transform" />
+            </div>
+          </div>
+        </Link>
+      )}
 
       {/* KPIs */}
       <DashboardKPIs items={kpiItems} columns={3} />
