@@ -17,7 +17,7 @@ const variantStyles: Record<CardVariant, string> = {
   default:
     "bg-white border border-slate-100 rounded-3xl shadow-[0_4px_20px_rgba(0,0,0,0.01)]",
   metric:
-    "bg-white border border-slate-100 rounded-3xl p-6 shadow-[0_4px_20px_rgba(0,0,0,0.01)] flex justify-between items-center",
+    "bg-white border border-slate-100 rounded-2xl px-5 py-4 shadow-[0_4px_20px_rgba(0,0,0,0.01)] flex justify-between items-center",
   table:
     "bg-white border border-slate-100 rounded-[32px] overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.01)]",
   glass:
@@ -25,9 +25,9 @@ const variantStyles: Record<CardVariant, string> = {
 };
 
 const paddingStyles = {
-  sm: "p-4",
-  md: "p-6",
-  lg: "p-6 md:p-8",
+  sm: "p-3",
+  md: "p-4 md:p-5",
+  lg: "p-5 md:p-6",
 };
 
 export function DashboardCard({
@@ -63,7 +63,7 @@ export function DashboardCardHeader({
   className?: string;
 }) {
   return (
-    <div className={cn("flex justify-between items-start mb-6", className)}>
+    <div className={cn("flex justify-between items-start mb-4", className)}>
       {children}
     </div>
   );
@@ -110,7 +110,7 @@ export function DashboardCardIcon({
   return (
     <div
       className={cn(
-        "w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-600",
+        "w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600",
         className
       )}
     >

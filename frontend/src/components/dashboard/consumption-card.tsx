@@ -40,64 +40,64 @@ export function ConsumptionCard() {
   const stats = data?.data;
 
   return (
-    <DashboardCard padding="lg">
-      <DashboardCardHeader>
+    <DashboardCard>
+      <DashboardCardHeader className="!mb-3">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-xl bg-emerald-50 flex items-center justify-center">
-            <DollarSign className="w-4 h-4 text-emerald-600" strokeWidth={1.5} />
+          <div className="w-7 h-7 rounded-lg bg-emerald-50 flex items-center justify-center">
+            <DollarSign className="w-3.5 h-3.5 text-emerald-600" strokeWidth={1.5} />
           </div>
           <div>
             <DashboardCardTitle>{t("dashboard.consumption")}</DashboardCardTitle>
-            <p className="text-[11px] text-slate-400 mt-0.5">{t("dashboard.consumptionDesc")}</p>
+            <p className="text-[10px] text-slate-400">{t("dashboard.consumptionDesc")}</p>
           </div>
         </div>
       </DashboardCardHeader>
 
       {isLoading ? (
-        <div className="flex items-center justify-center py-8">
+        <div className="flex items-center justify-center py-6">
           <Loader2 className="w-5 h-5 text-slate-300 animate-spin" />
         </div>
       ) : !stats || stats.totalConversations === 0 ? (
-        <div className="text-center py-6">
-          <DollarSign className="w-8 h-8 text-slate-200 mx-auto mb-2" />
+        <div className="text-center py-4">
+          <DollarSign className="w-7 h-7 text-slate-200 mx-auto mb-1.5" />
           <p className="text-xs text-slate-400">{t("dashboard.noMetaSessions")}</p>
         </div>
       ) : (
-        <div className="space-y-5">
+        <div className="space-y-3">
           {/* Total cost */}
           <div className="flex items-end justify-between">
             <div>
-              <p className="text-3xl font-extrabold text-slate-900">
+              <p className="text-2xl font-extrabold text-slate-900">
                 ${stats.totalCost.toFixed(2)}
               </p>
-              <p className="text-xs text-slate-400 mt-1">
+              <p className="text-[11px] text-slate-400">
                 {stats.totalConversations.toLocaleString()} {t("dashboard.conversations")}
               </p>
             </div>
-            <div className="flex items-center gap-1 text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">
+            <div className="flex items-center gap-1 text-[10px] font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
               <TrendingUp className="w-3 h-3" />
               USD
             </div>
           </div>
 
           {/* Category breakdown */}
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-1.5">
             {Object.entries(stats.breakdown).map(([category, data]) => (
               <div
                 key={category}
-                className={`flex flex-col rounded-xl border p-3 ${categoryBgColors[category] || "bg-slate-50 border-slate-100 text-slate-600"}`}
+                className={`flex flex-col rounded-lg border px-2.5 py-2 ${categoryBgColors[category] || "bg-slate-50 border-slate-100 text-slate-600"}`}
               >
-                <span className="text-[10px] font-semibold uppercase tracking-wider">
+                <span className="text-[9px] font-semibold uppercase tracking-wider">
                   {t(`dashboard.${category}`)}
                 </span>
-                <span className="text-lg font-bold mt-1">${data.cost.toFixed(2)}</span>
-                <span className="text-[10px] opacity-70">{data.count} conv.</span>
+                <span className="text-sm font-bold mt-0.5">${data.cost.toFixed(2)}</span>
+                <span className="text-[9px] opacity-70">{data.count} conv.</span>
               </div>
             ))}
           </div>
 
           {/* Progress bars by category */}
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             {Object.entries(stats.breakdown)
               .filter(([, d]) => d.count > 0)
               .sort((a, b) => b[1].cost - a[1].cost)
@@ -105,16 +105,16 @@ export function ConsumptionCard() {
                 const pct = stats.totalCost > 0 ? (data.cost / stats.totalCost) * 100 : 0;
                 return (
                   <div key={category} className="flex items-center gap-2">
-                    <span className="text-[10px] font-medium text-slate-500 w-20 truncate">
+                    <span className="text-[9px] font-medium text-slate-500 w-16 truncate">
                       {t(`dashboard.${category}`)}
                     </span>
-                    <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                    <div className="flex-1 h-1 bg-slate-100 rounded-full overflow-hidden">
                       <div
                         className={`h-full rounded-full ${categoryColors[category] || "bg-slate-400"}`}
                         style={{ width: `${Math.max(pct, 2)}%` }}
                       />
                     </div>
-                    <span className="text-[10px] font-medium text-slate-400 w-10 text-right">
+                    <span className="text-[9px] font-medium text-slate-400 w-8 text-right">
                       {pct.toFixed(0)}%
                     </span>
                   </div>

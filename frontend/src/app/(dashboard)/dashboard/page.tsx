@@ -50,11 +50,11 @@ export default function DashboardPage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-8">
-        <div className="h-8 w-48 bg-slate-100 rounded-xl animate-pulse" />
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="space-y-5">
+        <div className="h-7 w-40 bg-slate-100 rounded-xl animate-pulse" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {[...Array(3)].map((_, i) => (
-            <div key={i} className="h-32 bg-slate-50 rounded-3xl animate-pulse" />
+            <div key={i} className="h-24 bg-slate-50 rounded-2xl animate-pulse" />
           ))}
         </div>
       </div>
@@ -95,11 +95,11 @@ export default function DashboardPage() {
   ];
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-5">
       {/* Encabezado */}
       <DashboardHeader
         title="Dashboard"
-        description="Resumen de actividad y salud de tus envíos."
+        description="Resumen de actividad y salud de tus envios."
       >
         <div className={`flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full ${
           overview.connectedSessions > 0
@@ -117,22 +117,22 @@ export default function DashboardPage() {
       {/* Quick Connect Shortcut */}
       {overview.connectedSessions === 0 && (
         <Link href="/whatsapp" className="block group">
-          <div className="relative overflow-hidden rounded-3xl border border-emerald-200 bg-gradient-to-r from-emerald-50 to-teal-50 p-5 md:p-6 transition-all hover:shadow-md hover:border-emerald-300">
+          <div className="relative overflow-hidden rounded-2xl border border-emerald-200 bg-gradient-to-r from-emerald-50 to-teal-50 px-4 py-3 transition-all hover:shadow-md hover:border-emerald-300">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-2xl bg-emerald-100 flex items-center justify-center">
-                  <Smartphone className="w-6 h-6 text-emerald-600" />
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-emerald-100 flex items-center justify-center">
+                  <Smartphone className="w-4.5 h-4.5 text-emerald-600" />
                 </div>
                 <div>
-                  <h3 className="font-display text-base font-bold text-slate-900">
+                  <h3 className="font-display text-sm font-bold text-slate-900">
                     Conecta tu WhatsApp
                   </h3>
-                  <p className="text-sm text-slate-500 mt-0.5">
+                  <p className="text-xs text-slate-500">
                     Vincula tu cuenta de WhatsApp Business para empezar a enviar mensajes
                   </p>
                 </div>
               </div>
-              <ArrowRight className="w-5 h-5 text-emerald-500 group-hover:translate-x-1 transition-transform" />
+              <ArrowRight className="w-4 h-4 text-emerald-500 group-hover:translate-x-1 transition-transform" />
             </div>
           </div>
         </Link>
@@ -141,53 +141,55 @@ export default function DashboardPage() {
       {/* KPIs */}
       <DashboardKPIs items={kpiItems} columns={3} />
 
-      {/* Gráfico de tendencia */}
-      <DashboardChart
-        title="Historial de Envíos del Mes"
-        description="Total de mensajes despachados sin bloqueos."
-      />
+      {/* Chart + Consumption + Message Stats — all in one row on large screens */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        {/* Chart */}
+        <DashboardChart
+          title="Historial de Envios"
+          description="Mensajes despachados este mes."
+        />
 
-      {/* Consumption + Message Stats */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Consumption */}
         <ConsumptionCard />
 
-      <DashboardCard padding="lg">
-        <DashboardCardHeader>
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-slate-50 flex items-center justify-center">
-              <MessageSquare className="w-4 h-4 text-slate-500" strokeWidth={1.5} />
+        {/* Message Status */}
+        <DashboardCard>
+          <DashboardCardHeader className="!mb-3">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-slate-50 flex items-center justify-center">
+                <MessageSquare className="w-3.5 h-3.5 text-slate-500" strokeWidth={1.5} />
+              </div>
+              <DashboardCardTitle>Message Status</DashboardCardTitle>
             </div>
-            <DashboardCardTitle>Message Status</DashboardCardTitle>
-          </div>
-        </DashboardCardHeader>
-        {msgStatsLoading ? (
-          <div className="flex items-center justify-center py-8">
-            <Loader2 className="w-5 h-5 text-slate-300 animate-spin" />
-          </div>
-        ) : msgStats ? (
-          <div className="grid grid-cols-3 gap-3">
-            {Object.entries(msgStats).map(([status, count]) => {
-              const statusStyles: Record<string, string> = {
-                queued: "bg-amber-50 border-amber-100 text-amber-700",
-                sending: "bg-blue-50 border-blue-100 text-blue-700",
-                sent: "bg-sky-50 border-sky-100 text-sky-700",
-                delivered: "bg-emerald-50 border-emerald-100 text-emerald-700",
-                read: "bg-emerald-100 border-emerald-200 text-emerald-800",
-                failed: "bg-red-50 border-red-100 text-red-700",
-              };
-              return (
-                <div
-                  key={status}
-                  className={`flex flex-col items-center justify-center rounded-xl border p-3 ${statusStyles[status] || "bg-slate-50 border-slate-100 text-slate-600"}`}
-                >
-                  <span className="text-xl font-bold">{count}</span>
-                  <span className="text-[10px] font-semibold uppercase tracking-wider mt-0.5">{status}</span>
-                </div>
-              );
-            })}
-          </div>
-        ) : null}
-      </DashboardCard>
+          </DashboardCardHeader>
+          {msgStatsLoading ? (
+            <div className="flex items-center justify-center py-6">
+              <Loader2 className="w-5 h-5 text-slate-300 animate-spin" />
+            </div>
+          ) : msgStats ? (
+            <div className="grid grid-cols-3 gap-2">
+              {Object.entries(msgStats).map(([status, count]) => {
+                const statusStyles: Record<string, string> = {
+                  queued: "bg-amber-50 border-amber-100 text-amber-700",
+                  sending: "bg-blue-50 border-blue-100 text-blue-700",
+                  sent: "bg-sky-50 border-sky-100 text-sky-700",
+                  delivered: "bg-emerald-50 border-emerald-100 text-emerald-700",
+                  read: "bg-emerald-100 border-emerald-200 text-emerald-800",
+                  failed: "bg-red-50 border-red-100 text-red-700",
+                };
+                return (
+                  <div
+                    key={status}
+                    className={`flex flex-col items-center justify-center rounded-lg border px-2 py-2 ${statusStyles[status] || "bg-slate-50 border-slate-100 text-slate-600"}`}
+                  >
+                    <span className="text-lg font-bold leading-tight">{count}</span>
+                    <span className="text-[9px] font-semibold uppercase tracking-wider mt-0.5">{status}</span>
+                  </div>
+                );
+              })}
+            </div>
+          ) : null}
+        </DashboardCard>
       </div>
     </div>
   );

@@ -25,17 +25,17 @@ export function DashboardKPIs({ items, columns = 3 }: DashboardKPIsProps) {
   };
 
   return (
-    <div className={`grid ${gridCols[columns]} gap-6`}>
+    <div className={`grid ${gridCols[columns]} gap-4`}>
       {items.map((item) => (
         <DashboardCard key={item.label} variant="metric">
           <div>
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
               {item.label}
             </span>
-            <p className="font-display text-3xl font-extrabold text-slate-900 mt-2">
+            <p className="font-display text-2xl font-extrabold text-slate-900 mt-1">
               {item.value}
             </p>
-            <p className="text-xs text-emerald-600 font-medium mt-1">
+            <p className="text-[11px] text-emerald-600 font-medium mt-0.5">
               {item.sub}
             </p>
           </div>
@@ -43,7 +43,7 @@ export function DashboardKPIs({ items, columns = 3 }: DashboardKPIsProps) {
             className={item.iconBg ? `!bg-${item.iconBg}` : undefined}
           >
             <item.icon
-              className={`w-6 h-6 ${item.iconColor || "text-emerald-600"}`}
+              className={`w-5 h-5 ${item.iconColor || "text-emerald-600"}`}
               strokeWidth={2}
             />
           </DashboardCardIcon>
