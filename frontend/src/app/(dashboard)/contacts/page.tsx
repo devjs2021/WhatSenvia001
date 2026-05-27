@@ -356,12 +356,12 @@ export default function ContactsPage() {
             </Card>
           )}
 
-          <div className="flex items-center gap-4">
-            <div className="relative flex-1 max-sm">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
+            <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input placeholder={t('common.search')} className="pl-10" value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} />
             </div>
-            {pagination && <p className="text-sm text-muted-foreground">{pagination.total} {t('nav.contacts')}</p>}
+            {pagination && <p className="text-sm text-muted-foreground whitespace-nowrap">{pagination.total} {t('nav.contacts')}</p>}
           </div>
 
           <Card>
@@ -419,7 +419,7 @@ export default function ContactsPage() {
             {pagination && pagination.totalPages > 1 && (
               <div className="flex items-center justify-between border-t px-4 py-3">
                 <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>{t('common.previous')}</Button>
-                <span className="text-sm text-muted-foreground">{t('common.previous')} {page} {t('common.of')} {pagination.totalPages}</span>
+                <span className="text-sm text-muted-foreground">{page} {t('common.of')} {pagination.totalPages}</span>
                 <Button variant="outline" size="sm" disabled={page >= pagination.totalPages} onClick={() => setPage((p) => p + 1)}>{t('common.next')}</Button>
               </div>
             )}

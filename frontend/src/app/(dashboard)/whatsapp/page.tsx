@@ -185,27 +185,27 @@ export default function WhatsAppPage() {
             {/* Vertical connector line */}
             <div className="absolute left-6 top-8 bottom-8 w-px bg-slate-200 hidden md:block" />
 
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               {SETUP_STEPS.map((step) => (
                 <div
                   key={step.number}
-                  className={`relative flex gap-4 rounded-2xl border ${step.border} ${step.bg} p-4 md:p-5`}
+                  className={`relative flex gap-3 sm:gap-4 rounded-2xl border ${step.border} ${step.bg} p-3 sm:p-4 md:p-5`}
                 >
                   {/* Step number circle */}
-                  <div className={`relative z-10 flex-shrink-0 w-12 h-12 rounded-xl ${step.bg} border ${step.border} flex items-center justify-center`}>
-                    <step.icon className={`w-5 h-5 ${step.color}`} />
+                  <div className={`relative z-10 flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-xl ${step.bg} border ${step.border} flex items-center justify-center`}>
+                    <step.icon className={`w-4 h-4 sm:w-5 sm:h-5 ${step.color}`} />
                   </div>
 
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className={`text-xs font-bold ${step.color} uppercase tracking-wider`}>
+                      <span className={`text-[10px] sm:text-xs font-bold ${step.color} uppercase tracking-wider`}>
                         Paso {step.number}
                       </span>
                     </div>
-                    <h4 className="font-display text-sm font-bold text-slate-900">
+                    <h4 className="font-display text-xs sm:text-sm font-bold text-slate-900">
                       {t(step.titleKey)}
                     </h4>
-                    <p className="text-sm text-slate-600 mt-1 leading-relaxed">
+                    <p className="text-xs sm:text-sm text-slate-600 mt-1 leading-relaxed">
                       {t(step.descKey)}
                     </p>
                   </div>
@@ -291,7 +291,7 @@ export default function WhatsAppPage() {
               const isMeta = session.connectionType === "meta_cloud";
               return (
                 <DashboardCard key={session.id} className={isMeta ? "border-blue-200" : ""}>
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 md:p-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 sm:p-4 md:p-6">
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
                         <h3 className="font-display text-sm font-bold text-slate-900">{session.name}</h3>

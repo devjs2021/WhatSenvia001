@@ -15,6 +15,7 @@ import {
   X,
   FileText,
   Download,
+  ArrowLeft,
 } from "lucide-react";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { DashboardCard, DashboardCardHeader, DashboardCardTitle, DashboardCardDescription } from "@/components/ui/dashboard-card";
@@ -333,8 +334,8 @@ export default function ChatLivePage() {
         </DashboardCard>
       ) : (
         <div className="flex flex-col lg:flex-row gap-4 md:gap-6">
-          {/* Contacts sidebar */}
-          <div className="w-full lg:w-72 space-y-2">
+          {/* Contacts sidebar — hidden on mobile when a contact is selected */}
+          <div className={`w-full lg:w-72 space-y-2 ${selectedContact ? "hidden lg:block" : ""}`}>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
               <input
@@ -414,7 +415,13 @@ export default function ChatLivePage() {
                 {/* Chat header */}
                 <DashboardCardHeader>
                   <div className="flex items-center gap-2">
-                    <div className="h-8 w-8 rounded-full bg-slate-100 flex items-center justify-center">
+                    <button
+                      onClick={() => setSelectedContact(null)}
+                      className="lg:hidden h-8 w-8 rounded-xl flex items-center justify-center hover:bg-slate-50 text-slate-400 hover:text-slate-600 transition-colors shrink-0"
+                    >
+                      <ArrowLeft className="h-4 w-4" />
+                    </button>
+                    <div className="h-8 w-8 rounded-full bg-slate-100 flex items-center justify-center shrink-0">
                       <User className="h-4 w-4 text-slate-400" />
                     </div>
                     <div>
@@ -430,7 +437,7 @@ export default function ChatLivePage() {
                 </DashboardCardHeader>
 
                 {/* Messages */}
-                <div className="max-h-[400px] overflow-y-auto space-y-3 px-1 py-2">
+                <div className="max-h-[60vh] lg:max-h-[400px] overflow-y-auto space-y-3 px-1 py-2">
                   {messages.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-8 text-center">
                       <img

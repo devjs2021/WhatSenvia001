@@ -142,7 +142,7 @@ export default function DashboardPage() {
       <DashboardKPIs items={kpiItems} columns={3} />
 
       {/* Chart + Consumption + Message Stats — all in one row on large screens */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
         {/* Chart */}
         <DashboardChart
           title={t('dashboard.sendHistory')}
@@ -167,7 +167,7 @@ export default function DashboardPage() {
               <Loader2 className="w-5 h-5 text-slate-300 animate-spin" />
             </div>
           ) : msgStats ? (
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {Object.entries(msgStats).map(([status, count]) => {
                 const statusStyles: Record<string, string> = {
                   queued: "bg-amber-50 border-amber-100 text-amber-700",

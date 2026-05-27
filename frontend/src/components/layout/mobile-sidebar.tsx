@@ -32,7 +32,7 @@ export function MobileSidebar({ open, onClose }: MobileSidebarProps) {
       />
 
       {/* Sidebar panel */}
-      <aside className="absolute left-0 top-0 bottom-0 w-72 bg-white flex flex-col">
+      <aside className="absolute left-0 top-0 bottom-0 w-[85vw] max-w-72 bg-white flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-4 h-20 border-b border-slate-100">
           <div className="flex items-center gap-2">

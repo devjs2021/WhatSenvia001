@@ -78,19 +78,19 @@ export function DashboardTopbar({ onMobileMenuToggle }: DashboardTopbarProps) {
 
   return (
     <header className="border-b border-slate-100 bg-white shrink-0">
-      <div className="flex items-center justify-between px-6 md:px-10 h-20">
+      <div className="flex items-center justify-between px-4 sm:px-6 md:px-10 h-14 sm:h-16 md:h-20">
         {/* Breadcrumb / Título */}
-        <div className="shrink-0">
-          <span className="text-xs font-semibold text-slate-400 uppercase tracking-widest">
+        <div className="shrink-0 min-w-0">
+          <span className="hidden sm:block text-xs font-semibold text-slate-400 uppercase tracking-widest">
             {t("sidebar.console")}
           </span>
-          <h2 className="font-display text-lg font-bold text-slate-900 mt-0.5">
+          <h2 className="font-display text-base sm:text-lg font-bold text-slate-900 truncate">
             {currentTitle}
           </h2>
         </div>
 
-        {/* Centro: frase del Dashboard o sub-nav */}
-        <div className="flex-1 flex justify-center mx-4">
+        {/* Centro: frase del Dashboard o sub-nav — hidden on mobile */}
+        <div className="hidden md:flex flex-1 justify-center mx-4">
           {pathname === "/dashboard" ? (
             <p className="text-[11px] text-slate-400 leading-tight text-center max-w-[420px]">
               {t("topbar.tagline").split(/<1>|<\/1>/).map((part, i) =>
@@ -122,7 +122,7 @@ export function DashboardTopbar({ onMobileMenuToggle }: DashboardTopbarProps) {
         </div>
 
         {/* Acciones rápidas & Perfil */}
-        <div className="flex items-center gap-4 shrink-0">
+        <div className="flex items-center gap-2 sm:gap-4 shrink-0">
           {/* Estado Conectado a Meta */}
           {hasMetaConnection ? (
             <div className="hidden sm:flex items-center gap-2 bg-emerald-50 border border-emerald-100 px-3 py-1.5 rounded-full">
@@ -155,14 +155,14 @@ export function DashboardTopbar({ onMobileMenuToggle }: DashboardTopbarProps) {
             href={supportUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="w-10 h-10 border border-slate-100 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors"
+            className="hidden sm:flex w-10 h-10 border border-slate-100 rounded-xl items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors"
             title={t("nav.support")}
           >
             <Headphones className="w-5 h-5" strokeWidth={1.5} />
           </a>
 
           {/* Notificaciones */}
-          <button className="w-10 h-10 border border-slate-100 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors relative">
+          <button className="hidden sm:flex w-10 h-10 border border-slate-100 rounded-xl items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors relative">
             <Bell className="w-5 h-5" strokeWidth={1.5} />
             <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-emerald-500" />
           </button>
@@ -171,7 +171,7 @@ export function DashboardTopbar({ onMobileMenuToggle }: DashboardTopbarProps) {
           <div className="relative">
             <button
               onClick={() => setUserMenuOpen(!userMenuOpen)}
-              className="flex items-center gap-2 border border-slate-100 rounded-xl px-3 py-2 hover:bg-slate-50 transition-colors"
+              className="flex items-center gap-1.5 sm:gap-2 border border-slate-100 rounded-xl px-2 sm:px-3 py-1.5 sm:py-2 hover:bg-slate-50 transition-colors"
             >
               <div className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center">
                 <span className="text-xs font-bold text-emerald-700">

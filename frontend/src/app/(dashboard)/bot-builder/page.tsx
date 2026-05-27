@@ -181,19 +181,19 @@ export default function BotBuilderPage() {
       <DashboardHeader
         title={
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-50">
-              <Bot className="h-5 w-5 text-emerald-600" />
+            <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-2xl bg-emerald-50">
+              <Bot className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-600" />
             </div>
             <span>Bot Builder</span>
           </div>
         }
         description="Crea flujos para automatizar conversaciones"
       >
-        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-600">
+        <span className="hidden sm:inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-600">
           <Bot className="h-3 w-3 mr-1" />
           {modeInfo?.label.split(" ")[1] || "Hibrido"}
         </span>
-        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-500">
+        <span className="hidden sm:inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-500">
           {stats?.active || 0} activos · {stats?.total || 0} sesiones
         </span>
         <button
@@ -204,36 +204,39 @@ export default function BotBuilderPage() {
         </button>
         <button
           onClick={() => toast.info("Funcion de importar en desarrollo")}
-          className="border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-xl px-4 py-2 text-sm font-medium transition-all flex items-center gap-2"
+          className="hidden sm:flex border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-xl px-4 py-2 text-sm font-medium transition-all items-center gap-2"
         >
           <Upload className="h-4 w-4" />
           Importar Flujo
         </button>
         <button
           onClick={() => setShowCreateDialog(true)}
-          className="bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl px-5 py-2.5 text-sm font-semibold transition-all flex items-center gap-2"
+          className="bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl px-4 sm:px-5 py-2 sm:py-2.5 text-sm font-semibold transition-all flex items-center gap-2"
         >
           <Plus className="h-4 w-4" />
-          Crear Flujo
+          <span className="hidden sm:inline">Crear Flujo</span>
+          <span className="sm:hidden">Crear</span>
         </button>
       </DashboardHeader>
 
       {/* Tabs */}
-      <div className="flex gap-1 overflow-x-auto pb-1 border-b border-slate-100">
-        {tabs.map((t) => (
-          <button
-            key={t.id}
-            onClick={() => setTab(t.id)}
-            className={`px-4 py-2.5 text-sm font-medium transition-colors border-b-2 flex items-center gap-2 ${
-              tab === t.id
-                ? "text-emerald-600 border-emerald-600"
-                : "text-slate-400 border-transparent hover:text-slate-600"
-            }`}
-          >
-            <t.icon className="h-4 w-4" />
-            {t.label}
-          </button>
-        ))}
+      <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+        <div className="flex gap-1 pb-1 border-b border-slate-100 min-w-max sm:min-w-0">
+          {tabs.map((t) => (
+            <button
+              key={t.id}
+              onClick={() => setTab(t.id)}
+              className={`px-3 sm:px-4 py-2.5 text-sm font-medium transition-colors border-b-2 flex items-center gap-1.5 sm:gap-2 whitespace-nowrap ${
+                tab === t.id
+                  ? "text-emerald-600 border-emerald-600"
+                  : "text-slate-400 border-transparent hover:text-slate-600"
+              }`}
+            >
+              <t.icon className="h-4 w-4 shrink-0" />
+              {t.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Tab Content */}
@@ -385,8 +388,8 @@ export default function BotBuilderPage() {
 
       {/* Create Flow Dialog */}
       {showCreateDialog && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowCreateDialog(false)}>
-          <div className="bg-white rounded-3xl shadow-xl p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50" onClick={() => setShowCreateDialog(false)}>
+          <div className="bg-white rounded-t-3xl sm:rounded-3xl shadow-xl p-6 w-full sm:max-w-md" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-display text-lg font-bold text-slate-900">Crear nuevo flujo</h3>
               <button
@@ -427,8 +430,8 @@ export default function BotBuilderPage() {
 
       {/* Bot Settings Modal */}
       {showSettings && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowSettings(false)}>
-          <div className="bg-white rounded-3xl shadow-xl p-6 w-full max-w-lg" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50" onClick={() => setShowSettings(false)}>
+          <div className="bg-white rounded-t-3xl sm:rounded-3xl shadow-xl p-6 w-full sm:max-w-lg max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-2">
               <h3 className="font-display text-lg font-bold text-slate-900 flex items-center gap-2">
                 <Settings className="h-5 w-5" />
@@ -482,8 +485,8 @@ export default function BotBuilderPage() {
 
       {/* Session Picker Modal */}
       {showSessionPicker && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowSessionPicker(null)}>
-          <div className="bg-white rounded-3xl shadow-xl p-6 w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50" onClick={() => setShowSessionPicker(null)}>
+          <div className="bg-white rounded-t-3xl sm:rounded-3xl shadow-xl p-6 w-full sm:max-w-sm" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-display text-lg font-bold text-slate-900">Seleccionar numero</h3>
               <button

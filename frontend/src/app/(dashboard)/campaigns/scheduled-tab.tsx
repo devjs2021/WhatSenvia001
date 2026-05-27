@@ -374,7 +374,7 @@ export default function ScheduledTab() {
             </div>
 
             {/* Summary + Submit */}
-            <div className="flex items-center justify-between rounded-lg border p-4 bg-muted/30">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 rounded-lg border p-4 bg-muted/30">
               <div className="text-sm text-muted-foreground">
                 <span className="font-medium text-foreground">{totalContacts}</span> contactos
                 {scheduledAt && (
@@ -423,52 +423,50 @@ export default function ScheduledTab() {
             return (
               <Card key={campaign.id}>
                 <CardContent className="py-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4 flex-1 min-w-0">
-                      <div className="space-y-1 flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-medium truncate">{campaign.name}</h3>
-                          <Badge
-                            variant="outline"
-                            className={`shrink-0 ${status.color}`}
-                          >
-                            <StatusIcon className={`mr-1 h-3 w-3 ${campaign.status === "running" ? "animate-spin" : ""}`} />
-                            {status.label}
-                          </Badge>
-                        </div>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="flex-1 min-w-0 space-y-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="font-medium truncate">{campaign.name}</h3>
+                        <Badge
+                          variant="outline"
+                          className={`shrink-0 ${status.color}`}
+                        >
+                          <StatusIcon className={`mr-1 h-3 w-3 ${campaign.status === "running" ? "animate-spin" : ""}`} />
+                          {status.label}
+                        </Badge>
+                      </div>
 
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-3 sm:gap-4 text-sm text-muted-foreground flex-wrap">
+                        <span className="flex items-center gap-1">
+                          <Users className="h-3.5 w-3.5" />
+                          {campaign.totalContacts} contactos
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <CalendarClock className="h-3.5 w-3.5" />
+                          {new Date(campaign.scheduledAt).toLocaleString("es-CO")}
+                        </span>
+                        {campaign.status === "completed" && (
                           <span className="flex items-center gap-1">
-                            <Users className="h-3.5 w-3.5" />
-                            {campaign.totalContacts} contactos
+                            <Send className="h-3.5 w-3.5" />
+                            {campaign.sentCount} enviados
+                            {campaign.failedCount > 0 && (
+                              <span className="text-red-500">
+                                , {campaign.failedCount} fallidos
+                              </span>
+                            )}
                           </span>
-                          <span className="flex items-center gap-1">
-                            <CalendarClock className="h-3.5 w-3.5" />
-                            {new Date(campaign.scheduledAt).toLocaleString("es-CO")}
-                          </span>
-                          {campaign.status === "completed" && (
-                            <span className="flex items-center gap-1">
-                              <Send className="h-3.5 w-3.5" />
-                              {campaign.sentCount} enviados
-                              {campaign.failedCount > 0 && (
-                                <span className="text-red-500">
-                                  , {campaign.failedCount} fallidos
-                                </span>
-                              )}
-                            </span>
-                          )}
-                        </div>
-
-                        {campaign.status === "pending" && (
-                          <div className="flex items-center gap-1.5">
-                            <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-                            <Countdown targetDate={campaign.scheduledAt} />
-                          </div>
                         )}
                       </div>
+
+                      {campaign.status === "pending" && (
+                        <div className="flex items-center gap-1.5">
+                          <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                          <Countdown targetDate={campaign.scheduledAt} />
+                        </div>
+                      )}
                     </div>
 
-                    <div className="flex items-center gap-2 shrink-0 ml-4">
+                    <div className="flex items-center gap-2 shrink-0">
                       {campaign.status === "pending" && (
                         <Button
                           variant="outline"

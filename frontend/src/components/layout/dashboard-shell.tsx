@@ -89,7 +89,7 @@ export function DashboardShell({ children }: DashboardShellProps) {
         )}
 
         {/* Contenido con scroll */}
-        <div className="flex-1 overflow-y-auto p-6 md:p-10 max-w-6xl w-full mx-auto space-y-8 2xl:max-w-7xl">
+        <div className="flex-1 overflow-y-auto px-4 py-5 sm:p-6 md:p-10 max-w-6xl w-full mx-auto space-y-6 md:space-y-8 2xl:max-w-7xl">
           {children}
         </div>
       </main>

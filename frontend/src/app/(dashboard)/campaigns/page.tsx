@@ -356,21 +356,23 @@ export default function CampaignsPage() {
   return (
     <div className="space-y-4 md:space-y-6">
       {/* Tabs */}
-      <div className="flex gap-1 bg-slate-100 rounded-xl p-1 w-fit">
-        {(Object.entries(tabConfig) as [CampaignTab, { label: string; icon: any }][]).map(([key, tab]) => (
-          <button
-            key={key}
-            onClick={() => setActiveTab(key)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-              activeTab === key
-                ? "bg-white text-slate-800 shadow-sm"
-                : "text-slate-400 hover:text-slate-600"
-            }`}
-          >
-            <tab.icon className="h-3.5 w-3.5" />
-            {tab.label}
-          </button>
-        ))}
+      <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+        <div className="flex gap-1 bg-slate-100 rounded-xl p-1 w-fit">
+          {(Object.entries(tabConfig) as [CampaignTab, { label: string; icon: any }][]).map(([key, tab]) => (
+            <button
+              key={key}
+              onClick={() => setActiveTab(key)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
+                activeTab === key
+                  ? "bg-white text-slate-800 shadow-sm"
+                  : "text-slate-400 hover:text-slate-600"
+              }`}
+            >
+              <tab.icon className="h-3.5 w-3.5 shrink-0" />
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Tab Content */}
@@ -424,7 +426,7 @@ export default function CampaignsPage() {
               {/* Speed */}
               <div>
                 <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5 block">{t('campaigns.speed')}</label>
-                <div className="flex gap-1 bg-slate-100 rounded-xl p-1">
+                <div className="flex gap-1 bg-slate-100 rounded-xl p-1 flex-wrap">
                   {(Object.entries(speedPresets) as [SpeedPreset, { label: string; seconds: string; color: string }][]).map(([key, preset]) => (
                     <button
                       key={key}
@@ -468,7 +470,7 @@ export default function CampaignsPage() {
                 <div className="space-y-3">
                   <textarea
                     placeholder={t('campaigns.pasteNumbers')}
-                    rows={12}
+                    rows={8}
                     value={manualNumbers}
                     onChange={(e) => setManualNumbers(e.target.value)}
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-mono text-slate-800 placeholder:text-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
@@ -809,7 +811,7 @@ export default function CampaignsPage() {
           )}
 
           {/* Send button */}
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               {totalRecipients > 0 && (
                 <span className="text-sm text-slate-500">
@@ -826,7 +828,7 @@ export default function CampaignsPage() {
             <button
               onClick={handleSend}
               disabled={isSending || !isConnected || totalRecipients === 0}
-              className="bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl px-6 py-3 text-sm font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              className="bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl px-6 py-3 text-sm font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {isSending ? (
                 <Loader2 className="h-4 w-4 animate-spin" />

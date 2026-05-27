@@ -205,7 +205,7 @@ export default function PollResultsPage() {
                 <DashboardCardHeader>
                   <div>
                     <DashboardCardTitle>{results.question}</DashboardCardTitle>
-                    <div className="flex gap-4 mt-1 text-sm text-slate-400">
+                    <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-sm text-slate-400">
                       <span className="flex items-center gap-1">
                         <Users className="h-3.5 w-3.5" />
                         {results.totalSent} enviadas
@@ -289,7 +289,7 @@ export default function PollResultsPage() {
               {selectedOption && (
                 <DashboardCard>
                   <DashboardCardHeader>
-                    <div className="flex items-center justify-between w-full">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between w-full gap-2">
                       <div>
                         <DashboardCardTitle>
                           Numeros que eligieron: "{selectedOption}"
@@ -298,11 +298,11 @@ export default function PollResultsPage() {
                           </span>
                         </DashboardCardTitle>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 flex-wrap">
                         <button
                           onClick={() => copyPhones(phonesForOption)}
                           disabled={phonesForOption.length === 0}
-                          className="border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-xl px-4 py-2 text-sm font-medium transition-all disabled:opacity-50 flex items-center gap-1"
+                          className="border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-xl px-3 sm:px-4 py-2 text-sm font-medium transition-all disabled:opacity-50 flex items-center gap-1"
                         >
                           <Copy className="h-3.5 w-3.5" />
                           Copiar
@@ -310,7 +310,7 @@ export default function PollResultsPage() {
                         <button
                           onClick={() => downloadCSV(selectedOption)}
                           disabled={phonesForOption.length === 0}
-                          className="border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-xl px-4 py-2 text-sm font-medium transition-all disabled:opacity-50 flex items-center gap-1"
+                          className="border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-xl px-3 sm:px-4 py-2 text-sm font-medium transition-all disabled:opacity-50 flex items-center gap-1"
                         >
                           <Download className="h-3.5 w-3.5" />
                           CSV
@@ -318,7 +318,7 @@ export default function PollResultsPage() {
                         <button
                           onClick={() => savePhones(phonesForOption, selectedOption)}
                           disabled={phonesForOption.length === 0}
-                          className="bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl px-4 py-2 text-sm font-semibold transition-all disabled:opacity-50 flex items-center gap-1"
+                          className="bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl px-3 sm:px-4 py-2 text-sm font-semibold transition-all disabled:opacity-50 flex items-center gap-1"
                         >
                           <Save className="h-3.5 w-3.5" />
                           Guardar
