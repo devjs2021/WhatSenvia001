@@ -6,6 +6,7 @@ import { licenses } from "../../../infrastructure/database/schema/licenses.js";
 import { LICENSE_PLANS } from "../../../infrastructure/database/schema/licenses.js";
 import { refreshTokens } from "../../../infrastructure/database/schema/refresh-tokens.js";
 import { eq, and, lt } from "drizzle-orm";
+import { logger } from "../../../config/logger.js";
 import type { RegisterInput, LoginInput, GoogleAuthInput, ResetPasswordInput } from "../schemas/auth.schema.js";
 import { env } from "../../../config/env.js";
 import { sendPasswordResetCode } from "../../../infrastructure/email/email.service.js";
@@ -488,7 +489,7 @@ export class AuthService {
       .limit(1);
 
     if (!user) {
-      console.log(`Data deletion requested for unknown Facebook ID: ${facebookId}`);
+      logger.warn({ facebookId }, 'Data deletion requested for unknown Facebook ID');
       return null;
     }
 

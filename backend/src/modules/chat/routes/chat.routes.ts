@@ -3,13 +3,37 @@ import { authGuard, licenseGuard } from "../../../shared/middleware/auth.middlew
 import { chatService } from "../services/chat.service.js";
 import { chatBroadcast } from "../websocket/chat-broadcast.js";
 import { mediaStorageService } from "../services/media-storage.service.js";
+import { db } from "../../../config/database.js";
+import { whatsappSessions } from "../../../infrastructure/database/schema/whatsapp-sessions.js";
+import { eq } from "drizzle-orm";
 
 export async function chatRoutes(app: FastifyInstance) {
-  // WebSocket endpoint (no preHandler for WS)
-  app.get("/ws", { websocket: true }, (socket, req) => {
+  app.get("/ws", { websocket: true }, async (socket, req) => {
+    const token = (req.query as any).token;
     const sessionId = (req.query as any).sessionId;
-    if (!sessionId) {
-      socket.close();
+
+    if (!token || !sessionId) {
+      socket.close(4001, "Token and sessionId required");
+      return;
+    }
+
+    let userId: string;
+    try {
+      const decoded = app.jwt.verify<{ id: string }>(token);
+      userId = decoded.id;
+    } catch {
+      socket.close(4001, "Invalid token");
+      return;
+    }
+
+    const [session] = await db
+      .select({ id: whatsappSessions.id, userId: whatsappSessions.userId })
+      .from(whatsappSessions)
+      .where(eq(whatsappSessions.id, sessionId))
+      .limit(1);
+
+    if (!session || session.userId !== userId) {
+      socket.close(4003, "Session not found or not owned");
       return;
     }
 
@@ -19,12 +43,6 @@ export async function chatRoutes(app: FastifyInstance) {
       try {
         const msg = JSON.parse(raw.toString());
         if (msg.event === "send_message") {
-          // WebSocket clients must provide userId (validated at connection time)
-          const userId = msg.userId || (req as any).user?.id;
-          if (!userId) {
-            socket.send(JSON.stringify({ event: "error", data: "Authentication required" }));
-            return;
-          }
           const saved = await chatService.sendMessage(
             msg.sessionId,
             msg.phone,
@@ -39,7 +57,6 @@ export async function chatRoutes(app: FastifyInstance) {
     });
   });
 
-  // REST endpoints with auth
   app.get("/conversations", { preHandler: [authGuard, licenseGuard("chatLive")] }, async (req) => {
     const { sessionId } = req.query as any;
     const userId = (req as any).user.id;

@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { randomUUID } from "crypto";
+import { logger } from "../../../config/logger.js";
 
 type MediaType = "image" | "video" | "audio" | "document";
 
@@ -68,7 +69,7 @@ class MediaStorageService {
       { headers: { Authorization: `Bearer ${accessToken}` } }
     );
     if (!metaRes.ok) {
-      console.error("[MEDIA] Meta media URL fetch failed:", metaRes.status);
+      logger.error({ status: metaRes.status }, 'Meta media URL fetch failed');
       return null;
     }
     const metaData: any = await metaRes.json();
@@ -80,7 +81,7 @@ class MediaStorageService {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
     if (!fileRes.ok) {
-      console.error("[MEDIA] Meta media download failed:", fileRes.status);
+      logger.error({ status: fileRes.status }, 'Meta media download failed');
       return null;
     }
     const arrayBuf = await fileRes.arrayBuffer();

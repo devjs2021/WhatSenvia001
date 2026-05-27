@@ -53,12 +53,11 @@ export class AiConfigService {
       return created;
     }
 
-    // Desencriptar apiKey si está encriptada
     if (config.apiKey && config.apiKey.includes(":")) {
       try {
         config.apiKey = decrypt(config.apiKey);
       } catch {
-        // Si falla la desencriptación, asumimos que está en texto plano (migración)
+        // Plaintext fallback for pre-encryption migration data
       }
     }
 

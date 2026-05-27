@@ -7,6 +7,7 @@ import type {
 import pino from "pino";
 const logger = pino({ level: "silent" });
 import { env } from "../../../config/env.js";
+import { logger as appLogger } from "../../../config/logger.js";
 // @ts-expect-error - baileys v7 is ESM but tsx handles it fine at runtime
 import { makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion, decryptPollVote, makeCacheableSignalKeyStore, jidNormalizedUser, getAggregateVotesInPollMessage } from "@whiskeysockets/baileys";
 import { Boom } from "@hapi/boom";
@@ -65,7 +66,7 @@ export class BaileysProvider implements IWhatsAppProvider {
       getMessage: async (key: any) => {
         const cached = this.pollMessageCache.get(key.id);
         if (cached) {
-          console.log(`[POLL] getMessage: found cached poll for ${key.id}`);
+          appLogger.debug({ pollId: key.id }, 'getMessage: found cached poll');
           return cached;
         }
         const stored = this.messageStore.get(key.id);
@@ -115,7 +116,7 @@ export class BaileysProvider implements IWhatsAppProvider {
           this.messageStore.set(msg.key.id, msg);
           // Auto-cache outgoing polls
           if (msg.message.pollCreationMessage || msg.message.pollCreationMessageV2 || msg.message.pollCreationMessageV3) {
-            console.log(`[POLL] Caching poll message: ${msg.key.id}`);
+            appLogger.debug({ pollId: msg.key.id }, 'Caching poll message');
             this.pollMessageCache.set(msg.key.id, msg.message);
           }
         }
@@ -171,7 +172,7 @@ export class BaileysProvider implements IWhatsAppProvider {
                 mediaType = result.mediaType;
               }
             } catch (err: any) {
-              console.error("[MEDIA] Failed to download Baileys media:", err.message);
+              appLogger.error({ error: err.message }, 'Failed to download Baileys media');
               mediaType = imageMsg ? "image" : videoMsg ? "video" : audioMsg ? "audio" : "document";
             }
           }
@@ -224,7 +225,7 @@ export class BaileysProvider implements IWhatsAppProvider {
                 const voterJid = pollUpdate.pollUpdateMessageKey?.participant || key.remoteJid || "";
                 const voterPhone = voterJid.replace("@s.whatsapp.net", "").replace("@lid", "");
 
-                console.log(`[POLL] Vote via messages.update from ${voterPhone}: ${selectedOptions.join(", ")}`);
+                appLogger.debug({ from: voterPhone, options: selectedOptions }, 'Poll vote via messages.update');
                 events.onPollResponse({
                   from: voterPhone,
                   pollMessageId: key.id!,
@@ -236,7 +237,7 @@ export class BaileysProvider implements IWhatsAppProvider {
                 });
               }
             } catch (err: any) {
-              console.error(`[POLL] Error processing poll update:`, err.message);
+              appLogger.error({ error: err.message }, 'Error processing poll update');
             }
           }
         }
@@ -298,13 +299,13 @@ export class BaileysProvider implements IWhatsAppProvider {
       // Get cached poll message
       const pollMsg = this.pollMessageCache.get(pollMsgId);
       if (!pollMsg) {
-        console.warn(`[POLL] No cached poll message for: ${pollMsgId}`);
+        appLogger.warn({ pollMsgId }, 'No cached poll message');
         return;
       }
 
       const pollEncKey = pollMsg.messageContextInfo?.messageSecret;
       if (!pollEncKey) {
-        console.warn(`[POLL] No messageSecret in cached poll message: ${pollMsgId}`);
+        appLogger.warn({ pollMsgId }, 'No messageSecret in cached poll message');
         return;
       }
 
@@ -342,7 +343,7 @@ export class BaileysProvider implements IWhatsAppProvider {
               voterJid: combo.voterJid,
             },
           );
-          console.log(`[POLL] Vote decrypted (${combo.label}) for poll: ${pollMsgId}`);
+          appLogger.debug({ label: combo.label, pollMsgId }, 'Poll vote decrypted');
           break;
         } catch {
           // Try next combination
@@ -350,7 +351,7 @@ export class BaileysProvider implements IWhatsAppProvider {
       }
 
       if (!voteMsg) {
-        console.error(`[POLL] Failed to decrypt vote — tried ${jidCombinations.length} JID combos for pollMsgId=${pollMsgId}`);
+        appLogger.error({ pollMsgId, jidCombos: jidCombinations.length }, 'Failed to decrypt poll vote');
         return;
       }
 
@@ -380,7 +381,7 @@ export class BaileysProvider implements IWhatsAppProvider {
         || pollMsg.pollCreationMessageV3?.name
         || "";
 
-      console.log(`[POLL] Vote from ${voterPhone}: ${selectedOptions.join(", ")} (poll: "${pollName}")`);
+      appLogger.info({ from: voterPhone, options: selectedOptions, poll: pollName }, 'Poll vote received');
 
       if (selectedOptions.length > 0 && events.onPollResponse) {
         events.onPollResponse({
@@ -391,7 +392,7 @@ export class BaileysProvider implements IWhatsAppProvider {
         });
       }
     } catch (err: any) {
-      console.error(`[POLL] Error processing poll vote:`, err.message);
+      appLogger.error({ error: err.message }, 'Error processing poll vote');
     }
   }
 
@@ -472,7 +473,7 @@ export class BaileysProvider implements IWhatsAppProvider {
 
     // Cache the poll message for vote decryption
     if (msg?.key?.id && msg.message) {
-      console.log(`[POLL] Caching sent poll: ${msg.key.id}`);
+      appLogger.debug({ pollId: msg.key.id }, 'Caching sent poll');
       this.pollMessageCache.set(msg.key.id, msg.message);
       this.messageStore.set(msg.key.id, msg);
     }

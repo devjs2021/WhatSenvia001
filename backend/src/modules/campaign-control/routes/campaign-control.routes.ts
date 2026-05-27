@@ -4,12 +4,21 @@ import { campaignControlService } from "../services/campaign-control.service.js"
 import { campaignBroadcast } from "../websocket/campaign-broadcast.js";
 
 export async function campaignControlRoutes(app: FastifyInstance) {
-  // WebSocket doesn't go through preHandler, but REST routes need auth
-  app.get("/ws", { websocket: true }, (socket) => {
-    campaignBroadcast.addClient(socket);
+  app.get("/ws", { websocket: true }, async (socket, req) => {
+    const token = (req.query as any).token;
+    if (!token) {
+      socket.close(4001, "Token required");
+      return;
+    }
+
+    try {
+      const decoded = app.jwt.verify<{ id: string }>(token);
+      campaignBroadcast.addClient(socket, decoded.id);
+    } catch {
+      socket.close(4001, "Invalid token");
+    }
   });
 
-  // Auth for REST routes
   app.get("/config", { preHandler: [authGuard, licenseGuard("campaignControl")] }, async () => {
     return campaignControlService.loadConfig();
   });

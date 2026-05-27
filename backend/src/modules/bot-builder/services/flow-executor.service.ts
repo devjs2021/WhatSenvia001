@@ -6,6 +6,7 @@ import { getWhatsAppProvider } from "../../../infrastructure/whatsapp/whatsapp.f
 import type { IncomingMessage } from "../../../infrastructure/whatsapp/interfaces/whatsapp-provider.interface.js";
 import { chatService } from "../../chat/services/chat.service.js";
 import { chatBroadcast } from "../../chat/websocket/chat-broadcast.js";
+import { logger } from "../../../config/logger.js";
 
 interface ConversationState {
   id?: string;
@@ -109,7 +110,7 @@ export class FlowExecutorService {
   // --- Main entry ---
 
   async handleIncomingMessage(sessionId: string, incoming: IncomingMessage) {
-    console.log(`[BOT] Incoming message from ${incoming.from}: "${incoming.message}" (session: ${sessionId}, group: ${incoming.isGroup})`);
+    logger.info({ from: incoming.from, sessionId, isGroup: incoming.isGroup }, 'Bot incoming message');
     if (incoming.isGroup) return;
 
     const phone = incoming.from;
@@ -126,7 +127,7 @@ export class FlowExecutorService {
       .from(botFlows)
       .where(and(eq(botFlows.sessionId, sessionId), eq(botFlows.status, "active")));
 
-    console.log(`[BOT] Found ${activeFlows.length} active flows for session ${sessionId}`);
+    logger.debug({ count: activeFlows.length, sessionId }, 'Active flows found');
     if (activeFlows.length === 0) return;
 
     const userId = activeFlows[0].userId;
@@ -146,7 +147,7 @@ export class FlowExecutorService {
       if (!triggerNode) continue;
 
       const matched = this.matchTrigger(triggerNode, text, !existingState);
-      console.log(`[BOT] Trigger "${triggerNode.data.triggerType}" match: ${matched} (isFirstMessage: ${!existingState})`);
+      logger.debug({ trigger: triggerNode.data.triggerType, matched, isFirstMessage: !existingState }, 'Trigger evaluation');
       if (!matched) continue;
 
       const state: ConversationState = {
@@ -697,10 +698,10 @@ export class FlowExecutorService {
         });
         chatBroadcast.broadcast(sessionId, "new_message", chatMsg);
       } catch (chatErr: any) {
-        console.error("Chat save error (bot):", chatErr.message);
+        logger.error({ error: chatErr.message }, 'Chat save error (bot)');
       }
-    } catch (err) {
-      console.error(`Failed to send bot message to ${remoteJid}:`, err);
+    } catch (err: any) {
+      logger.error({ remoteJid, error: err.message }, 'Failed to send bot message');
     }
   }
 }

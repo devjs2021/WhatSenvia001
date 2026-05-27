@@ -10,9 +10,6 @@ import {
   BarChart3,
   Settings,
   Crown,
-  FileText,
-  FileCheck,
-  MessageSquare,
   type LucideIcon,
 } from "lucide-react";
 
@@ -31,9 +28,7 @@ export interface DashboardNavGroup {
   children: DashboardNavItem[];
 }
 
-export type NavEntry = DashboardNavGroup;
-
-export const dashboardNavGroups: NavEntry[] = [
+export const dashboardNavGroups: DashboardNavGroup[] = [
   {
     nameKey: "Dashboard",
     icon: LayoutDashboard,

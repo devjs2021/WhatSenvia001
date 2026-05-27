@@ -35,7 +35,28 @@ export async function metaExchangeRoutes(fastify: FastifyInstance) {
         return reply.status(400).send({ error: 'No se pudo obtener el token de acceso' })
       }
 
-      const accessToken = tokenData.access_token
+      // Exchange short-lived token for long-lived token (~60 days)
+      let accessToken = tokenData.access_token
+      let tokenExpiresAt: Date | null = null
+
+      try {
+        const llRes = await fetch(
+          `https://graph.facebook.com/v21.0/oauth/access_token?` +
+          `grant_type=fb_exchange_token&` +
+          `client_id=${env.META_APP_ID}&` +
+          `client_secret=${env.META_APP_SECRET}&` +
+          `fb_exchange_token=${accessToken}`
+        )
+        const llData = await llRes.json() as any
+        if (llData.access_token) {
+          accessToken = llData.access_token
+          const expiresIn = llData.expires_in || 5184000 // default 60 days
+          tokenExpiresAt = new Date(Date.now() + expiresIn * 1000)
+          fastify.log.info({ expiresIn, expiresAt: tokenExpiresAt.toISOString() }, 'Exchanged for long-lived token')
+        }
+      } catch (err: any) {
+        fastify.log.warn({ error: err.message }, 'Long-lived token exchange failed, using short-lived token')
+      }
 
       fastify.log.info({ waba_id, phone_number_id }, 'Token obtained via Embedded Signup')
 
@@ -78,7 +99,6 @@ export async function metaExchangeRoutes(fastify: FastifyInstance) {
 
       let session
       if (existingSession.length > 0) {
-        // Actualizar sesión existente
         [session] = await db
           .update(whatsappSessions)
           .set({
@@ -86,6 +106,7 @@ export async function metaExchangeRoutes(fastify: FastifyInstance) {
             metaPhoneNumberId: phone_number_id,
             metaAccessToken: encryptedToken,
             metaBusinessId: businessId,
+            metaTokenExpiresAt: tokenExpiresAt,
             phone: displayPhone || phone_number_id,
             status: 'connected',
             lastConnectedAt: new Date(),
@@ -94,7 +115,6 @@ export async function metaExchangeRoutes(fastify: FastifyInstance) {
           .where(eq(whatsappSessions.id, existingSession[0].id))
           .returning()
       } else {
-        // Crear nueva sesión
         [session] = await db
           .insert(whatsappSessions)
           .values({
@@ -105,6 +125,7 @@ export async function metaExchangeRoutes(fastify: FastifyInstance) {
             metaPhoneNumberId: phone_number_id,
             metaAccessToken: encryptedToken,
             metaBusinessId: businessId,
+            metaTokenExpiresAt: tokenExpiresAt,
             phone: displayPhone || phone_number_id,
             status: 'connected',
             lastConnectedAt: new Date(),

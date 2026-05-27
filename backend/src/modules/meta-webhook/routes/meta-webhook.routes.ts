@@ -1,4 +1,6 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
+import crypto from 'crypto'
+import { Readable } from 'stream'
 import { env } from '../../../config/env.js'
 import { db } from '../../../config/database.js'
 import { whatsappSessions } from '../../../infrastructure/database/schema/whatsapp-sessions.js'
@@ -10,6 +12,26 @@ import { flowExecutor } from '../../bot-builder/services/flow-executor.service.j
 import { chatService } from '../../chat/services/chat.service.js'
 import { mediaStorageService } from '../../chat/services/media-storage.service.js'
 import { decrypt } from '../../../infrastructure/security/encryption.service.js'
+import { logger } from '../../../config/logger.js'
+
+function verifyWebhookSignature(rawBody: Buffer, signature: string | undefined): boolean {
+  if (!env.META_APP_SECRET) return true // Skip in dev if not configured
+  if (!signature) return false
+
+  const expected = 'sha256=' + crypto
+    .createHmac('sha256', env.META_APP_SECRET)
+    .update(rawBody)
+    .digest('hex')
+
+  try {
+    const sigBuf = Buffer.from(signature)
+    const expectedBuf = Buffer.from(expected)
+    if (sigBuf.length !== expectedBuf.length) return false
+    return crypto.timingSafeEqual(sigBuf, expectedBuf)
+  } catch {
+    return false
+  }
+}
 
 interface WebhookQuery {
   'hub.mode': string
@@ -69,19 +91,33 @@ export async function metaWebhookRoutes(app: FastifyInstance) {
     const challenge = request.query['hub.challenge']
 
     if (mode === 'subscribe' && token === env.META_WEBHOOK_VERIFY_TOKEN) {
-      console.log('✅ Webhook de Meta verificado correctamente')
+      logger.info('Meta webhook verified')
       return reply.status(200).send(challenge)
     }
 
-    console.log('❌ Token de verificación incorrecto')
+    logger.warn('Meta webhook verification failed: invalid token')
     return reply.status(403).send('Forbidden')
   })
 
-  // POST - Recibir mensajes y eventos de Meta
-  app.post('/meta-webhook', async (
-    request: FastifyRequest<{ Body: WebhookBody }>,
-    reply: FastifyReply
-  ) => {
+  // POST - Recibir mensajes y eventos de Meta (con validación de firma)
+  app.post<{ Body: WebhookBody }>('/meta-webhook', {
+    preParsing: async (request, reply, payload) => {
+      const chunks: Buffer[] = []
+      for await (const chunk of payload as AsyncIterable<Buffer>) {
+        chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk as any))
+      }
+      const rawBody = Buffer.concat(chunks)
+
+      const signature = request.headers['x-hub-signature-256'] as string | undefined
+      if (!verifyWebhookSignature(rawBody, signature)) {
+        logger.warn('Meta webhook request rejected: invalid signature')
+        reply.code(403).send('Forbidden')
+        return
+      }
+
+      return Readable.from(rawBody)
+    },
+  }, async (request, reply) => {
     const body = request.body
 
     if (body.object === 'whatsapp_business_account') {
@@ -99,7 +135,7 @@ export async function metaWebhookRoutes(app: FastifyInstance) {
               .limit(1)
 
             if (!session) {
-              console.warn(`⚠️ No se encontró sesión para phone_number_id: ${phoneNumberId}`)
+              logger.warn({ phoneNumberId }, 'No session found for phone_number_id')
               continue
             }
 
@@ -139,7 +175,7 @@ export async function metaWebhookRoutes(app: FastifyInstance) {
                         mediaType = result.mediaType
                       }
                     } catch (err: any) {
-                      console.error('[MEDIA] Failed to download Meta media:', err.message)
+                      logger.error({ error: err.message }, 'Failed to download Meta media')
                     }
                     if (!messageContent) {
                       messageContent = message.type === 'document' && mediaObj.filename
@@ -152,15 +188,7 @@ export async function metaWebhookRoutes(app: FastifyInstance) {
                 }
                 if (!messageContent) messageContent = `[${message.type}]`
 
-                console.log('📩 Mensaje entrante Meta:', {
-                  de: message.from,
-                  nombre: contactName,
-                  tipo: message.type,
-                  texto: messageContent,
-                  media: mediaUrl || null,
-                  sessionId: session.id,
-                  timestamp: timestamp.toISOString()
-                })
+                logger.info({ from: message.from, type: message.type, sessionId: session.id }, 'Incoming Meta message')
 
                 try {
                   const [saved] = await db.insert(chatMessages).values({
@@ -175,11 +203,11 @@ export async function metaWebhookRoutes(app: FastifyInstance) {
                     mediaUrl,
                     mediaType,
                   }).returning()
-                  console.log(`✅ Mensaje guardado en chat_messages (session: ${session.id})`)
+                  logger.debug({ sessionId: session.id }, 'Message saved to chat_messages')
 
                   chatBroadcast.broadcast(session.id, 'new_message', saved)
                 } catch (err: any) {
-                  console.error('❌ Error guardando mensaje en chat_messages:', err.message)
+                  logger.error({ error: err.message }, 'Error saving message to chat_messages')
                 }
 
                 // Ejecutar flowExecutor para bots automatizados (igual que Baileys)
@@ -192,9 +220,9 @@ export async function metaWebhookRoutes(app: FastifyInstance) {
                     isGroup: false,
                     pushName: contactName,
                   })
-                  console.log(`✅ Flow executor ejecutado para mensaje Meta (session: ${session.id})`)
+                  logger.debug({ sessionId: session.id }, 'Flow executor completed for Meta message')
                 } catch (err: any) {
-                  console.error('❌ Error en flow executor para Meta:', err.message)
+                  logger.error({ error: err.message }, 'Flow executor error for Meta message')
                 }
               }
             }
@@ -202,12 +230,7 @@ export async function metaWebhookRoutes(app: FastifyInstance) {
             // Estados de mensajes enviados
             if (value.statuses && value.statuses.length > 0) {
               for (const status of value.statuses) {
-                console.log('📊 Estado de mensaje Meta:', {
-                  id: status.id,
-                  estado: status.status,
-                  destinatario: status.recipient_id,
-                  timestamp: new Date(parseInt(status.timestamp) * 1000).toISOString()
-                })
+                logger.debug({ messageId: status.id, status: status.status }, 'Meta message status update')
 
                 // Actualizar estado en tabla messages
                 try {
@@ -220,9 +243,9 @@ export async function metaWebhookRoutes(app: FastifyInstance) {
                       sentAt: new Date(parseInt(status.timestamp) * 1000),
                     })
                     .where(eq(messages.whatsappMessageId, status.id))
-                  console.log(`✅ Estado actualizado para mensaje ${status.id}: ${dbStatus}`)
+                  logger.debug({ messageId: status.id, dbStatus }, 'Message status updated')
                 } catch (err: any) {
-                  console.error('❌ Error actualizando estado de mensaje:', err.message)
+                  logger.error({ error: err.message }, 'Error updating message status')
                 }
               }
             }

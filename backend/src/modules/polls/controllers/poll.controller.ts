@@ -14,7 +14,8 @@ export async function getPollResults(
   request: FastifyRequest<{ Params: { id: string } }>,
   reply: FastifyReply
 ) {
-  const results = await service.getCampaignResults(request.params.id);
+  const userId = (request as any).user.id;
+  const results = await service.getCampaignResults(request.params.id, userId);
   if (!results) return error(reply, "Poll campaign not found", 404);
   return success(reply, results);
 }
@@ -23,9 +24,10 @@ export async function getPhonesByOption(
   request: FastifyRequest<{ Params: { id: string }; Querystring: { option: string } }>,
   reply: FastifyReply
 ) {
+  const userId = (request as any).user.id;
   const option = (request.query as any).option;
   if (!option) return error(reply, "option query param required", 422);
-  const phones = await service.getPhonesByOption(request.params.id, option);
+  const phones = await service.getPhonesByOption(request.params.id, option, userId);
   return success(reply, phones);
 }
 
@@ -33,7 +35,8 @@ export async function deletePollCampaign(
   request: FastifyRequest<{ Params: { id: string } }>,
   reply: FastifyReply
 ) {
-  const deleted = await service.deleteCampaign(request.params.id);
+  const userId = (request as any).user.id;
+  const deleted = await service.deleteCampaign(request.params.id, userId);
   if (!deleted) return error(reply, "Poll campaign not found", 404);
   return success(reply, { deleted: true });
 }

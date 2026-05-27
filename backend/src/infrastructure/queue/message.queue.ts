@@ -114,9 +114,9 @@ export function startMessageWorker() {
             .set({ sentCount: sql`${campaigns.sentCount} + 1` })
             .where(eq(campaigns.id, campaignId));
 
-          // Fetch updated campaign counts for broadcast
           const [updatedCampaign] = await db
             .select({
+              userId: campaigns.userId,
               sentCount: campaigns.sentCount,
               failedCount: campaigns.failedCount,
               totalContacts: campaigns.totalContacts,
@@ -128,7 +128,7 @@ export function startMessageWorker() {
             const sent = updatedCampaign.sentCount ?? 0;
             const failed = updatedCampaign.failedCount ?? 0;
             const total = updatedCampaign.totalContacts ?? 0;
-            campaignBroadcast.broadcast("campaign_progress", {
+            campaignBroadcast.broadcast(updatedCampaign.userId, "campaign_progress", {
               campaignId,
               phone,
               status: "sent",
@@ -153,9 +153,9 @@ export function startMessageWorker() {
             .set({ failedCount: sql`${campaigns.failedCount} + 1` })
             .where(eq(campaigns.id, campaignId));
 
-          // Fetch updated campaign counts for broadcast
           const [updatedCampaignFail] = await db
             .select({
+              userId: campaigns.userId,
               sentCount: campaigns.sentCount,
               failedCount: campaigns.failedCount,
               totalContacts: campaigns.totalContacts,
@@ -167,7 +167,7 @@ export function startMessageWorker() {
             const sent = updatedCampaignFail.sentCount ?? 0;
             const failed = updatedCampaignFail.failedCount ?? 0;
             const total = updatedCampaignFail.totalContacts ?? 0;
-            campaignBroadcast.broadcast("campaign_progress", {
+            campaignBroadcast.broadcast(updatedCampaignFail.userId, "campaign_progress", {
               campaignId,
               phone,
               status: "failed",

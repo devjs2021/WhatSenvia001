@@ -3,6 +3,7 @@ import { botFlows } from "../../../infrastructure/database/schema/bot-flows.js";
 import { users } from "../../../infrastructure/database/schema/users.js";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
+import { logger } from "../../../config/logger.js";
 
 const SYSTEM_USER_ID = "00000000-0000-0000-0000-000000000000";
 
@@ -987,5 +988,5 @@ export async function seedTemplates() {
     });
   }
 
-  console.log(`Seeded ${templates.length} bot flow templates`);
+  logger.info(`Seeded ${templates.length} bot flow templates`);
 }

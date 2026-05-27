@@ -84,7 +84,8 @@ export default function CampaignMonitorTab() {
     const wsBase = process.env.NEXT_PUBLIC_WS_URL
       || process.env.NEXT_PUBLIC_API_URL?.replace('https://', 'wss://').replace('http://', 'ws://')
       || 'ws://localhost:3001';
-    const wsUrl = `${wsBase}/api/campaign-control/ws`;
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    const wsUrl = `${wsBase}/api/campaign-control/ws${token ? `?token=${token}` : ''}`;
 
     function connect() {
       const ws = new WebSocket(wsUrl);

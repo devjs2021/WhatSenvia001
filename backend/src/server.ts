@@ -36,6 +36,7 @@ import { startMessageWorker } from "./infrastructure/queue/message.queue.js";
 import { startCampaignWorker } from "./infrastructure/queue/campaign.queue.js";
 import { startScheduledChecker } from "./infrastructure/queue/scheduled-checker.js";
 import { startTemplateSyncJob } from "./infrastructure/queue/template-sync.js";
+import { startTokenRefreshJob } from "./infrastructure/queue/token-refresh.js";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 import { seedTemplates } from "./modules/bot-builder/services/seed-templates.js";
 import { WhatsAppService } from "./modules/whatsapp/services/whatsapp.service.js";
@@ -238,6 +239,7 @@ async function bootstrap() {
     await db.execute(sql`ALTER TABLE whatsapp_sessions ADD COLUMN IF NOT EXISTS meta_phone_number_id VARCHAR(100)`);
     await db.execute(sql`ALTER TABLE whatsapp_sessions ADD COLUMN IF NOT EXISTS meta_access_token TEXT`);
     await db.execute(sql`ALTER TABLE whatsapp_sessions ADD COLUMN IF NOT EXISTS meta_business_id VARCHAR(100)`);
+    await db.execute(sql`ALTER TABLE whatsapp_sessions ADD COLUMN IF NOT EXISTS meta_token_expires_at TIMESTAMP`);
   } catch (err: any) {
     app.log.warn(`Auto-migration (whatsapp_sessions) note: ${err.message}`);
   }
@@ -284,6 +286,7 @@ async function bootstrap() {
   startCampaignWorker();
   startScheduledChecker();
   startTemplateSyncJob();
+  startTokenRefreshJob();
   app.log.info("Queue workers started");
 
   // Seed bot templates

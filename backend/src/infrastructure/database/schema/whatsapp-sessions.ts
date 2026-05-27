@@ -22,6 +22,7 @@ export const whatsappSessions = pgTable(
     metaPhoneNumberId: varchar("meta_phone_number_id", { length: 100 }),
     metaAccessToken: text("meta_access_token"),
     metaBusinessId: varchar("meta_business_id", { length: 100 }),
+    metaTokenExpiresAt: timestamp("meta_token_expires_at"),
     lastConnectedAt: timestamp("last_connected_at"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),

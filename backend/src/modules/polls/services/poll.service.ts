@@ -1,6 +1,6 @@
 import { db } from "../../../config/database.js";
 import { pollCampaigns, pollResponses, pollSentMessages } from "../../../infrastructure/database/schema/polls.js";
-import { eq, desc, sql } from "drizzle-orm";
+import { eq, and, desc, sql } from "drizzle-orm";
 
 export class PollService {
   // Create a poll campaign when user sends a poll
@@ -52,12 +52,11 @@ export class PollService {
     return campaigns;
   }
 
-  // Get poll campaign with aggregated results
-  async getCampaignResults(campaignId: string) {
+  async getCampaignResults(campaignId: string, userId: string) {
     const [campaign] = await db
       .select()
       .from(pollCampaigns)
-      .where(eq(pollCampaigns.id, campaignId))
+      .where(and(eq(pollCampaigns.id, campaignId), eq(pollCampaigns.userId, userId)))
       .limit(1);
 
     if (!campaign) return null;
@@ -95,8 +94,14 @@ export class PollService {
     };
   }
 
-  // Get phones that selected a specific option
-  async getPhonesByOption(campaignId: string, option: string) {
+  async getPhonesByOption(campaignId: string, option: string, userId: string) {
+    const [campaign] = await db
+      .select({ id: pollCampaigns.id })
+      .from(pollCampaigns)
+      .where(and(eq(pollCampaigns.id, campaignId), eq(pollCampaigns.userId, userId)))
+      .limit(1);
+    if (!campaign) return [];
+
     const responses = await db
       .select()
       .from(pollResponses)
@@ -144,11 +149,10 @@ export class PollService {
     ) || null;
   }
 
-  // Delete a poll campaign
-  async deleteCampaign(campaignId: string) {
+  async deleteCampaign(campaignId: string, userId: string) {
     const [deleted] = await db
       .delete(pollCampaigns)
-      .where(eq(pollCampaigns.id, campaignId))
+      .where(and(eq(pollCampaigns.id, campaignId), eq(pollCampaigns.userId, userId)))
       .returning({ id: pollCampaigns.id });
     return !!deleted;
   }

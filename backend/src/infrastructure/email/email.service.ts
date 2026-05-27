@@ -1,4 +1,5 @@
 import { env } from "../../config/env.js";
+import { logger } from "../../config/logger.js";
 
 interface SendEmailParams {
   to: string;
@@ -6,14 +7,9 @@ interface SendEmailParams {
   html: string;
 }
 
-/**
- * Email service using Resend API.
- * Falls back to console.log if RESEND_API_KEY is not configured.
- */
 export async function sendEmail({ to, subject, html }: SendEmailParams): Promise<void> {
   if (!env.RESEND_API_KEY) {
-    console.log(`[EMAIL] Would send email to ${to}: ${subject}`);
-    console.log(`[EMAIL] Body: ${html.substring(0, 200)}...`);
+    logger.warn({ to, subject }, 'RESEND_API_KEY not configured, skipping email');
     return;
   }
 
@@ -34,10 +30,10 @@ export async function sendEmail({ to, subject, html }: SendEmailParams): Promise
 
     if (!response.ok) {
       const errorData = await response.text();
-      console.error(`[EMAIL] Failed to send email: ${errorData}`);
+      logger.error({ to, subject, error: errorData }, 'Failed to send email');
     }
   } catch (err: any) {
-    console.error(`[EMAIL] Error sending email: ${err.message}`);
+    logger.error({ to, error: err.message }, 'Error sending email');
   }
 }
 

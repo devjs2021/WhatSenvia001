@@ -10,6 +10,7 @@ import { flowExecutor } from "../../bot-builder/services/flow-executor.service.j
 import { PollService } from "../../polls/services/poll.service.js";
 import { chatService } from "../../chat/services/chat.service.js";
 import { chatBroadcast } from "../../chat/websocket/chat-broadcast.js";
+import { logger } from "../../../config/logger.js";
 
 const pollService = new PollService();
 const DEV_USER_ID = "00000000-0000-0000-0000-000000000000";
@@ -43,16 +44,16 @@ export class WhatsAppService {
       .where(eq(whatsappSessions.status, "connected"));
 
     if (sessions.length === 0) {
-      console.log("No WhatsApp sessions to restore");
+      logger.info("No WhatsApp sessions to restore");
       return;
     }
 
-    console.log(`Restoring ${sessions.length} WhatsApp session(s)...`);
+    logger.info(`Restoring ${sessions.length} WhatsApp session(s)`);
 
     for (const session of sessions) {
       try {
         if (session.connectionType === "meta_cloud") {
-          console.log(`Meta Cloud session "${session.name}" is already connected via API`);
+          logger.info({ session: session.name }, 'Meta Cloud session already connected via API');
           const updateFields: Record<string, any> = { lastConnectedAt: new Date(), updatedAt: new Date() };
 
           // Re-fetch display phone if current phone looks like an internal ID
@@ -68,10 +69,10 @@ export class WhatsAppService {
                 const data = await res.json() as any;
                 if (data.display_phone_number) {
                   updateFields.phone = data.display_phone_number;
-                  console.log(`Updated Meta session "${session.name}" phone: ${data.display_phone_number}`);
+                  logger.info({ session: session.name, phone: data.display_phone_number }, 'Updated Meta session phone');
                 }
               } catch (err: any) {
-                console.warn(`Could not fetch display phone for Meta session "${session.name}":`, err.message);
+                logger.warn({ session: session.name, error: err.message }, 'Could not fetch display phone for Meta session');
               }
             }
           }
@@ -102,10 +103,10 @@ export class WhatsAppService {
               .update(whatsappSessions)
               .set({ status: "connected", phone, qrCode: null, lastConnectedAt: new Date(), updatedAt: new Date() })
               .where(eq(whatsappSessions.id, session.id));
-            console.log(`Session "${session.name}" restored (${phone})`);
+            logger.info({ session: session.name, phone }, 'Session restored');
           },
           onDisconnected: async (reason) => {
-            console.warn(`Session "${session.name}" disconnected during restore: ${reason}`);
+            logger.warn({ session: session.name, reason }, 'Session disconnected during restore');
             await db
               .update(whatsappSessions)
               .set({ status: "disconnected", updatedAt: new Date() })
@@ -128,13 +129,13 @@ export class WhatsAppService {
               });
               chatBroadcast.broadcast(session.id, "new_message", chatMsg);
             } catch (chatErr: any) {
-              console.error("Chat save error:", chatErr.message);
+              logger.error({ error: chatErr.message }, 'Chat save error');
             }
 
             try {
               await flowExecutor.handleIncomingMessage(session.id, msg);
             } catch (err: any) {
-              console.error(`Bot flow error (session ${session.name}):`, err.message);
+              logger.error({ session: session.name, error: err.message }, 'Bot flow error');
             }
           },
           onPollResponse: async (vote) => {
@@ -149,12 +150,12 @@ export class WhatsAppService {
                   selectedOptions: vote.selectedOptions,
                   whatsappMessageId: vote.pollMessageId,
                 });
-                console.log(`[POLL] Vote recorded from ${vote.from}: ${vote.selectedOptions.join(", ")}`);
+                logger.info({ from: vote.from, options: vote.selectedOptions }, 'Poll vote recorded');
               } else {
-                console.warn(`[POLL] No campaign found for poll "${vote.pollName}" (msgId: ${vote.pollMessageId})`);
+                logger.warn({ pollName: vote.pollName, msgId: vote.pollMessageId }, 'No campaign found for poll');
               }
             } catch (err: any) {
-              console.error(`Poll vote error (session ${session.name}):`, err.message);
+              logger.error({ session: session.name, error: err.message }, 'Poll vote error');
             }
           },
           onContactsSync: async (syncedContacts) => {
@@ -177,7 +178,7 @@ export class WhatsAppService {
           },
         });
       } catch (err: any) {
-        console.error(`Failed to restore session "${session.name}": ${err.message}`);
+        logger.error({ session: session.name, error: err.message }, 'Failed to restore session');
         await db
           .update(whatsappSessions)
           .set({ status: "disconnected", updatedAt: new Date() })
@@ -244,7 +245,7 @@ export class WhatsAppService {
         },
 
         onDisconnected: async (reason: string) => {
-          console.warn(`WhatsApp disconnected: ${sessionId} - ${reason}`);
+          logger.warn({ sessionId, reason }, 'WhatsApp disconnected');
           await db
             .update(whatsappSessions)
             .set({ status: "disconnected", updatedAt: new Date() })
@@ -252,7 +253,7 @@ export class WhatsAppService {
         },
 
         onMessageStatus: async (messageId: string, status: string) => {
-          console.debug(`Message status: ${messageId} -> ${status}`);
+          logger.debug({ messageId, status }, 'Message status update');
         },
 
         onMessage: async (msg: any) => {
@@ -271,13 +272,13 @@ export class WhatsAppService {
             });
             chatBroadcast.broadcast(sessionId, "new_message", chatMsg);
           } catch (chatErr: any) {
-            console.error("Chat save error:", chatErr.message);
+            logger.error({ error: chatErr.message }, 'Chat save error');
           }
 
           try {
             await flowExecutor.handleIncomingMessage(sessionId, msg);
           } catch (err: any) {
-            console.error(`Bot flow error (session ${sessionId}):`, err.message);
+            logger.error({ sessionId, error: err.message }, 'Bot flow error');
           }
         },
 
@@ -292,12 +293,12 @@ export class WhatsAppService {
                 selectedOptions: vote.selectedOptions,
                 whatsappMessageId: vote.pollMessageId,
               });
-              console.log(`[POLL] Vote recorded from ${vote.from}: ${vote.selectedOptions.join(", ")}`);
+              logger.info({ from: vote.from, options: vote.selectedOptions }, 'Poll vote recorded');
             } else {
-              console.warn(`[POLL] No campaign found for poll "${vote.pollName}" (msgId: ${vote.pollMessageId})`);
+              logger.warn({ pollName: vote.pollName, msgId: vote.pollMessageId }, 'No campaign found for poll');
             }
           } catch (err: any) {
-            console.error(`Poll vote error (session ${sessionId}):`, err.message);
+            logger.error({ sessionId, error: err.message }, 'Poll vote error');
           }
         },
         onContactsSync: async (syncedContacts: any[]) => {
