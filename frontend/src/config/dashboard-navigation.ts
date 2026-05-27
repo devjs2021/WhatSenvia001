@@ -30,61 +30,60 @@ export interface DashboardNavGroup {
 
 export const dashboardNavGroups: DashboardNavGroup[] = [
   {
-    nameKey: "Dashboard",
+    nameKey: "nav.dashboard",
     icon: LayoutDashboard,
     href: "/dashboard",
     children: [
-      { nameKey: "Dashboard", href: "/dashboard", icon: LayoutDashboard, feature: null },
+      { nameKey: "nav.dashboard", href: "/dashboard", icon: LayoutDashboard, feature: null },
     ],
   },
   {
-    nameKey: "Messaging",
+    nameKey: "nav.messaging",
     icon: Send,
     href: "/campaigns",
     children: [
-      { nameKey: "Bulk Send", href: "/campaigns", icon: Send, feature: "campaigns" },
-      { nameKey: "Connection", href: "/whatsapp", icon: Smartphone, feature: null },
-      { nameKey: "Bot Builder", href: "/bot-builder", icon: Bot, feature: "botBuilder" },
-      { nameKey: "Chat Live", href: "/chat-live", icon: MessageCircle, feature: "chatLive" },
+      { nameKey: "nav.bulkSend", href: "/campaigns", icon: Send, feature: "campaigns" },
+      { nameKey: "nav.connection", href: "/whatsapp", icon: Smartphone, feature: null },
+      { nameKey: "nav.botBuilder", href: "/bot-builder", icon: Bot, feature: "botBuilder" },
+      { nameKey: "nav.chatLive", href: "/chat-live", icon: MessageCircle, feature: "chatLive" },
     ],
   },
   {
-    nameKey: "Contacts",
+    nameKey: "nav.contactsGroup",
     icon: Users,
     href: "/contacts",
     children: [
-      { nameKey: "Contacts", href: "/contacts", icon: Users, feature: null },
-      { nameKey: "Import", href: "/import", icon: Upload, feature: "import" },
-      { nameKey: "Extract", href: "/extract-contacts", icon: UserPlus, feature: "contactExtraction" },
+      { nameKey: "nav.contacts", href: "/contacts", icon: Users, feature: null },
+      { nameKey: "nav.import", href: "/import", icon: Upload, feature: "import" },
+      { nameKey: "nav.extractContacts", href: "/extract-contacts", icon: UserPlus, feature: "contactExtraction" },
     ],
   },
   {
-    nameKey: "Campaigns",
+    nameKey: "nav.campaigns",
     icon: Send,
     href: "/campaigns",
     children: [
-      { nameKey: "Campaigns", href: "/campaigns", icon: Send, feature: "campaigns" },
+      { nameKey: "nav.campaigns", href: "/campaigns", icon: Send, feature: "campaigns" },
     ],
   },
   {
-    nameKey: "Analytics",
+    nameKey: "nav.analytics",
     icon: BarChart3,
     href: "/poll-results",
     children: [
-      { nameKey: "Polls", href: "/poll-results", icon: BarChart3, feature: "polls" },
+      { nameKey: "nav.polls", href: "/poll-results", icon: BarChart3, feature: "polls" },
     ],
   },
   {
-    nameKey: "Settings",
+    nameKey: "nav.settings",
     icon: Settings,
     href: "/settings",
     children: [
-      { nameKey: "Settings", href: "/settings", icon: Crown, feature: null },
+      { nameKey: "nav.settings", href: "/settings", icon: Crown, feature: null },
     ],
   },
 ];
 
-/** Encuentra a qué grupo pertenece una ruta */
 export function findGroupByHref(pathname: string): DashboardNavGroup | undefined {
   return dashboardNavGroups.find((group) =>
     group.children.some((child) => pathname === child.href || pathname.startsWith(child.href + "/"))

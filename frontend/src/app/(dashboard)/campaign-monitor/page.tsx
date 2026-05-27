@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useI18n } from "@/i18n";
 import {
   Send,
   CheckCircle,
@@ -38,6 +39,7 @@ function formatETA(seconds: number): string {
 }
 
 export default function CampaignMonitorPage() {
+  const { t } = useI18n();
   const [events, setEvents] = useState<ProgressEvent[]>([]);
   const [connected, setConnected] = useState(false);
   const [stats, setStats] = useState({ sent: 0, failed: 0, total: 0, pending: 0 });
@@ -94,7 +96,6 @@ export default function CampaignMonitorPage() {
       ws.onopen = () => setConnected(true);
       ws.onclose = () => {
         setConnected(false);
-        // Reconnect after 3 seconds
         setTimeout(connect, 3000);
       };
       ws.onerror = () => ws.close();
@@ -108,7 +109,6 @@ export default function CampaignMonitorPage() {
     };
   }, [handleMessage]);
 
-  // Auto-scroll log
   useEffect(() => {
     if (logRef.current) {
       logRef.current.scrollTop = logRef.current.scrollHeight;
@@ -118,7 +118,6 @@ export default function CampaignMonitorPage() {
   const progress =
     stats.total > 0 ? Math.round(((stats.sent + stats.failed) / stats.total) * 100) : 0;
 
-  // ETA calculation
   const processed = stats.sent + stats.failed;
   const elapsed = startTime ? (Date.now() - startTime) / 1000 : 0;
   const avgPerMsg = processed > 0 ? elapsed / processed : 0;
@@ -129,117 +128,72 @@ export default function CampaignMonitorPage() {
 
   return (
     <div className="space-y-4 md:space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-lg md:text-xl font-semibold">Monitor de Campana</h1>
-          <p className="text-muted-foreground">
-            Progreso en tiempo real del envio masivo
-          </p>
+          <h1 className="text-lg md:text-xl font-semibold">{t("monitor.title")}</h1>
+          <p className="text-muted-foreground">{t("monitor.subtitle")}</p>
         </div>
         <div className="flex items-center gap-2">
-          <span
-            className={`inline-block h-2 w-2 rounded-full ${
-              connected ? "bg-green-500" : "bg-red-500"
-            }`}
-          />
+          <span className={`inline-block h-2 w-2 rounded-full ${connected ? "bg-green-500" : "bg-red-500"}`} />
           <span className="text-sm text-muted-foreground">
-            {connected ? "Conectado" : "Desconectado"}
+            {connected ? t("whatsapp.connected") : t("whatsapp.disconnected")}
           </span>
         </div>
       </div>
 
-      {/* Empty state */}
       {events.length === 0 && (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-16 text-center">
             <Radio className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No hay campana activa</h3>
-            <p className="text-muted-foreground max-w-md">
-              Inicia un envio masivo para ver el progreso aqui. Los mensajes
-              enviados y fallidos se mostraran en tiempo real.
-            </p>
+            <h3 className="text-lg font-semibold mb-2">{t("monitor.noCampaign")}</h3>
+            <p className="text-muted-foreground max-w-md">{t("monitor.noCampaignDesc")}</p>
           </CardContent>
         </Card>
       )}
 
-      {/* Stats + Progress when active */}
       {events.length > 0 && (
         <>
-          {/* Stat cards */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Total
-                </CardTitle>
+                <CardTitle className="text-sm font-medium text-muted-foreground">{t("monitor.total")}</CardTitle>
                 <Send className="h-4 w-4 text-blue-500" />
               </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-blue-600">
-                  {stats.total}
-                </div>
-              </CardContent>
+              <CardContent><div className="text-3xl font-bold text-blue-600">{stats.total}</div></CardContent>
             </Card>
-
             <Card>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Enviados
-                </CardTitle>
+                <CardTitle className="text-sm font-medium text-muted-foreground">{t("monitor.sent")}</CardTitle>
                 <CheckCircle className="h-4 w-4 text-green-500" />
               </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-green-600">
-                  {stats.sent}
-                </div>
-              </CardContent>
+              <CardContent><div className="text-3xl font-bold text-green-600">{stats.sent}</div></CardContent>
             </Card>
-
             <Card>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Fallidos
-                </CardTitle>
+                <CardTitle className="text-sm font-medium text-muted-foreground">{t("monitor.failed")}</CardTitle>
                 <XCircle className="h-4 w-4 text-red-500" />
               </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-red-600">
-                  {stats.failed}
-                </div>
-              </CardContent>
+              <CardContent><div className="text-3xl font-bold text-red-600">{stats.failed}</div></CardContent>
             </Card>
-
             <Card>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Pendientes
-                </CardTitle>
+                <CardTitle className="text-sm font-medium text-muted-foreground">{t("monitor.pending")}</CardTitle>
                 <Clock className="h-4 w-4 text-yellow-500" />
               </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-yellow-600">
-                  {stats.pending}
-                </div>
-              </CardContent>
+              <CardContent><div className="text-3xl font-bold text-yellow-600">{stats.pending}</div></CardContent>
             </Card>
           </div>
 
-          {/* Progress bar + ETA */}
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium">Progreso</CardTitle>
+                <CardTitle className="text-sm font-medium">{t("monitor.progress")}</CardTitle>
                 <div className="flex items-center gap-4 text-sm text-muted-foreground">
                   <span>{progress}%</span>
-                  {isActive && (
-                    <span>
-                      ETA: {formatETA(eta)}
-                    </span>
-                  )}
+                  {isActive && <span>ETA: {formatETA(eta)}</span>}
                   {isComplete && (
                     <Badge variant="outline" className="border-green-500 text-green-600">
-                      Completado
+                      {t("monitor.completed")}
                     </Badge>
                   )}
                 </div>
@@ -255,16 +209,15 @@ export default function CampaignMonitorPage() {
             </CardContent>
           </Card>
 
-          {/* Live log */}
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-2 text-sm font-medium">
                   <Activity className="h-4 w-4" />
-                  Log en vivo
+                  {t("monitor.liveLog")}
                 </CardTitle>
                 <span className="text-xs text-muted-foreground">
-                  {events.length} eventos
+                  {events.length} {t("monitor.events")}
                 </span>
               </div>
             </CardHeader>
@@ -281,20 +234,16 @@ export default function CampaignMonitorPage() {
                     <span className="shrink-0 text-xs text-muted-foreground">
                       {new Date(evt.timestamp).toLocaleTimeString()}
                     </span>
-                    <span className="shrink-0 font-medium">
-                      {maskPhone(evt.phone)}
-                    </span>
+                    <span className="shrink-0 font-medium">{maskPhone(evt.phone)}</span>
                     {evt.status === "sent" ? (
                       <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
-                        Enviado
+                        {t("monitor.sent")}
                       </Badge>
                     ) : (
-                      <Badge variant="destructive">Fallido</Badge>
+                      <Badge variant="destructive">{t("monitor.failed")}</Badge>
                     )}
                     {evt.error && (
-                      <span className="truncate text-xs text-red-500">
-                        {evt.error}
-                      </span>
+                      <span className="truncate text-xs text-red-500">{evt.error}</span>
                     )}
                   </div>
                 ))}

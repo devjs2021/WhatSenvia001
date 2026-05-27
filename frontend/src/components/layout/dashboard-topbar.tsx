@@ -19,22 +19,21 @@ import {
 } from "lucide-react";
 
 const SUPPORT_PHONE = "573202101789";
-const SUPPORT_MESSAGE = "Hola, necesito ayuda con mi cuenta de ClickSend";
 
-const breadcrumbTitles: Record<string, string> = {
-  "/dashboard": "Dashboard",
-  "/whatsapp": "Conexión WhatsApp",
-  "/bot-builder": "Bot Builder",
-  "/chat-live": "Chat en Vivo",
-  "/campaigns": "Campañas",
-  "/templates": "Plantillas",
-  "/meta-templates": "Meta Templates",
-  "/poll-results": "Encuestas",
-  "/contacts": "Contactos",
-  "/extract-contacts": "Extraer Contactos",
-  "/import": "Importar",
-  "/messages": "Mensajes",
-  "/settings": "Configuración",
+const breadcrumbKeys: Record<string, string> = {
+  "/dashboard": "nav.dashboard",
+  "/whatsapp": "nav.connection",
+  "/bot-builder": "nav.botBuilder",
+  "/chat-live": "nav.chatLive",
+  "/campaigns": "nav.bulkSend",
+  "/templates": "nav.templates",
+  "/meta-templates": "nav.metaTemplates",
+  "/poll-results": "nav.polls",
+  "/contacts": "nav.contacts",
+  "/extract-contacts": "nav.extractContacts",
+  "/import": "nav.import",
+  "/messages": "nav.messages",
+  "/settings": "nav.settings",
 };
 
 interface DashboardTopbarProps {
@@ -53,12 +52,12 @@ export function DashboardTopbar({ onMobileMenuToggle }: DashboardTopbarProps) {
   }, []);
 
   const currentLocale = mounted ? locale : "es";
-  const supportUrl = `https://wa.me/${SUPPORT_PHONE}?text=${encodeURIComponent(SUPPORT_MESSAGE)}`;
+  const supportUrl = `https://wa.me/${SUPPORT_PHONE}?text=${encodeURIComponent(t("topbar.supportMessage"))}`;
 
-  // Determinar el título del breadcrumb
-  const currentTitle = Object.entries(breadcrumbTitles).find(([key]) =>
+  const currentTitleKey = Object.entries(breadcrumbKeys).find(([key]) =>
     pathname === key || pathname.startsWith(key + "/")
-  )?.[1] || "Dashboard";
+  )?.[1] || "nav.dashboard";
+  const currentTitle = t(currentTitleKey);
 
   // Grupo activo para el sub-nav
   const activeGroup = findGroupByHref(pathname);
@@ -83,7 +82,7 @@ export function DashboardTopbar({ onMobileMenuToggle }: DashboardTopbarProps) {
         {/* Breadcrumb / Título */}
         <div className="shrink-0">
           <span className="text-xs font-semibold text-slate-400 uppercase tracking-widest">
-            ClickSend Consola
+            {t("sidebar.console")}
           </span>
           <h2 className="font-display text-lg font-bold text-slate-900 mt-0.5">
             {currentTitle}
@@ -94,7 +93,9 @@ export function DashboardTopbar({ onMobileMenuToggle }: DashboardTopbarProps) {
         <div className="flex-1 flex justify-center mx-4">
           {pathname === "/dashboard" ? (
             <p className="text-[11px] text-slate-400 leading-tight text-center max-w-[420px]">
-              Cuidamos de <span className="text-emerald-500 font-bold">ti</span> y de tu <span className="text-emerald-500 font-bold">tiempo</span>. Aquí tienes un resumen de la actividad y la salud de tus envíos hoy.
+              {t("topbar.tagline").split(/<1>|<\/1>/).map((part, i) =>
+                i % 2 === 1 ? <span key={i} className="text-emerald-500 font-bold">{part}</span> : part
+              )}
             </p>
           ) : activeGroup && activeGroup.children.length > 1 ? (
             <nav className="flex items-center gap-1 overflow-x-auto">
@@ -112,7 +113,7 @@ export function DashboardTopbar({ onMobileMenuToggle }: DashboardTopbarProps) {
                     )}
                   >
                     <child.icon className="w-3.5 h-3.5 shrink-0 text-emerald-500" strokeWidth={1.5} />
-                    <span>{child.nameKey}</span>
+                    <span>{t(child.nameKey)}</span>
                   </Link>
                 );
               })}
@@ -132,7 +133,7 @@ export function DashboardTopbar({ onMobileMenuToggle }: DashboardTopbarProps) {
                 <path d="M16.4 6c-1.8 0-3.4 1-4.4 2.5C11 7 9.4 6 7.6 6 4.5 6 2 8.5 2 11.6s2.5 5.6 5.6 5.6c1.8 0 3.4-1 4.4-2.5 1 1.5 2.6 2.5 4.4 2.5 3.1 0 5.6-2.5 5.6-5.6S19.5 6 16.4 6zm-8.8 9.2c-2 0-3.6-1.6-3.6-3.6S5.6 8 7.6 8c1.3 0 2.5.7 3.1 1.8-.8 1.4-.8 3.2 0 4.6-.6 1.1-1.8 1.8-3.1 1.8zm8.8 0c-1.3 0-2.5-.7-3.1-1.8.8-1.4.8-3.2 0-4.6.6-1.1 1.8-1.8 3.1-1.8 2 0 3.6 1.6 3.6 3.6s-1.6 3.6-3.6 3.6z" />
               </svg>
               <span className="text-[11px] font-bold text-emerald-700 uppercase tracking-wider">
-                Conectado a Meta
+                {t("topbar.connectedMeta")}
               </span>
             </div>
           ) : (
@@ -144,7 +145,7 @@ export function DashboardTopbar({ onMobileMenuToggle }: DashboardTopbarProps) {
                 <path d="M16.4 6c-1.8 0-3.4 1-4.4 2.5C11 7 9.4 6 7.6 6 4.5 6 2 8.5 2 11.6s2.5 5.6 5.6 5.6c1.8 0 3.4-1 4.4-2.5 1 1.5 2.6 2.5 4.4 2.5 3.1 0 5.6-2.5 5.6-5.6S19.5 6 16.4 6zm-8.8 9.2c-2 0-3.6-1.6-3.6-3.6S5.6 8 7.6 8c1.3 0 2.5.7 3.1 1.8-.8 1.4-.8 3.2 0 4.6-.6 1.1-1.8 1.8-3.1 1.8zm8.8 0c-1.3 0-2.5-.7-3.1-1.8.8-1.4.8-3.2 0-4.6.6-1.1 1.8-1.8 3.1-1.8 2 0 3.6 1.6 3.6 3.6s-1.6 3.6-3.6 3.6z" />
               </svg>
               <span className="text-[11px] font-bold text-red-600 uppercase tracking-wider">
-                Desconectado
+                {t("whatsapp.disconnected")}
               </span>
             </div>
           )}

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useI18n } from "@/i18n";
 import {
   Send,
   CheckCircle,
@@ -38,6 +39,7 @@ function formatETA(seconds: number): string {
 }
 
 export default function CampaignMonitorTab() {
+  const { t } = useI18n();
   const [events, setEvents] = useState<ProgressEvent[]>([]);
   const [connected, setConnected] = useState(false);
   const [stats, setStats] = useState({ sent: 0, failed: 0, total: 0, pending: 0 });
@@ -129,9 +131,9 @@ export default function CampaignMonitorTab() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-lg md:text-xl font-semibold">Monitor de Campana</h1>
+          <h1 className="text-lg md:text-xl font-semibold">{t("monitor.title")}</h1>
           <p className="text-muted-foreground">
-            Progreso en tiempo real del envio masivo
+            {t("monitor.subtitle")}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -141,7 +143,7 @@ export default function CampaignMonitorTab() {
             }`}
           />
           <span className="text-sm text-muted-foreground">
-            {connected ? "Conectado" : "Desconectado"}
+            {connected ? t("whatsapp.connected") : t("whatsapp.disconnected")}
           </span>
         </div>
       </div>
@@ -151,10 +153,9 @@ export default function CampaignMonitorTab() {
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-16 text-center">
             <Radio className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No hay campana activa</h3>
+            <h3 className="text-lg font-semibold mb-2">{t("monitor.noCampaign")}</h3>
             <p className="text-muted-foreground max-w-md">
-              Inicia un envio masivo para ver el progreso aqui. Los mensajes
-              enviados y fallidos se mostraran en tiempo real.
+              {t("monitor.noCampaignDesc")}
             </p>
           </CardContent>
         </Card>
@@ -168,7 +169,7 @@ export default function CampaignMonitorTab() {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Total
+                  {t("monitor.total")}
                 </CardTitle>
                 <Send className="h-4 w-4 text-blue-500" />
               </CardHeader>
@@ -182,7 +183,7 @@ export default function CampaignMonitorTab() {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Enviados
+                  {t("monitor.sent")}
                 </CardTitle>
                 <CheckCircle className="h-4 w-4 text-green-500" />
               </CardHeader>
@@ -196,7 +197,7 @@ export default function CampaignMonitorTab() {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Fallidos
+                  {t("monitor.failed")}
                 </CardTitle>
                 <XCircle className="h-4 w-4 text-red-500" />
               </CardHeader>
@@ -210,7 +211,7 @@ export default function CampaignMonitorTab() {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Pendientes
+                  {t("monitor.pending")}
                 </CardTitle>
                 <Clock className="h-4 w-4 text-yellow-500" />
               </CardHeader>
@@ -226,7 +227,7 @@ export default function CampaignMonitorTab() {
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium">Progreso</CardTitle>
+                <CardTitle className="text-sm font-medium">{t("monitor.progress")}</CardTitle>
                 <div className="flex items-center gap-4 text-sm text-muted-foreground">
                   <span>{progress}%</span>
                   {isActive && (
@@ -236,7 +237,7 @@ export default function CampaignMonitorTab() {
                   )}
                   {isComplete && (
                     <Badge variant="outline" className="border-green-500 text-green-600">
-                      Completado
+                      {t("monitor.completed")}
                     </Badge>
                   )}
                 </div>
@@ -258,10 +259,10 @@ export default function CampaignMonitorTab() {
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-2 text-sm font-medium">
                   <Activity className="h-4 w-4" />
-                  Log en vivo
+                  {t("monitor.liveLog")}
                 </CardTitle>
                 <span className="text-xs text-muted-foreground">
-                  {events.length} eventos
+                  {events.length} {t("monitor.events")}
                 </span>
               </div>
             </CardHeader>
@@ -283,10 +284,10 @@ export default function CampaignMonitorTab() {
                     </span>
                     {evt.status === "sent" ? (
                       <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
-                        Enviado
+                        {t("monitor.sent")}
                       </Badge>
                     ) : (
-                      <Badge variant="destructive">Fallido</Badge>
+                      <Badge variant="destructive">{t("monitor.failed")}</Badge>
                     )}
                     {evt.error && (
                       <span className="truncate text-xs text-red-500">

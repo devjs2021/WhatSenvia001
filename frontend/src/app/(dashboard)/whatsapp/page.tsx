@@ -27,9 +27,8 @@ const SETUP_STEPS = [
   {
     number: 1,
     icon: Rocket,
-    title: "Inicia el registro",
-    description:
-      "Haz clic en el boton \"Conectar WhatsApp Business Oficial\". Se abrira una ventana de Facebook para guiarte en el proceso.",
+    titleKey: "whatsapp.step1Title",
+    descKey: "whatsapp.step1Desc",
     color: "text-blue-600",
     bg: "bg-blue-50",
     border: "border-blue-200",
@@ -37,9 +36,8 @@ const SETUP_STEPS = [
   {
     number: 2,
     icon: Building2,
-    title: "Selecciona tus activos comerciales",
-    description:
-      "Elige tu Portfolio comercial (empresa) y tu Cuenta de WhatsApp Business existente, o crea una nueva.",
+    titleKey: "whatsapp.step2Title",
+    descKey: "whatsapp.step2Desc",
     color: "text-violet-600",
     bg: "bg-violet-50",
     border: "border-violet-200",
@@ -47,9 +45,8 @@ const SETUP_STEPS = [
   {
     number: 3,
     icon: Phone,
-    title: "Agrega tu numero de WhatsApp",
-    description:
-      "Registra un numero nuevo o usa uno existente. Puedes elegir solo nombre visible o vincular un numero con verificacion.",
+    titleKey: "whatsapp.step3Title",
+    descKey: "whatsapp.step3Desc",
     color: "text-amber-600",
     bg: "bg-amber-50",
     border: "border-amber-200",
@@ -57,9 +54,8 @@ const SETUP_STEPS = [
   {
     number: 4,
     icon: ShieldCheck,
-    title: "Revisa y autoriza permisos",
-    description:
-      "Confirma los accesos que compartes: administrar tu cuenta de WhatsApp Business, acceder a conversaciones y registrar eventos.",
+    titleKey: "whatsapp.step4Title",
+    descKey: "whatsapp.step4Desc",
     color: "text-emerald-600",
     bg: "bg-emerald-50",
     border: "border-emerald-200",
@@ -67,9 +63,8 @@ const SETUP_STEPS = [
   {
     number: 5,
     icon: CheckCircle,
-    title: "Cuenta conectada",
-    description:
-      "Tu cuenta queda vinculada automaticamente. Meta revisara que cumple sus politicas y te notificara en 24 horas si hay algun ajuste.",
+    titleKey: "whatsapp.step5Title",
+    descKey: "whatsapp.step5Desc",
     color: "text-green-600",
     bg: "bg-green-50",
     border: "border-green-200",
@@ -172,11 +167,10 @@ export default function WhatsAppPage() {
           <DashboardCardHeader>
             <div>
               <DashboardCardTitle className="text-lg">
-                Conecta tu WhatsApp Business
+                {t("whatsapp.connectBusiness")}
               </DashboardCardTitle>
               <DashboardCardDescription className="!text-sm !text-slate-500 mt-1">
-                Vincula tu cuenta oficial de WhatsApp Business con la API de Meta Cloud.
-                Sigue los pasos a continuacion para completar el registro.
+                {t("whatsapp.connectBusinessDesc")}
               </DashboardCardDescription>
             </div>
           </DashboardCardHeader>
@@ -209,10 +203,10 @@ export default function WhatsAppPage() {
                       </span>
                     </div>
                     <h4 className="font-display text-sm font-bold text-slate-900">
-                      {step.title}
+                      {t(step.titleKey)}
                     </h4>
                     <p className="text-sm text-slate-600 mt-1 leading-relaxed">
-                      {step.description}
+                      {t(step.descKey)}
                     </p>
                   </div>
                 </div>
@@ -223,7 +217,7 @@ export default function WhatsAppPage() {
           {/* Connect button - BOTTOM */}
           <div className="mt-8 pt-6 border-t border-slate-100">
             <p className="text-sm text-slate-500 mb-3 text-center">
-              Listo para empezar? Haz clic para iniciar la conexion
+              {t("whatsapp.readyToStart")}
             </p>
             <MetaSignupButton onSuccess={handleMetaSuccess} />
           </div>

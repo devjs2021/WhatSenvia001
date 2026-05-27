@@ -98,8 +98,8 @@ export default function DashboardPage() {
     <div className="space-y-5">
       {/* Encabezado */}
       <DashboardHeader
-        title="Dashboard"
-        description="Resumen de actividad y salud de tus envios."
+        title={t('nav.dashboard')}
+        description={t('dashboard.description')}
       >
         <div className={`flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full ${
           overview.connectedSessions > 0
@@ -125,10 +125,10 @@ export default function DashboardPage() {
                 </div>
                 <div>
                   <h3 className="font-display text-sm font-bold text-slate-900">
-                    Conecta tu WhatsApp
+                    {t('dashboard.connectWhatsapp')}
                   </h3>
                   <p className="text-xs text-slate-500">
-                    Vincula tu cuenta de WhatsApp Business para empezar a enviar mensajes
+                    {t('dashboard.connectWhatsappDesc')}
                   </p>
                 </div>
               </div>
@@ -145,8 +145,8 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Chart */}
         <DashboardChart
-          title="Historial de Envios"
-          description="Mensajes despachados este mes."
+          title={t('dashboard.sendHistory')}
+          description={t('dashboard.sendHistoryDesc')}
         />
 
         {/* Consumption */}
@@ -159,7 +159,7 @@ export default function DashboardPage() {
               <div className="w-7 h-7 rounded-lg bg-slate-50 flex items-center justify-center">
                 <MessageSquare className="w-3.5 h-3.5 text-slate-500" strokeWidth={1.5} />
               </div>
-              <DashboardCardTitle>Message Status</DashboardCardTitle>
+              <DashboardCardTitle>{t('dashboard.messageStatus')}</DashboardCardTitle>
             </div>
           </DashboardCardHeader>
           {msgStatsLoading ? (

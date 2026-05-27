@@ -48,7 +48,7 @@ export function DashboardSidebar() {
                 )}
               >
                 <group.icon className="w-4 h-4 shrink-0" strokeWidth={1.5} />
-                <span>{group.nameKey}</span>
+                <span>{t(group.nameKey)}</span>
               </Link>
             );
           })}
@@ -64,7 +64,7 @@ export function DashboardSidebar() {
             !licenseStatus && "bg-emerald-500"
           )} />
           <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-            {user?.role === "admin" ? "Administrador" : "Cuenta"}
+            {user?.role === "admin" ? t("sidebar.admin") : t("sidebar.account")}
           </span>
         </div>
         <div>
@@ -77,21 +77,21 @@ export function DashboardSidebar() {
               </p>
               <p className="text-[10px] text-slate-500 mt-0.5">
                 {licenseStatus.type === "warning"
-                  ? t('license.renewSoon') || "Renew soon to avoid interruptions."
+                  ? t("sidebar.renewSoon")
                   : licenseStatus.type === "expired"
-                  ? t('license.renewNow') || "Renew your license to continue."
-                  : t('license.active') || "All good."}
+                  ? t("sidebar.renewNow")
+                  : t("sidebar.allGood")}
               </p>
             </>
           ) : (
             <>
               <p className="text-xs font-semibold text-slate-900">
-                {user?.role === "admin" ? "Administrador" : "Excellent protection"}
+                {user?.role === "admin" ? t("sidebar.admin") : t("sidebar.protectionTitle")}
               </p>
               <p className="text-[10px] text-slate-500 mt-0.5">
                 {user?.role === "admin"
-                  ? "Control total del sistema."
-                  : "Optimized limits to avoid Meta spam."}
+                  ? t("sidebar.adminDesc")
+                  : t("sidebar.protectionDesc")}
               </p>
             </>
           )}
