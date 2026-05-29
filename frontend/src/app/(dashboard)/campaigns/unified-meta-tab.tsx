@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { useI18n } from "@/i18n";
@@ -142,7 +142,9 @@ export default function UnifiedMetaTab() {
     }
   }
 
-  // Verify numbers via Baileys
+  // Verify numbers via Baileys (background job)
+  const [verifyJobId, setVerifyJobId] = useState<string | null>(null);
+
   async function handleVerifyNumbers() {
     if (!parsedExcel || baileysSessions.length === 0) return;
     setVerifying(true);
@@ -152,41 +154,55 @@ export default function UnifiedMetaTab() {
     setVerifyProgress({ checked: 0, total: phones.length });
 
     try {
-      const batchSize = 50;
-      const valid: string[] = [];
-      const invalid: string[] = [];
-
-      for (let i = 0; i < phones.length; i += batchSize) {
-        const batch = phones.slice(i, i + batchSize);
-        const res = await api.post<Array<{ phone: string; exists: boolean }>>(
-          `/whatsapp/sessions/${baileysSessionId}/check-numbers`,
-          { phones: batch }
-        );
-        for (const r of res) {
-          if (r.exists) valid.push(r.phone);
-          else invalid.push(r.phone);
-        }
-        setVerifyProgress({ checked: Math.min(i + batchSize, phones.length), total: phones.length });
-      }
-
-      setVerifyResult({ valid, invalid });
-
-      // Filter parsedExcel to only valid numbers
-      const validSet = new Set(valid);
-      setParsedExcel({
-        ...parsedExcel,
-        rows: parsedExcel.rows.filter((r) => validSet.has(r.phone)),
-        totalRows: valid.length,
-      });
-
-      toast.success(`${valid.length} ${t("unifiedCampaign.validNumbers")} · ${invalid.length} ${t("unifiedCampaign.invalidNumbers")}`);
-      setShowSaveListPrompt(true);
+      const res = await api.post<{ success: boolean; data: { id: string; totalCount: number } }>(
+        "/whatsapp/verify-bulk",
+        { sessionId: baileysSessionId, phones }
+      );
+      setVerifyJobId(res.data.id);
     } catch (err: any) {
       toast.error(err.message);
-    } finally {
       setVerifying(false);
     }
   }
+
+  // Poll verification progress
+  const { data: verifyJobData } = useQuery({
+    queryKey: ["verify-job", verifyJobId],
+    queryFn: () => api.get<{ success: boolean; data: { status: string; totalCount: number; checkedCount: number; validPhones: string[]; invalidPhones: string[] } }>(
+      `/whatsapp/verify-bulk/${verifyJobId}`
+    ),
+    enabled: !!verifyJobId && verifying,
+    refetchInterval: 3000,
+  });
+
+  useEffect(() => {
+    if (!verifyJobData?.data || !verifying) return;
+    const job = verifyJobData.data;
+    setVerifyProgress({ checked: job.checkedCount, total: job.totalCount });
+
+    if (job.status === "completed" || job.status === "failed") {
+      setVerifying(false);
+      setVerifyJobId(null);
+
+      if (job.status === "completed" && parsedExcel) {
+        const valid = job.validPhones || [];
+        const invalid = job.invalidPhones || [];
+        setVerifyResult({ valid, invalid });
+
+        const validSet = new Set(valid);
+        setParsedExcel({
+          ...parsedExcel,
+          rows: parsedExcel.rows.filter((r) => validSet.has(r.phone)),
+          totalRows: valid.length,
+        });
+
+        toast.success(`${valid.length} ${t("unifiedCampaign.validNumbers")} · ${invalid.length} ${t("unifiedCampaign.invalidNumbers")}`);
+        setShowSaveListPrompt(true);
+      } else if (job.status === "failed") {
+        toast.error(t("common.error"));
+      }
+    }
+  }, [verifyJobData]);
 
   // Save verified list as contact list
   async function handleSaveFilteredList() {

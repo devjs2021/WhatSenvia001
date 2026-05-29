@@ -10,6 +10,10 @@ import {
 } from "../controllers/whatsapp.controller.js";
 import { getWhatsAppProvider } from "../../../infrastructure/whatsapp/whatsapp.factory.js";
 import { chatService } from "../../chat/services/chat.service.js";
+import { db } from "../../../config/database.js";
+import { verificationJobs } from "../../../infrastructure/database/schema/verification-jobs.js";
+import { verificationQueue } from "../../../infrastructure/queue/verification.queue.js";
+import { eq, and } from "drizzle-orm";
 
 export async function whatsappRoutes(app: FastifyInstance) {
   app.addHook("preHandler", authGuard);
@@ -113,5 +117,60 @@ export async function whatsappRoutes(app: FastifyInstance) {
       }
     }
     return results;
+  });
+
+  // Background verification
+  app.post("/verify-bulk", async (req, reply) => {
+    const userId = (req as any).user.id;
+    const { sessionId, phones } = req.body as { sessionId: string; phones: string[] };
+
+    if (!sessionId || !phones?.length) {
+      return reply.status(422).send({ error: "sessionId and phones are required" });
+    }
+
+    const cleanPhones = phones.map((p) => p.replace(/\D/g, "")).filter((p) => p.length >= 10);
+
+    const [job] = await db
+      .insert(verificationJobs)
+      .values({
+        userId,
+        sessionId,
+        phones: cleanPhones,
+        totalCount: cleanPhones.length,
+      })
+      .returning();
+
+    await verificationQueue.add(`verify-${job.id}`, {
+      jobId: job.id,
+      sessionId,
+    });
+
+    return { success: true, data: { id: job.id, totalCount: cleanPhones.length } };
+  });
+
+  app.get("/verify-bulk/:id", async (req, reply) => {
+    const userId = (req as any).user.id;
+    const { id } = req.params as { id: string };
+
+    const [job] = await db
+      .select()
+      .from(verificationJobs)
+      .where(and(eq(verificationJobs.id, id), eq(verificationJobs.userId, userId)))
+      .limit(1);
+
+    if (!job) return reply.status(404).send({ error: "Job not found" });
+
+    return {
+      success: true,
+      data: {
+        id: job.id,
+        status: job.status,
+        totalCount: job.totalCount,
+        checkedCount: job.checkedCount,
+        validPhones: job.validPhones,
+        invalidPhones: job.invalidPhones,
+        error: job.error,
+      },
+    };
   });
 }

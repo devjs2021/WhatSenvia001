@@ -36,6 +36,7 @@ import { startMessageWorker } from "./infrastructure/queue/message.queue.js";
 import { startCampaignWorker } from "./infrastructure/queue/campaign.queue.js";
 import { startScheduledChecker } from "./infrastructure/queue/scheduled-checker.js";
 import { startTemplateSyncJob } from "./infrastructure/queue/template-sync.js";
+import { startVerificationWorker } from "./infrastructure/queue/verification.queue.js";
 import { startTokenRefreshJob } from "./infrastructure/queue/token-refresh.js";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 import { seedTemplates } from "./modules/bot-builder/services/seed-templates.js";
@@ -224,6 +225,20 @@ async function bootstrap() {
     await db.execute(sql`ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS template_name VARCHAR(255)`);
     await db.execute(sql`ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS contacts JSONB`);
     await db.execute(sql`ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS rejection_reason TEXT`);
+    await db.execute(sql`CREATE TABLE IF NOT EXISTS verification_jobs (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      session_id UUID NOT NULL,
+      status VARCHAR(20) NOT NULL DEFAULT 'pending',
+      phones JSONB NOT NULL,
+      valid_phones JSONB DEFAULT '[]',
+      invalid_phones JSONB DEFAULT '[]',
+      total_count INTEGER NOT NULL DEFAULT 0,
+      checked_count INTEGER NOT NULL DEFAULT 0,
+      error VARCHAR(500),
+      created_at TIMESTAMP DEFAULT NOW() NOT NULL,
+      completed_at TIMESTAMP
+    )`);
   } catch (err: any) {
     app.log.warn({ error: err.message }, "Meta templates table setup warning");
   }
@@ -289,6 +304,7 @@ async function bootstrap() {
   startCampaignWorker();
   startScheduledChecker();
   startTemplateSyncJob();
+  startVerificationWorker();
   startTokenRefreshJob();
   app.log.info("Queue workers started");
 
