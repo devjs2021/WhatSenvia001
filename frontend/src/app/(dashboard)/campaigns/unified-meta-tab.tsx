@@ -82,6 +82,8 @@ export default function UnifiedMetaTab() {
   const [headerFormat, setHeaderFormat] = useState<"NONE" | "TEXT" | "IMAGE" | "VIDEO" | "DOCUMENT">("NONE");
   const [headerText, setHeaderText] = useState("");
   const [headerMediaUrl, setHeaderMediaUrl] = useState("");
+  const [headerUploading, setHeaderUploading] = useState(false);
+  const [headerFileName, setHeaderFileName] = useState("");
   const [bodyText, setBodyText] = useState("");
   const [footerText, setFooterText] = useState("");
   const [paramMapping, setParamMapping] = useState<Record<string, string[]>>({});
@@ -124,6 +126,33 @@ export default function UnifiedMetaTab() {
       toast.error(err.message);
     } finally {
       setUploading(false);
+    }
+  }
+
+  // Header media upload
+  async function handleHeaderUpload(file: globalThis.File) {
+    setHeaderUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const token = localStorage.getItem("token");
+      const res = await fetch("/api/chat/upload", {
+        method: "POST",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: formData,
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || "Error al subir archivo");
+      }
+      const data = await res.json();
+      setHeaderMediaUrl(data.url);
+      setHeaderFileName(file.name);
+      toast.success(t("unifiedCampaign.fileUploaded"));
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setHeaderUploading(false);
     }
   }
 
@@ -219,6 +248,7 @@ export default function UnifiedMetaTab() {
     setHeaderFormat("NONE");
     setHeaderText("");
     setHeaderMediaUrl("");
+    setHeaderFileName("");
     setBodyText("");
     setFooterText("");
     setParamMapping({});
@@ -452,18 +482,58 @@ export default function UnifiedMetaTab() {
               )}
               {(headerFormat === "IMAGE" || headerFormat === "VIDEO" || headerFormat === "DOCUMENT") && (
                 <div>
-                  <div className="flex items-center gap-1.5">
-                    {headerFormat === "IMAGE" && <Image className="h-3.5 w-3.5 text-slate-400 shrink-0" />}
-                    {headerFormat === "VIDEO" && <Video className="h-3.5 w-3.5 text-slate-400 shrink-0" />}
-                    {headerFormat === "DOCUMENT" && <File className="h-3.5 w-3.5 text-slate-400 shrink-0" />}
-                    <input
-                      placeholder={t("metaTemplates.mediaUrlPlaceholder")}
-                      value={headerMediaUrl}
-                      onChange={(e) => setHeaderMediaUrl(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
-                    />
-                  </div>
-                  <p className="text-[10px] text-slate-400 mt-0.5">{t("metaTemplates.mediaUrlHint")}</p>
+                  {!headerMediaUrl ? (
+                    <div className="rounded-2xl border-2 border-dashed border-slate-200 p-4 text-center hover:border-emerald-300 transition-colors">
+                      <div className="flex items-center justify-center gap-2 mb-2 text-slate-400">
+                        {headerFormat === "IMAGE" && <Image className="h-6 w-6" />}
+                        {headerFormat === "VIDEO" && <Video className="h-6 w-6" />}
+                        {headerFormat === "DOCUMENT" && <File className="h-6 w-6" />}
+                      </div>
+                      <label className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 text-sm font-medium cursor-pointer transition-colors">
+                        <Upload className="h-4 w-4" />
+                        {t("unifiedCampaign.uploadFile")}
+                        <input
+                          type="file"
+                          accept={
+                            headerFormat === "IMAGE" ? "image/*" :
+                            headerFormat === "VIDEO" ? "video/*" :
+                            ".pdf,.doc,.docx,.xls,.xlsx"
+                          }
+                          className="hidden"
+                          onChange={(e) => {
+                            const f = e.target.files?.[0];
+                            if (f) handleHeaderUpload(f);
+                          }}
+                        />
+                      </label>
+                      {headerUploading && (
+                        <p className="text-xs text-slate-400 mt-2 animate-pulse flex items-center justify-center gap-1">
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                          {t("common.loading")}
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="rounded-2xl bg-emerald-50 border border-emerald-200 p-3 flex items-center justify-between">
+                      <div className="flex items-center gap-3 min-w-0">
+                        {headerFormat === "IMAGE" && headerMediaUrl && (
+                          <img src={headerMediaUrl} alt="Header" className="h-12 w-12 rounded-lg object-cover shrink-0" />
+                        )}
+                        {headerFormat === "VIDEO" && <Video className="h-8 w-8 text-emerald-500 shrink-0" />}
+                        {headerFormat === "DOCUMENT" && <File className="h-8 w-8 text-emerald-500 shrink-0" />}
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-emerald-800 truncate">{headerFileName || "archivo"}</p>
+                          <p className="text-[10px] text-emerald-600 truncate">{headerMediaUrl}</p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => { setHeaderMediaUrl(""); setHeaderFileName(""); }}
+                        className="h-7 w-7 rounded-xl flex items-center justify-center hover:bg-emerald-100 text-emerald-400 hover:text-emerald-600 transition-colors shrink-0"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

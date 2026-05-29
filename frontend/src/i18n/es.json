@@ -537,6 +537,8 @@
     "template": "Plantilla",
     "campaignName": "Nombre de la campana",
     "campaignNamePlaceholder": "Ej: Promo Mayo 2026",
-    "uploadExcelFirst": "Sube el Excel primero para insertar variables"
+    "uploadExcelFirst": "Sube el Excel primero para insertar variables",
+    "uploadFile": "Subir archivo",
+    "fileUploaded": "Archivo subido correctamente"
   }
 }

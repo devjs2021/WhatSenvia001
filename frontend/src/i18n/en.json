@@ -537,6 +537,8 @@
     "template": "Template",
     "campaignName": "Campaign name",
     "campaignNamePlaceholder": "E.g. May 2026 Promo",
-    "uploadExcelFirst": "Upload Excel first to insert variables"
+    "uploadExcelFirst": "Upload Excel first to insert variables",
+    "uploadFile": "Upload file",
+    "fileUploaded": "File uploaded successfully"
   }
 }
