@@ -68,6 +68,12 @@ export async function getTags(request: FastifyRequest, reply: FastifyReply) {
   return success(reply, tags);
 }
 
+export async function getMetadataKeys(request: FastifyRequest, reply: FastifyReply) {
+  const userId = (request as any).user.id;
+  const keys = await contactService.getMetadataKeys(userId);
+  return success(reply, keys);
+}
+
 export async function upsertBulkWithTag(request: FastifyRequest, reply: FastifyReply) {
   const body = request.body as { phones?: string[]; tag?: string };
   if (!body?.phones?.length || !body?.tag) {

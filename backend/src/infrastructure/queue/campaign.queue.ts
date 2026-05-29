@@ -49,25 +49,56 @@ export function startCampaignWorker() {
         .set({ status: "running", startedAt: new Date() })
         .where(eq(campaigns.id, campaignId));
 
-      // Get target contacts
-      const targetContacts = await db
-        .select()
-        .from(contacts)
-        .where(eq(contacts.userId, userId));
+      // Resolve contacts: embedded (unified flow) or tag-based (legacy flow)
+      const embeddedContacts = campaign.contacts as Array<Record<string, string>> | null;
+      const contactsToProcess: Array<{ id?: string; phone: string; name: string; email: string | null; metadata: Record<string, string> }> = [];
 
-      // Filter by tags if specified
-      const filteredContacts =
-        campaign.targetTags && (campaign.targetTags as string[]).length > 0
-          ? targetContacts.filter((c) => {
-              const contactTags = (c.tags as string[]) || [];
-              return (campaign.targetTags as string[]).some((tag) => contactTags.includes(tag));
-            })
-          : targetContacts;
+      if (embeddedContacts && embeddedContacts.length > 0) {
+        for (const ec of embeddedContacts) {
+          const phone = ec.phone?.replace(/[^0-9]/g, "");
+          if (!phone || phone.length < 10) continue;
+          const [existing] = await db.select({ id: contacts.id }).from(contacts)
+            .where(and(eq(contacts.userId, userId), eq(contacts.phone, phone))).limit(1);
+          if (existing) {
+            contactsToProcess.push({
+              id: existing.id, phone, name: ec.name || "", email: ec.email || null,
+              metadata: Object.fromEntries(Object.entries(ec).filter(([k]) => !["phone", "name", "email"].includes(k))),
+            });
+          } else {
+            const meta = Object.fromEntries(Object.entries(ec).filter(([k]) => !["phone", "name", "email"].includes(k)));
+            const [created] = await db.insert(contacts).values({
+              userId, phone, name: ec.name || "", email: ec.email || null, tags: [], metadata: meta,
+            }).returning({ id: contacts.id });
+            contactsToProcess.push({ id: created.id, phone, name: ec.name || "", email: ec.email || null, metadata: meta });
+          }
+        }
+      } else {
+        const targetContacts = await db
+          .select()
+          .from(contacts)
+          .where(eq(contacts.userId, userId));
+
+        const filteredContacts =
+          campaign.targetTags && (campaign.targetTags as string[]).length > 0
+            ? targetContacts.filter((c) => {
+                const contactTags = (c.tags as string[]) || [];
+                return (campaign.targetTags as string[]).some((tag) => contactTags.includes(tag));
+              })
+            : targetContacts;
+
+        contactsToProcess.push(...filteredContacts.map((c) => ({
+          id: c.id,
+          phone: c.phone,
+          name: c.name || "",
+          email: c.email || null,
+          metadata: (c.metadata as Record<string, string>) || {},
+        })));
+      }
 
       // Update total contacts
       await db
         .update(campaigns)
-        .set({ totalContacts: filteredContacts.length })
+        .set({ totalContacts: contactsToProcess.length })
         .where(eq(campaigns.id, campaignId));
 
       // Resolve meta template if this is a template campaign
@@ -90,14 +121,13 @@ export function startCampaignWorker() {
       }
 
       // Create message records and queue jobs
-      for (const contact of filteredContacts) {
-        // Personalize message with contact fields and metadata variables
+      for (const contact of contactsToProcess) {
+        const metadata = contact.metadata;
         let personalizedMessage = campaign.message
           .replace(/\{\{name\}\}/g, contact.name || "")
           .replace(/\{\{phone\}\}/g, contact.phone)
           .replace(/\{\{email\}\}/g, contact.email || "");
 
-        const metadata = (contact.metadata as Record<string, string>) || {};
         for (const [key, value] of Object.entries(metadata)) {
           personalizedMessage = personalizedMessage.replace(
             new RegExp(`\\{\\{${key}\\}\\}`, "g"),
@@ -134,7 +164,7 @@ export function startCampaignWorker() {
           .insert(messages)
           .values({
             userId,
-            contactId: contact.id,
+            contactId: contact.id!,
             campaignId,
             phone: contact.phone,
             content: personalizedMessage,
@@ -164,7 +194,7 @@ export function startCampaignWorker() {
       }
 
       logger.info(
-        { campaignId, totalContacts: filteredContacts.length },
+        { campaignId, totalContacts: contactsToProcess.length },
         "Campaign messages queued"
       );
     },

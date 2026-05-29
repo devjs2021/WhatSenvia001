@@ -1,6 +1,6 @@
 import { FastifyRequest, FastifyReply } from "fastify";
 import { CampaignService } from "../services/campaign.service.js";
-import { createCampaignSchema, updateCampaignSchema, queryCampaignsSchema } from "../schemas/campaign.schema.js";
+import { createCampaignSchema, updateCampaignSchema, queryCampaignsSchema, createUnifiedCampaignSchema } from "../schemas/campaign.schema.js";
 import { success, error, paginated } from "../../../shared/utils/api-response.js";
 
 const campaignService = new CampaignService();
@@ -70,4 +70,33 @@ export async function getCampaignStats(request: FastifyRequest<{ Params: { id: s
   const stats = await campaignService.getStats(userId, request.params.id);
   if (!stats) return error(reply, "Campaign not found", 404);
   return success(reply, stats);
+}
+
+export async function createUnifiedCampaign(request: FastifyRequest, reply: FastifyReply) {
+  const parsed = createUnifiedCampaignSchema.safeParse(request.body);
+  if (!parsed.success) return error(reply, parsed.error.errors[0].message, 422);
+
+  try {
+    const userId = (request as any).user.id;
+    const result = await campaignService.createUnified(userId, parsed.data);
+    return success(reply, result, 201);
+  } catch (err: any) {
+    return error(reply, err.message);
+  }
+}
+
+export async function listUnifiedCampaigns(request: FastifyRequest, reply: FastifyReply) {
+  const userId = (request as any).user.id;
+  const data = await campaignService.listUnified(userId);
+  return success(reply, data);
+}
+
+export async function sendApprovedCampaign(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
+  try {
+    const userId = (request as any).user.id;
+    const result = await campaignService.sendApproved(userId, request.params.id);
+    return success(reply, result);
+  } catch (err: any) {
+    return error(reply, err.message);
+  }
 }

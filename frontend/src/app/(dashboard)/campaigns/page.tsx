@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { useI18n } from "@/i18n";
@@ -23,6 +23,7 @@ import {
   Shield,
   Radio,
   CalendarClock,
+  Braces,
 } from "lucide-react";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { DashboardCard, DashboardCardHeader, DashboardCardTitle, DashboardCardDescription } from "@/components/ui/dashboard-card";
@@ -31,6 +32,7 @@ import CampaignMonitorTab from "./campaign-monitor-tab";
 import ScheduledTab from "./scheduled-tab";
 import TemplatesTab from "./templates-tab";
 import MetaTemplatesTab from "./meta-templates-tab";
+import UnifiedMetaTab from "./unified-meta-tab";
 
 interface Template {
   id: string;
@@ -63,10 +65,11 @@ type SendMode = "manual" | "lists";
 type ContentType = "text" | "poll";
 type SpeedPreset = "slow" | "normal" | "fast" | "turbo";
 
-type CampaignTab = "campaigns" | "control" | "monitor" | "scheduled" | "templates" | "meta-templates";
+type CampaignTab = "campaigns" | "unified-meta" | "control" | "monitor" | "scheduled" | "templates" | "meta-templates";
 
 const tabConfig: Record<CampaignTab, { label: string; icon: any }> = {
   campaigns: { label: "Campanas", icon: Send },
+  "unified-meta": { label: "Campanas Meta", icon: Zap },
   control: { label: "Control", icon: Shield },
   monitor: { label: "Monitor", icon: Radio },
   scheduled: { label: "Programados", icon: CalendarClock },
@@ -99,6 +102,9 @@ export default function CampaignsPage() {
   const [pollOptions, setPollOptions] = useState(["", ""]);
   const [pollMultiSelect, setPollMultiSelect] = useState(false);
   const [showExcelImport, setShowExcelImport] = useState(false);
+  const [showVarMenu, setShowVarMenu] = useState(false);
+  const [customVarName, setCustomVarName] = useState("");
+  const messageRef = useRef<HTMLTextAreaElement>(null);
 
   const { data: sessionsData } = useQuery({
     queryKey: ["sessions"],
@@ -119,6 +125,10 @@ export default function CampaignsPage() {
   const { data: contactListsData } = useQuery({
     queryKey: ["contact-lists"],
     queryFn: () => api.get<{ success: boolean; data: ContactList[] }>("/contact-lists"),
+  });
+  const { data: metadataKeysData } = useQuery({
+    queryKey: ["contact-metadata-keys"],
+    queryFn: () => api.get<ApiResponse<string[]>>("/contacts/metadata-keys"),
   });
 
   const sessions = sessionsData?.data || [];
@@ -286,10 +296,12 @@ export default function CampaignsPage() {
     }
   }
 
+  const metadataKeys = metadataKeysData?.data || [];
   const contactFieldOptions = [
     { value: "name", label: t('campaigns.fieldName') },
     { value: "phone", label: t('campaigns.fieldPhone') },
     { value: "email", label: t('campaigns.fieldEmail') },
+    ...metadataKeys.map((key) => ({ value: key, label: `📊 ${key}` })),
   ];
 
   const [uploading, setUploading] = useState(false);
@@ -317,6 +329,27 @@ export default function CampaignsPage() {
     } finally {
       setUploading(false);
     }
+  }
+
+  function insertVariable(varName: string) {
+    const tag = `{{${varName}}}`;
+    const textarea = messageRef.current;
+    if (textarea) {
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const before = message.slice(0, start);
+      const after = message.slice(end);
+      setMessage(before + tag + after);
+      setTimeout(() => {
+        textarea.focus();
+        const pos = start + tag.length;
+        textarea.setSelectionRange(pos, pos);
+      }, 0);
+    } else {
+      setMessage((m) => m + tag);
+    }
+    setShowVarMenu(false);
+    setCustomVarName("");
   }
 
   function handleSend() {
@@ -720,6 +753,58 @@ export default function CampaignsPage() {
                         {btn.label}
                       </button>
                     ))}
+                    <div className="h-4 w-px bg-slate-200 mx-1" />
+                    <div className="relative">
+                      <button
+                        title={t('campaigns.insertVariable')}
+                        onClick={() => setShowVarMenu(!showVarMenu)}
+                        className="h-7 px-2 rounded-lg flex items-center gap-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors text-xs font-medium"
+                      >
+                        <Braces className="h-3.5 w-3.5" />
+                        <span className="hidden sm:inline">{t('campaigns.variable')}</span>
+                      </button>
+                      {showVarMenu && (
+                        <>
+                          <div className="fixed inset-0 z-10" onClick={() => { setShowVarMenu(false); setCustomVarName(""); }} />
+                          <div className="absolute left-0 top-full mt-1 w-56 bg-white rounded-xl border border-slate-200 shadow-lg py-1 z-20">
+                            <p className="px-3 py-1.5 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">{t('campaigns.defaultVars')}</p>
+                            {[
+                              { key: "name", label: t('campaigns.fieldName'), example: "Juan" },
+                              { key: "phone", label: t('campaigns.fieldPhone'), example: "573001234567" },
+                              { key: "email", label: t('campaigns.fieldEmail'), example: "j@mail.com" },
+                            ].map((v) => (
+                              <button
+                                key={v.key}
+                                onClick={() => insertVariable(v.key)}
+                                className="w-full text-left px-3 py-2 hover:bg-slate-50 flex items-center justify-between transition-colors"
+                              >
+                                <span className="text-sm text-slate-700 font-mono">{`{{${v.key}}}`}</span>
+                                <span className="text-[10px] text-slate-400">{v.example}</span>
+                              </button>
+                            ))}
+                            <div className="border-t border-slate-100 mt-1 pt-1">
+                              <p className="px-3 py-1.5 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">{t('campaigns.customVar')}</p>
+                              <div className="px-3 pb-2 flex gap-1.5">
+                                <input
+                                  placeholder={t('campaigns.customVarPlaceholder')}
+                                  value={customVarName}
+                                  onChange={(e) => setCustomVarName(e.target.value.replace(/[^a-zA-Z0-9_]/g, ""))}
+                                  onKeyDown={(e) => { if (e.key === "Enter" && customVarName.trim()) insertVariable(customVarName.trim()); }}
+                                  className="flex-1 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-blue-500/30"
+                                />
+                                <button
+                                  onClick={() => customVarName.trim() && insertVariable(customVarName.trim())}
+                                  disabled={!customVarName.trim()}
+                                  className="px-2 py-1.5 rounded-lg bg-blue-50 text-blue-600 text-xs font-medium hover:bg-blue-100 transition-colors disabled:opacity-40"
+                                >
+                                  <Plus className="h-3.5 w-3.5" />
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </>
+                      )}
+                    </div>
                     {message && (
                       <div className="ml-auto flex gap-1 flex-wrap">
                         {message.match(/\{\{(\w+)\}\}/g)?.map((v, i) => (
@@ -730,6 +815,7 @@ export default function CampaignsPage() {
                   </div>
 
                   <textarea
+                    ref={messageRef}
                     placeholder={t('campaigns.writeMessage')}
                     rows={9}
                     value={message}
@@ -841,6 +927,7 @@ export default function CampaignsPage() {
         </>
       )}
 
+      {activeTab === "unified-meta" && <UnifiedMetaTab />}
       {activeTab === "control" && <CampaignControlTab />}
       {activeTab === "monitor" && <CampaignMonitorTab />}
       {activeTab === "scheduled" && <ScheduledTab />}

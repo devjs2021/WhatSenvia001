@@ -1,9 +1,11 @@
 import { db } from "../../../config/database.js";
 import { campaigns } from "../../../infrastructure/database/schema/campaigns.js";
+import { metaTemplates } from "../../../infrastructure/database/schema/meta-templates.js";
 import { messages } from "../../../infrastructure/database/schema/messages.js";
-import { eq, and, count, desc } from "drizzle-orm";
+import { eq, and, count, desc, getTableColumns } from "drizzle-orm";
 import { campaignQueue } from "../../../infrastructure/queue/campaign.queue.js";
-import type { CreateCampaignInput, UpdateCampaignInput } from "../schemas/campaign.schema.js";
+import { MetaTemplateService } from "../../meta-templates/services/meta-template.service.js";
+import type { CreateCampaignInput, UpdateCampaignInput, CreateUnifiedCampaignInput } from "../schemas/campaign.schema.js";
 
 export class CampaignService {
   async list(userId: string, page: number, limit: number, status?: string) {
@@ -107,6 +109,88 @@ export class CampaignService {
       .returning();
 
     return campaign || null;
+  }
+
+  async createUnified(userId: string, input: CreateUnifiedCampaignInput) {
+    const metaTemplateService = new MetaTemplateService();
+    const { template } = await metaTemplateService.createTemplate(userId, input.sessionId, {
+      name: input.templateName,
+      category: input.templateCategory,
+      language: input.templateLanguage,
+      components: input.templateComponents,
+    });
+
+    const [campaign] = await db
+      .insert(campaigns)
+      .values({
+        userId,
+        sessionId: input.sessionId,
+        name: input.name,
+        message: `[Template: ${input.templateName}]`,
+        status: "pending_approval",
+        isTemplateCampaign: true,
+        metaTemplateId: template.id,
+        templateParams: input.templateParams || {},
+        templateName: input.templateName,
+        contacts: input.contacts,
+        totalContacts: input.contacts.length,
+        messagesPerMinute: input.messagesPerMinute,
+      })
+      .returning();
+
+    return { campaign, template };
+  }
+
+  async sendApproved(userId: string, campaignId: string) {
+    const campaign = await this.getById(userId, campaignId);
+    if (!campaign) throw new Error("Campaign not found");
+    if (campaign.status !== "pending_approval") throw new Error("Campaign is not pending approval");
+    if (!campaign.metaTemplateId) throw new Error("Campaign has no template");
+    if (!campaign.sessionId) throw new Error("No session assigned");
+
+    const [template] = await db
+      .select()
+      .from(metaTemplates)
+      .where(eq(metaTemplates.id, campaign.metaTemplateId))
+      .limit(1);
+
+    if (!template || template.status !== "APPROVED") {
+      throw new Error("Template is not yet approved by Meta");
+    }
+
+    await campaignQueue.add(`campaign-${campaignId}`, {
+      campaignId,
+      userId,
+      sessionId: campaign.sessionId,
+      messagesPerMinute: campaign.messagesPerMinute,
+    });
+
+    await db
+      .update(campaigns)
+      .set({ status: "scheduled", updatedAt: new Date() })
+      .where(eq(campaigns.id, campaignId));
+
+    return { status: "scheduled" };
+  }
+
+  async listUnified(userId: string) {
+    const result = await db
+      .select({
+        ...getTableColumns(campaigns),
+        templateStatus: metaTemplates.status,
+        templateComponents: metaTemplates.components,
+      })
+      .from(campaigns)
+      .leftJoin(metaTemplates, eq(campaigns.metaTemplateId, metaTemplates.id))
+      .where(
+        and(
+          eq(campaigns.userId, userId),
+          eq(campaigns.isTemplateCampaign, true),
+        )
+      )
+      .orderBy(desc(campaigns.createdAt));
+
+    return result;
   }
 
   async getStats(userId: string, campaignId: string) {

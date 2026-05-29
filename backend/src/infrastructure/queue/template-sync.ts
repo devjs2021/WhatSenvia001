@@ -2,6 +2,7 @@ import { logger } from "../../config/logger.js";
 import { db } from "../../config/database.js";
 import { whatsappSessions } from "../database/schema/whatsapp-sessions.js";
 import { metaTemplates } from "../database/schema/meta-templates.js";
+import { campaigns } from "../database/schema/campaigns.js";
 import { decrypt } from "../security/encryption.service.js";
 import { eq, and } from "drizzle-orm";
 
@@ -73,6 +74,29 @@ async function syncAllMetaTemplates() {
                 updatedAt: new Date(),
               })
               .where(eq(metaTemplates.id, existing.id));
+
+            if (tpl.status === "REJECTED") {
+              const pendingCampaigns = await db
+                .select({ id: campaigns.id })
+                .from(campaigns)
+                .where(
+                  and(
+                    eq(campaigns.metaTemplateId, existing.id),
+                    eq(campaigns.status, "pending_approval" as any),
+                  )
+                );
+              for (const pc of pendingCampaigns) {
+                await db
+                  .update(campaigns)
+                  .set({
+                    status: "rejected",
+                    rejectionReason: "Template rechazado por Meta",
+                    updatedAt: new Date(),
+                  })
+                  .where(eq(campaigns.id, pc.id));
+                logger.info({ campaignId: pc.id }, "Campaign rejected due to template rejection");
+              }
+            }
           } else {
             await db.insert(metaTemplates).values({
               userId: session.userId,

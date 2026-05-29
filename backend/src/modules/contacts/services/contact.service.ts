@@ -133,4 +133,22 @@ export class ContactService {
     }
     return Array.from(tagSet).sort();
   }
+
+  async getMetadataKeys(userId: string): Promise<string[]> {
+    const result = await db
+      .select({ metadata: contacts.metadata })
+      .from(contacts)
+      .where(eq(contacts.userId, userId));
+
+    const keySet = new Set<string>();
+    for (const row of result) {
+      const meta = row.metadata as Record<string, string> | null;
+      if (meta) {
+        for (const key of Object.keys(meta)) {
+          keySet.add(key);
+        }
+      }
+    }
+    return Array.from(keySet).sort();
+  }
 }

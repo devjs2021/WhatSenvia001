@@ -3,7 +3,7 @@ import { users } from "./users";
 import { whatsappSessions } from "./whatsapp-sessions";
 import { metaTemplates } from "./meta-templates";
 
-export const campaignStatusEnum = ["draft", "scheduled", "running", "paused", "completed", "failed"] as const;
+export const campaignStatusEnum = ["draft", "scheduled", "running", "paused", "completed", "failed", "pending_approval", "rejected"] as const;
 export type CampaignStatus = (typeof campaignStatusEnum)[number];
 
 export const campaigns = pgTable(
@@ -27,6 +27,9 @@ export const campaigns = pgTable(
     isTemplateCampaign: boolean("is_template_campaign").default(false).notNull(),
     metaTemplateId: uuid("meta_template_id").references(() => metaTemplates.id, { onDelete: "set null" }),
     templateParams: jsonb("template_params").$type<Record<string, string[]>>(),
+    templateName: varchar("template_name", { length: 255 }),
+    contacts: jsonb("contacts").$type<Array<Record<string, string>>>(),
+    rejectionReason: text("rejection_reason"),
     scheduledAt: timestamp("scheduled_at"),
     startedAt: timestamp("started_at"),
     completedAt: timestamp("completed_at"),

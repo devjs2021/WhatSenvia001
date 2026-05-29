@@ -221,6 +221,9 @@ async function bootstrap() {
     await db.execute(sql`ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS is_template_campaign BOOLEAN DEFAULT FALSE`);
     await db.execute(sql`ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS meta_template_id UUID REFERENCES meta_templates(id) ON DELETE SET NULL`);
     await db.execute(sql`ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS template_params JSONB`);
+    await db.execute(sql`ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS template_name VARCHAR(255)`);
+    await db.execute(sql`ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS contacts JSONB`);
+    await db.execute(sql`ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS rejection_reason TEXT`);
   } catch (err: any) {
     app.log.warn({ error: err.message }, "Meta templates table setup warning");
   }

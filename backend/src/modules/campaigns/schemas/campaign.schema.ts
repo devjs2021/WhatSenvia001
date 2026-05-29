@@ -23,5 +23,18 @@ export const queryCampaignsSchema = z.object({
   status: z.string().optional(),
 });
 
+export const createUnifiedCampaignSchema = z.object({
+  sessionId: z.string().uuid(),
+  name: z.string().min(1),
+  contacts: z.array(z.record(z.string())).min(1, "At least one contact is required"),
+  templateName: z.string().min(1).regex(/^[a-z0-9_]+$/, "Only lowercase letters, numbers, underscores"),
+  templateCategory: z.enum(["MARKETING", "UTILITY", "AUTHENTICATION"]),
+  templateLanguage: z.string().min(1),
+  templateComponents: z.array(z.any()).min(1),
+  templateParams: z.record(z.array(z.string())).optional(),
+  messagesPerMinute: z.number().int().min(1).max(30).optional().default(8),
+});
+
 export type CreateCampaignInput = z.infer<typeof createCampaignSchema>;
 export type UpdateCampaignInput = z.infer<typeof updateCampaignSchema>;
+export type CreateUnifiedCampaignInput = z.infer<typeof createUnifiedCampaignSchema>;
