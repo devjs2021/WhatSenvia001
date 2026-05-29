@@ -539,6 +539,16 @@
     "campaignNamePlaceholder": "E.g. May 2026 Promo",
     "uploadExcelFirst": "Upload Excel first to insert variables",
     "uploadFile": "Upload file",
-    "fileUploaded": "File uploaded successfully"
+    "fileUploaded": "File uploaded successfully",
+    "verifyQuestion": "You have WhatsApp connected. Do you want to verify that numbers are active?",
+    "verifyHint": "Filter invalid numbers before sending using your WhatsApp session",
+    "verifyYes": "Verify",
+    "verifyNo": "No",
+    "verifying": "Verifying numbers...",
+    "validNumbers": "valid",
+    "invalidNumbers": "invalid",
+    "saveListQuestion": "Do you want to save the filtered list to Contacts?",
+    "saveListPlaceholder": "List name",
+    "listSaved": "List saved to Contacts"
   }
 }

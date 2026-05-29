@@ -101,10 +101,19 @@ export default function UnifiedMetaTab() {
     refetchInterval: 30000,
   });
 
-  const metaSessions = (sessionsData?.data || []).filter(
-    (s) => s.connectionType === "meta_cloud"
-  );
+  const allSessions = sessionsData?.data || [];
+  const metaSessions = allSessions.filter((s) => s.connectionType === "meta_cloud");
+  const baileysSessions = allSessions.filter((s) => s.connectionType !== "meta_cloud" && s.status === "connected");
+  const hasBaileys = baileysSessions.length > 0;
   const campaigns = campaignsData?.data || [];
+
+  // Verification state
+  const [showVerifyPrompt, setShowVerifyPrompt] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+  const [verifyProgress, setVerifyProgress] = useState({ checked: 0, total: 0 });
+  const [verifyResult, setVerifyResult] = useState<{ valid: string[]; invalid: string[] } | null>(null);
+  const [showSaveListPrompt, setShowSaveListPrompt] = useState(false);
+  const [saveListName, setSaveListName] = useState("");
 
   // Excel upload
   async function handleExcelUpload(file: File) {
@@ -121,11 +130,82 @@ export default function UnifiedMetaTab() {
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Error al parsear Excel");
       setParsedExcel(json.data);
+      setVerifyResult(null);
       toast.success(`${json.data.totalRows} ${t("unifiedCampaign.contactsLoaded")}`);
+      if (hasBaileys) {
+        setShowVerifyPrompt(true);
+      }
     } catch (err: any) {
       toast.error(err.message);
     } finally {
       setUploading(false);
+    }
+  }
+
+  // Verify numbers via Baileys
+  async function handleVerifyNumbers() {
+    if (!parsedExcel || baileysSessions.length === 0) return;
+    setVerifying(true);
+    setShowVerifyPrompt(false);
+    const baileysSessionId = baileysSessions[0].id;
+    const phones = parsedExcel.rows.map((r) => r.phone).filter(Boolean);
+    setVerifyProgress({ checked: 0, total: phones.length });
+
+    try {
+      const batchSize = 50;
+      const valid: string[] = [];
+      const invalid: string[] = [];
+
+      for (let i = 0; i < phones.length; i += batchSize) {
+        const batch = phones.slice(i, i + batchSize);
+        const res = await api.post<Array<{ phone: string; exists: boolean }>>(
+          `/whatsapp/sessions/${baileysSessionId}/check-numbers`,
+          { phones: batch }
+        );
+        for (const r of res) {
+          if (r.exists) valid.push(r.phone);
+          else invalid.push(r.phone);
+        }
+        setVerifyProgress({ checked: Math.min(i + batchSize, phones.length), total: phones.length });
+      }
+
+      setVerifyResult({ valid, invalid });
+
+      // Filter parsedExcel to only valid numbers
+      const validSet = new Set(valid);
+      setParsedExcel({
+        ...parsedExcel,
+        rows: parsedExcel.rows.filter((r) => validSet.has(r.phone)),
+        totalRows: valid.length,
+      });
+
+      toast.success(`${valid.length} ${t("unifiedCampaign.validNumbers")} · ${invalid.length} ${t("unifiedCampaign.invalidNumbers")}`);
+      setShowSaveListPrompt(true);
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setVerifying(false);
+    }
+  }
+
+  // Save verified list as contact list
+  async function handleSaveFilteredList() {
+    if (!parsedExcel || !saveListName.trim()) return;
+    try {
+      const phones = parsedExcel.rows.map((r) => ({
+        phone: r.phone,
+        name: r[parsedExcel.columns.find((c) => /^(name|nombre)$/i.test(c)) || ""] || undefined,
+      }));
+      await api.post("/contact-lists", {
+        name: saveListName.trim(),
+        description: `Lista verificada - ${parsedExcel.totalRows} números válidos`,
+        phones,
+      });
+      toast.success(t("unifiedCampaign.listSaved"));
+      setShowSaveListPrompt(false);
+      setSaveListName("");
+    } catch (err: any) {
+      toast.error(err.message);
     }
   }
 
@@ -385,12 +465,94 @@ export default function UnifiedMetaTab() {
                       </div>
                     </div>
                     <button
-                      onClick={() => setParsedExcel(null)}
+                      onClick={() => { setParsedExcel(null); setVerifyResult(null); setShowVerifyPrompt(false); setShowSaveListPrompt(false); }}
                       className="h-8 w-8 rounded-xl flex items-center justify-center hover:bg-emerald-100 text-emerald-400 hover:text-emerald-600 transition-colors"
                     >
                       <X className="h-4 w-4" />
                     </button>
                   </div>
+
+                  {/* Verify prompt */}
+                  {showVerifyPrompt && !verifying && !verifyResult && (
+                    <div className="mt-3 flex items-center gap-3 bg-blue-50 border border-blue-200 rounded-xl p-3">
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-blue-800">{t("unifiedCampaign.verifyQuestion")}</p>
+                        <p className="text-xs text-blue-600 mt-0.5">{t("unifiedCampaign.verifyHint")}</p>
+                      </div>
+                      <button
+                        onClick={handleVerifyNumbers}
+                        className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium transition-colors shrink-0"
+                      >
+                        {t("unifiedCampaign.verifyYes")}
+                      </button>
+                      <button
+                        onClick={() => setShowVerifyPrompt(false)}
+                        className="px-3 py-2 rounded-xl text-sm text-blue-500 hover:bg-blue-100 transition-colors shrink-0"
+                      >
+                        {t("unifiedCampaign.verifyNo")}
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Verify progress */}
+                  {verifying && (
+                    <div className="mt-3 bg-blue-50 border border-blue-200 rounded-xl p-3">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+                        <span className="text-sm font-medium text-blue-800">
+                          {t("unifiedCampaign.verifying")} {verifyProgress.checked}/{verifyProgress.total}
+                        </span>
+                      </div>
+                      <div className="h-2 w-full bg-blue-100 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-blue-500 rounded-full transition-all duration-300"
+                          style={{ width: `${verifyProgress.total > 0 ? (verifyProgress.checked / verifyProgress.total) * 100 : 0}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Verify results */}
+                  {verifyResult && (
+                    <div className="mt-3 flex items-center gap-4 text-sm">
+                      <span className="flex items-center gap-1.5 text-green-700 bg-green-50 px-3 py-1.5 rounded-lg">
+                        <CheckCircle className="h-4 w-4" />
+                        {verifyResult.valid.length} {t("unifiedCampaign.validNumbers")}
+                      </span>
+                      <span className="flex items-center gap-1.5 text-red-600 bg-red-50 px-3 py-1.5 rounded-lg">
+                        <XCircle className="h-4 w-4" />
+                        {verifyResult.invalid.length} {t("unifiedCampaign.invalidNumbers")}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Save list prompt */}
+                  {showSaveListPrompt && verifyResult && (
+                    <div className="mt-3 bg-amber-50 border border-amber-200 rounded-xl p-3">
+                      <p className="text-sm font-medium text-amber-800 mb-2">{t("unifiedCampaign.saveListQuestion")}</p>
+                      <div className="flex gap-2">
+                        <input
+                          placeholder={t("unifiedCampaign.saveListPlaceholder")}
+                          value={saveListName}
+                          onChange={(e) => setSaveListName(e.target.value)}
+                          className="flex-1 bg-white border border-amber-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/30"
+                        />
+                        <button
+                          onClick={handleSaveFilteredList}
+                          disabled={!saveListName.trim()}
+                          className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-sm font-medium transition-colors disabled:opacity-40 shrink-0"
+                        >
+                          {t("common.save")}
+                        </button>
+                        <button
+                          onClick={() => setShowSaveListPrompt(false)}
+                          className="px-3 py-2 rounded-xl text-sm text-amber-500 hover:bg-amber-100 transition-colors shrink-0"
+                        >
+                          {t("unifiedCampaign.verifyNo")}
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
