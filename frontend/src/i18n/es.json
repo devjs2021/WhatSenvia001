@@ -536,6 +536,7 @@
     "contacts": "contactos",
     "template": "Plantilla",
     "campaignName": "Nombre de la campana",
-    "campaignNamePlaceholder": "Ej: Promo Mayo 2026"
+    "campaignNamePlaceholder": "Ej: Promo Mayo 2026",
+    "uploadExcelFirst": "Sube el Excel primero para insertar variables"
   }
 }

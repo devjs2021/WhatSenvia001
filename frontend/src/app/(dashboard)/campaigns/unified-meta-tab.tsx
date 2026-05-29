@@ -23,6 +23,10 @@ import {
   Pencil,
   Eye,
   Braces,
+  Type,
+  Image,
+  Video,
+  File,
 } from "lucide-react";
 import {
   DashboardCard,
@@ -75,6 +79,9 @@ export default function UnifiedMetaTab() {
   const [templateName, setTemplateName] = useState("");
   const [templateCategory, setTemplateCategory] = useState<string>("MARKETING");
   const [templateLanguage, setTemplateLanguage] = useState("es");
+  const [headerFormat, setHeaderFormat] = useState<"NONE" | "TEXT" | "IMAGE" | "VIDEO" | "DOCUMENT">("NONE");
+  const [headerText, setHeaderText] = useState("");
+  const [headerMediaUrl, setHeaderMediaUrl] = useState("");
   const [bodyText, setBodyText] = useState("");
   const [footerText, setFooterText] = useState("");
   const [paramMapping, setParamMapping] = useState<Record<string, string[]>>({});
@@ -120,6 +127,12 @@ export default function UnifiedMetaTab() {
     }
   }
 
+  // Available variables = Excel columns minus phone column
+  const availableVarColumns = parsedExcel
+    ? parsedExcel.columns.filter((col) => col !== parsedExcel.phoneColumn)
+    : [];
+  const maxVariables = availableVarColumns.length;
+
   // Detect body params
   const bodyParams = bodyText.match(/\{\{\d+\}\}/g) || [];
 
@@ -131,11 +144,11 @@ export default function UnifiedMetaTab() {
         const body = prev.body || [];
         const newBody = Array(count)
           .fill("")
-          .map((_, i) => body[i] || "name");
+          .map((_, i) => body[i] || availableVarColumns[i] || availableVarColumns[0] || "name");
         return { ...prev, body: newBody };
       });
     }
-  }, [bodyParams.length]);
+  }, [bodyParams.length, availableVarColumns]);
 
   // Create mutation
   const createMutation = useMutation({
@@ -143,6 +156,13 @@ export default function UnifiedMetaTab() {
       if (!parsedExcel) throw new Error("No contacts loaded");
 
       const components: any[] = [];
+
+      if (headerFormat === "TEXT" && headerText.trim()) {
+        components.push({ type: "HEADER", format: "TEXT", text: headerText.trim() });
+      } else if (headerFormat !== "NONE" && headerMediaUrl.trim()) {
+        components.push({ type: "HEADER", format: headerFormat, example: { header_handle: [headerMediaUrl.trim()] } });
+      }
+
       components.push({ type: "BODY", text: bodyText.trim() });
       if (footerText.trim()) {
         components.push({ type: "FOOTER", text: footerText.trim() });
@@ -196,6 +216,9 @@ export default function UnifiedMetaTab() {
     setTemplateName("");
     setTemplateCategory("MARKETING");
     setTemplateLanguage("es");
+    setHeaderFormat("NONE");
+    setHeaderText("");
+    setHeaderMediaUrl("");
     setBodyText("");
     setFooterText("");
     setParamMapping({});
@@ -392,24 +415,88 @@ export default function UnifiedMetaTab() {
               </div>
             </div>
 
-            {/* Row 4: Message body */}
+            {/* Header (optional) */}
+            <div>
+              <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5 block">
+                Header <span className="font-normal lowercase">({t("metaTemplates.optional")})</span>
+              </label>
+              <div className="flex gap-2 mb-2 flex-wrap">
+                {(["NONE", "TEXT", "IMAGE", "VIDEO", "DOCUMENT"] as const).map((fmt) => {
+                  const icons: Record<string, typeof Type> = { TEXT: Type, IMAGE: Image, VIDEO: Video, DOCUMENT: File };
+                  const FmtIcon = icons[fmt];
+                  return (
+                    <button
+                      key={fmt}
+                      type="button"
+                      onClick={() => { setHeaderFormat(fmt); setHeaderText(""); setHeaderMediaUrl(""); }}
+                      className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all border ${
+                        headerFormat === fmt
+                          ? "bg-emerald-600 text-white border-emerald-600"
+                          : "bg-white text-slate-500 border-slate-200 hover:bg-slate-50"
+                      }`}
+                    >
+                      {FmtIcon && <FmtIcon className="h-3 w-3" />}
+                      {fmt === "NONE" ? t("metaTemplates.headerNone") : fmt}
+                    </button>
+                  );
+                })}
+              </div>
+              {headerFormat === "TEXT" && (
+                <input
+                  placeholder={t("metaTemplates.headerPlaceholder")}
+                  value={headerText}
+                  onChange={(e) => setHeaderText(e.target.value)}
+                  maxLength={60}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+                />
+              )}
+              {(headerFormat === "IMAGE" || headerFormat === "VIDEO" || headerFormat === "DOCUMENT") && (
+                <div>
+                  <div className="flex items-center gap-1.5">
+                    {headerFormat === "IMAGE" && <Image className="h-3.5 w-3.5 text-slate-400 shrink-0" />}
+                    {headerFormat === "VIDEO" && <Video className="h-3.5 w-3.5 text-slate-400 shrink-0" />}
+                    {headerFormat === "DOCUMENT" && <File className="h-3.5 w-3.5 text-slate-400 shrink-0" />}
+                    <input
+                      placeholder={t("metaTemplates.mediaUrlPlaceholder")}
+                      value={headerMediaUrl}
+                      onChange={(e) => setHeaderMediaUrl(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+                    />
+                  </div>
+                  <p className="text-[10px] text-slate-400 mt-0.5">{t("metaTemplates.mediaUrlHint")}</p>
+                </div>
+              )}
+            </div>
+
+            {/* Body (required) */}
             <div>
               <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5 block">
                 Body <span className="text-red-500">*</span>
               </label>
-              <div className="flex items-center gap-1 mb-2">
+              <div className="flex items-center gap-1 mb-2 flex-wrap">
                 <button
                   type="button"
+                  disabled={!parsedExcel || bodyParams.length >= maxVariables}
                   onClick={() => {
                     const nextNum = bodyParams.length + 1;
                     setBodyText((b) => b + `{{${nextNum}}}`);
                     setTimeout(updateParamMapping, 0);
                   }}
-                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 transition-colors"
+                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   <Braces className="h-3.5 w-3.5" />
                   {t("campaigns.insertVariable")}
                 </button>
+                {parsedExcel && (
+                  <span className="text-[10px] text-slate-400 ml-1">
+                    {bodyParams.length}/{maxVariables}
+                  </span>
+                )}
+                {!parsedExcel && (
+                  <span className="text-[10px] text-amber-500 ml-1">
+                    {t("unifiedCampaign.uploadExcelFirst")}
+                  </span>
+                )}
                 {bodyParams.length > 0 && (
                   <div className="flex gap-1 flex-wrap ml-2">
                     {bodyParams.map((p, i) => (
@@ -446,7 +533,7 @@ export default function UnifiedMetaTab() {
               />
             </div>
 
-            {/* Row 5: Variable mapping */}
+            {/* Variable mapping — only shows Excel columns minus phone */}
             {bodyParams.length > 0 && parsedExcel && (
               <div>
                 <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5 block">
@@ -462,7 +549,7 @@ export default function UnifiedMetaTab() {
                       <span className="text-xs text-slate-400">→</span>
                       <div className="relative flex-1">
                         <select
-                          value={paramMapping.body?.[idx] || "name"}
+                          value={paramMapping.body?.[idx] || availableVarColumns[0] || ""}
                           onChange={(e) => {
                             const newMapping = { ...paramMapping };
                             const body = [...(newMapping.body || [])];
@@ -472,7 +559,7 @@ export default function UnifiedMetaTab() {
                           }}
                           className="appearance-none w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 cursor-pointer"
                         >
-                          {parsedExcel.columns.map((col) => (
+                          {availableVarColumns.map((col) => (
                             <option key={col} value={col}>{col}</option>
                           ))}
                         </select>
@@ -492,7 +579,32 @@ export default function UnifiedMetaTab() {
                 </label>
                 <div className="rounded-2xl border border-slate-200 bg-[#e5ddd5] p-4">
                   <div className="max-w-[320px] mx-auto rounded-lg bg-white overflow-hidden shadow-sm">
+                    {headerFormat === "IMAGE" && (
+                      <div className="bg-slate-100 flex items-center justify-center h-40">
+                        {headerMediaUrl ? (
+                          <img src={headerMediaUrl} alt="Header" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                        ) : (
+                          <Image className="h-10 w-10 text-slate-300" />
+                        )}
+                      </div>
+                    )}
+                    {headerFormat === "VIDEO" && (
+                      <div className="bg-slate-100 flex items-center justify-center h-40">
+                        <Video className="h-10 w-10 text-slate-300" />
+                      </div>
+                    )}
+                    {headerFormat === "DOCUMENT" && (
+                      <div className="bg-slate-100 flex items-center justify-center h-16">
+                        <div className="flex items-center gap-2 text-slate-400">
+                          <File className="h-6 w-6" />
+                          <span className="text-xs">document.pdf</span>
+                        </div>
+                      </div>
+                    )}
                     <div className="p-3 space-y-1.5">
+                      {headerFormat === "TEXT" && headerText && (
+                        <p className="text-sm font-semibold text-slate-800">{headerText}</p>
+                      )}
                       <p className="text-sm text-slate-700 whitespace-pre-wrap">{bodyText}</p>
                       {footerText && <p className="text-[11px] text-slate-400">{footerText}</p>}
                     </div>

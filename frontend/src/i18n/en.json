@@ -536,6 +536,7 @@
     "contacts": "contacts",
     "template": "Template",
     "campaignName": "Campaign name",
-    "campaignNamePlaceholder": "E.g. May 2026 Promo"
+    "campaignNamePlaceholder": "E.g. May 2026 Promo",
+    "uploadExcelFirst": "Upload Excel first to insert variables"
   }
 }
