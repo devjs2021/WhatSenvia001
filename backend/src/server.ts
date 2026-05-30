@@ -37,6 +37,7 @@ import { startCampaignWorker } from "./infrastructure/queue/campaign.queue.js";
 import { startScheduledChecker } from "./infrastructure/queue/scheduled-checker.js";
 import { startTemplateSyncJob } from "./infrastructure/queue/template-sync.js";
 import { startVerificationWorker } from "./infrastructure/queue/verification.queue.js";
+import { startLicenseExpiryChecker } from "./infrastructure/queue/license-expiry-checker.js";
 import { startTokenRefreshJob } from "./infrastructure/queue/token-refresh.js";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 import { seedTemplates } from "./modules/bot-builder/services/seed-templates.js";
@@ -305,6 +306,7 @@ async function bootstrap() {
   startScheduledChecker();
   startTemplateSyncJob();
   startVerificationWorker();
+  startLicenseExpiryChecker();
   startTokenRefreshJob();
   app.log.info("Queue workers started");
 

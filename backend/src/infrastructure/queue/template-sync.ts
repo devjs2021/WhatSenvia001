@@ -3,7 +3,9 @@ import { db } from "../../config/database.js";
 import { whatsappSessions } from "../database/schema/whatsapp-sessions.js";
 import { metaTemplates } from "../database/schema/meta-templates.js";
 import { campaigns } from "../database/schema/campaigns.js";
+import { users } from "../database/schema/users.js";
 import { decrypt } from "../security/encryption.service.js";
+import { sendTemplateStatusEmail } from "../email/email.service.js";
 import { eq, and } from "drizzle-orm";
 
 async function syncAllMetaTemplates() {
@@ -75,9 +77,9 @@ async function syncAllMetaTemplates() {
               })
               .where(eq(metaTemplates.id, existing.id));
 
-            if (tpl.status === "REJECTED") {
+            if (tpl.status === "APPROVED" || tpl.status === "REJECTED") {
               const pendingCampaigns = await db
-                .select({ id: campaigns.id })
+                .select({ id: campaigns.id, userId: campaigns.userId })
                 .from(campaigns)
                 .where(
                   and(
@@ -85,16 +87,24 @@ async function syncAllMetaTemplates() {
                     eq(campaigns.status, "pending_approval" as any),
                   )
                 );
+
               for (const pc of pendingCampaigns) {
-                await db
-                  .update(campaigns)
-                  .set({
-                    status: "rejected",
-                    rejectionReason: "Template rechazado por Meta",
-                    updatedAt: new Date(),
-                  })
-                  .where(eq(campaigns.id, pc.id));
-                logger.info({ campaignId: pc.id }, "Campaign rejected due to template rejection");
+                if (tpl.status === "REJECTED") {
+                  await db
+                    .update(campaigns)
+                    .set({ status: "rejected", rejectionReason: "Template rechazado por Meta", updatedAt: new Date() })
+                    .where(eq(campaigns.id, pc.id));
+                  logger.info({ campaignId: pc.id }, "Campaign rejected due to template rejection");
+                }
+
+                const [user] = await db.select({ email: users.email, name: users.name }).from(users).where(eq(users.id, pc.userId)).limit(1);
+                if (user) {
+                  sendTemplateStatusEmail(
+                    user.email, user.name, tpl.name,
+                    tpl.status as "APPROVED" | "REJECTED",
+                    tpl.status === "REJECTED" ? "Template rechazado por Meta" : undefined
+                  ).catch(() => {});
+                }
               }
             }
           } else {

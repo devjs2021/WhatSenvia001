@@ -7,6 +7,8 @@ import { campaigns } from "../database/schema/campaigns.js";
 import { getWhatsAppProvider } from "../whatsapp/whatsapp.factory.js";
 import { eq, sql } from "drizzle-orm";
 import { campaignBroadcast } from "../../modules/campaign-control/websocket/campaign-broadcast.js";
+import { sendCampaignCompletedEmail } from "../email/email.service.js";
+import { users } from "../database/schema/users.js";
 import { getCountryFromPhone, getConversationRate, getCategoryFromTemplate } from "../../modules/consumption/meta-pricing.js";
 import { whatsappSessions } from "../database/schema/whatsapp-sessions.js";
 
@@ -128,6 +130,7 @@ export function startMessageWorker() {
             const sent = updatedCampaign.sentCount ?? 0;
             const failed = updatedCampaign.failedCount ?? 0;
             const total = updatedCampaign.totalContacts ?? 0;
+            const pending = total - sent - failed;
             campaignBroadcast.broadcast(updatedCampaign.userId, "campaign_progress", {
               campaignId,
               phone,
@@ -135,8 +138,17 @@ export function startMessageWorker() {
               sent,
               failed,
               total,
-              pending: total - sent - failed,
+              pending,
             });
+
+            if (pending === 0) {
+              await db.update(campaigns).set({ status: "completed", completedAt: new Date() }).where(eq(campaigns.id, campaignId));
+              const [campaignRow] = await db.select({ name: campaigns.name }).from(campaigns).where(eq(campaigns.id, campaignId)).limit(1);
+              const [user] = await db.select({ email: users.email, name: users.name }).from(users).where(eq(users.id, updatedCampaign.userId)).limit(1);
+              if (user) {
+                sendCampaignCompletedEmail(user.email, user.name, campaignRow?.name || "Campaña", { sent, failed, total }).catch(() => {});
+              }
+            }
           }
         }
 

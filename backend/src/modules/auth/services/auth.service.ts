@@ -7,6 +7,7 @@ import { LICENSE_PLANS } from "../../../infrastructure/database/schema/licenses.
 import { refreshTokens } from "../../../infrastructure/database/schema/refresh-tokens.js";
 import { eq, and, lt } from "drizzle-orm";
 import { logger } from "../../../config/logger.js";
+import { sendWelcomeEmail } from "../../../infrastructure/email/email.service.js";
 import type { RegisterInput, LoginInput, GoogleAuthInput, ResetPasswordInput } from "../schemas/auth.schema.js";
 import { env } from "../../../config/env.js";
 import { sendPasswordResetCode } from "../../../infrastructure/email/email.service.js";
@@ -63,6 +64,8 @@ export class AuthService {
       features: preset.features,
       notes: "Auto-created demo license",
     });
+
+    sendWelcomeEmail(user.email, user.name).catch(() => {});
 
     return user;
   }
