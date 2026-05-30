@@ -132,133 +132,137 @@ export default function ChatLivePage() {
   }
 
   return (
-    <div className="space-y-2 md:space-y-3">
-      {/* Header */}
-      <DashboardHeader
-        title={
-          <div className="flex items-center gap-2">
-            <MessageSquare className="h-5 w-5" />
-            {t("chatLive.title")}
-          </div>
-        }
-        description={t("chatLive.description")}
-      >
-        {/* View toggle */}
-        <div className="flex gap-0.5 bg-slate-100 rounded-lg p-0.5">
-          <button
-            onClick={() => setViewMode("chat")}
-            className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
-              viewMode === "chat" ? "bg-white text-slate-800 shadow-sm" : "text-slate-400 hover:text-slate-600"
-            }`}
-          >
-            <LayoutList className="h-3.5 w-3.5" />
-            {t("chatLive.viewChat")}
-          </button>
-          <button
-            onClick={() => setViewMode("kanban")}
-            className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
-              viewMode === "kanban" ? "bg-white text-slate-800 shadow-sm" : "text-slate-400 hover:text-slate-600"
-            }`}
-          >
-            <Columns3 className="h-3.5 w-3.5" />
-            {t("chatLive.viewKanban")}
-          </button>
-        </div>
-      </DashboardHeader>
-
-      {/* Filter buttons */}
-      {sessions.length > 0 && (
-        <div className="flex gap-1.5 overflow-x-auto pb-1">
-          <button
-            onClick={() => { setFilterMode("all"); setSelectedContact(null); setActiveSessionId(""); }}
-            className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all border whitespace-nowrap ${
-              filterMode === "all" ? "bg-slate-900 border-slate-900 text-white" : "border-slate-200 text-slate-500 hover:bg-slate-50"
-            }`}
-          >
-            <MessageSquare className="h-3 w-3 inline mr-1" />
-            {t("chatLive.allChat")}
-          </button>
-          {metaSessions.map((s) => (
+    <div className="flex flex-col h-[calc(100vh-64px)]">
+      {/* Header - fixed */}
+      <div className="shrink-0 space-y-2 md:space-y-3 pb-2">
+        <DashboardHeader
+          title={
+            <div className="flex items-center gap-2">
+              <MessageSquare className="h-5 w-5" />
+              {t("chatLive.title")}
+            </div>
+          }
+          description={t("chatLive.description")}
+        >
+          {/* View toggle */}
+          <div className="flex gap-0.5 bg-slate-100 rounded-lg p-0.5">
             <button
-              key={s.id}
-              onClick={() => { setFilterMode(s.id); setSelectedContact(null); }}
-              className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all border whitespace-nowrap ${
-                filterMode === s.id ? "bg-blue-50 border-blue-500 text-blue-600" : "border-slate-200 text-slate-500 hover:bg-blue-50/50"
+              onClick={() => setViewMode("chat")}
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
+                viewMode === "chat" ? "bg-white text-slate-800 shadow-sm" : "text-slate-400 hover:text-slate-600"
               }`}
             >
-              <span className={`inline-block w-1.5 h-1.5 rounded-full mr-1 ${filterMode === s.id ? "bg-blue-500" : "bg-blue-400"}`} />
-              Meta {formatPhone(s)}
+              <LayoutList className="h-3.5 w-3.5" />
+              {t("chatLive.viewChat")}
             </button>
-          ))}
-          {baileysSessions.map((s) => (
             <button
-              key={s.id}
-              onClick={() => { setFilterMode(s.id); setSelectedContact(null); }}
-              className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all border whitespace-nowrap ${
-                filterMode === s.id ? "bg-emerald-50 border-emerald-500 text-emerald-600" : "border-slate-200 text-slate-500 hover:bg-emerald-50/50"
+              onClick={() => setViewMode("kanban")}
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
+                viewMode === "kanban" ? "bg-white text-slate-800 shadow-sm" : "text-slate-400 hover:text-slate-600"
               }`}
             >
-              <span className={`inline-block w-1.5 h-1.5 rounded-full mr-1 ${filterMode === s.id ? "bg-emerald-500" : "bg-emerald-400"}`} />
-              WhatsApp {formatPhone(s)}
+              <Columns3 className="h-3.5 w-3.5" />
+              {t("chatLive.viewKanban")}
             </button>
-          ))}
-        </div>
-      )}
-
-      {/* No sessions */}
-      {sessions.length === 0 ? (
-        <DashboardCard>
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <MessageSquare className="h-10 w-10 text-slate-300 mb-3" />
-            <h3 className="text-sm font-bold text-slate-900">{t("chatLive.noSessions")}</h3>
-            <p className="text-[11px] text-slate-400 mt-1">{t("chatLive.noSessionsDesc")}</p>
           </div>
-        </DashboardCard>
-      ) : viewMode === "kanban" ? (
-        <ChatKanbanView
-          contacts={contacts}
-          onSelectContact={handleSelectContact}
-          querySessionId={querySessionId}
-        />
-      ) : (
-        /* Chat view */
-        <div className="flex flex-col lg:flex-row gap-3 h-[calc(100vh-160px)] min-h-0">
-          {/* Contact list */}
-          <ChatContactList
+        </DashboardHeader>
+
+        {/* Filter buttons - fixed */}
+        {sessions.length > 0 && (
+          <div className="flex gap-1.5 overflow-x-auto pb-1">
+            <button
+              onClick={() => { setFilterMode("all"); setSelectedContact(null); setActiveSessionId(""); }}
+              className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all border whitespace-nowrap ${
+                filterMode === "all" ? "bg-slate-900 border-slate-900 text-white" : "border-slate-200 text-slate-500 hover:bg-slate-50"
+              }`}
+            >
+              <MessageSquare className="h-3 w-3 inline mr-1" />
+              {t("chatLive.allChat")}
+            </button>
+            {metaSessions.map((s) => (
+              <button
+                key={s.id}
+                onClick={() => { setFilterMode(s.id); setSelectedContact(null); }}
+                className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all border whitespace-nowrap ${
+                  filterMode === s.id ? "bg-blue-50 border-blue-500 text-blue-600" : "border-slate-200 text-slate-500 hover:bg-blue-50/50"
+                }`}
+              >
+                <span className={`inline-block w-1.5 h-1.5 rounded-full mr-1 ${filterMode === s.id ? "bg-blue-500" : "bg-blue-400"}`} />
+                Meta {formatPhone(s)}
+              </button>
+            ))}
+            {baileysSessions.map((s) => (
+              <button
+                key={s.id}
+                onClick={() => { setFilterMode(s.id); setSelectedContact(null); }}
+                className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all border whitespace-nowrap ${
+                  filterMode === s.id ? "bg-emerald-50 border-emerald-500 text-emerald-600" : "border-slate-200 text-slate-500 hover:bg-emerald-50/50"
+                }`}
+              >
+                <span className={`inline-block w-1.5 h-1.5 rounded-full mr-1 ${filterMode === s.id ? "bg-emerald-500" : "bg-emerald-400"}`} />
+                WhatsApp {formatPhone(s)}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Scrollable content area */}
+      <div className="flex-1 min-h-0">
+        {sessions.length === 0 ? (
+          <DashboardCard>
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <MessageSquare className="h-10 w-10 text-slate-300 mb-3" />
+              <h3 className="text-sm font-bold text-slate-900">{t("chatLive.noSessions")}</h3>
+              <p className="text-[11px] text-slate-400 mt-1">{t("chatLive.noSessionsDesc")}</p>
+            </div>
+          </DashboardCard>
+        ) : viewMode === "kanban" ? (
+          <ChatKanbanView
             contacts={contacts}
-            selectedPhone={selectedContact}
-            searchTerm={searchTerm}
-            onSearchChange={setSearchTerm}
-            onSelect={handleSelectContact}
-            hidden={!!selectedContact}
+            onSelectContact={handleSelectContact}
+            querySessionId={querySessionId}
           />
-
-          {/* Chat area */}
-          <ChatMessageArea
-            contact={selectedContactObj}
-            messages={messages}
-            messageText={messageText}
-            onMessageChange={setMessageText}
-            onSend={handleSend}
-            sending={sending}
-            attachedFile={attachedFile}
-            attachedPreview={attachedPreview}
-            onFileSelect={handleFileSelect}
-            onClearAttachment={clearAttachment}
-            onBack={() => setSelectedContact(null)}
-            onToggleCrm={() => setShowCrmPanel(!showCrmPanel)}
-          />
-
-          {/* CRM Panel */}
-          {selectedContactObj && showCrmPanel && (
-            <ChatCrmPanel
-              contact={selectedContactObj}
-              onClose={() => setShowCrmPanel(false)}
-              querySessionId={querySessionId}
+        ) : (
+          /* Chat view */
+          <div className="flex flex-col lg:flex-row gap-3 h-full min-h-0">
+            {/* Contact list */}
+            <ChatContactList
+              contacts={contacts}
+              selectedPhone={selectedContact}
+              searchTerm={searchTerm}
+              onSearchChange={setSearchTerm}
+              onSelect={handleSelectContact}
+              hidden={!!selectedContact}
             />
-          )}
-        </div>
-      )}
+
+            {/* Chat area */}
+            <ChatMessageArea
+              contact={selectedContactObj}
+              messages={messages}
+              messageText={messageText}
+              onMessageChange={setMessageText}
+              onSend={handleSend}
+              sending={sending}
+              attachedFile={attachedFile}
+              attachedPreview={attachedPreview}
+              onFileSelect={handleFileSelect}
+              onClearAttachment={clearAttachment}
+              onBack={() => setSelectedContact(null)}
+              onToggleCrm={() => setShowCrmPanel(!showCrmPanel)}
+            />
+
+            {/* CRM Panel */}
+            {selectedContactObj && showCrmPanel && (
+              <ChatCrmPanel
+                contact={selectedContactObj}
+                onClose={() => setShowCrmPanel(false)}
+                querySessionId={querySessionId}
+              />
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
