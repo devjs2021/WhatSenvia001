@@ -5,6 +5,7 @@ import type {
   WhatsAppConnectionEvents,
 } from "../interfaces/whatsapp-provider.interface.js";
 import { logger } from "../../../config/logger.js";
+import { env } from "../../../config/env.js";
 
 /**
  * Meta Cloud API Provider
@@ -82,9 +83,18 @@ export class MetaCloudProvider implements IWhatsAppProvider {
         };
 
         if (options.mediaUrl && options.mediaType) {
+          // Resolve relative URLs to absolute URLs (Meta needs a publicly accessible URL)
+          let resolvedUrl = options.mediaUrl;
+          if (resolvedUrl.startsWith("/")) {
+            const baseUrl = env.APP_URL.replace(/\/+$/, "");
+            resolvedUrl = `${baseUrl}${resolvedUrl}`;
+          }
+
+          logger.info({ mediaUrl: options.mediaUrl, resolvedUrl, appUrl: env.APP_URL }, "[META MEDIA] URL resuelta");
+
           body.type = options.mediaType;
           body[options.mediaType] = {
-            link: options.mediaUrl,
+            link: resolvedUrl,
             caption: options.message,
           };
           delete body.text;
