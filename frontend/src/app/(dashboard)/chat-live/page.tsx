@@ -222,7 +222,7 @@ export default function ChatLivePage() {
         />
       ) : (
         /* Chat view */
-        <div className="flex flex-col lg:flex-row gap-3 h-[calc(100vh-160px)]">
+        <div className="flex flex-col lg:flex-row gap-3 h-[calc(100vh-160px)] min-h-0">
           {/* Contact list */}
           <ChatContactList
             contacts={contacts}

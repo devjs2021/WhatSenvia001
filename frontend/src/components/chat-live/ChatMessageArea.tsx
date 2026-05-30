@@ -70,7 +70,7 @@ export function ChatMessageArea({
   }
 
   return (
-    <div className="flex-1 min-w-0 rounded-2xl border border-slate-100 bg-white flex flex-col h-full max-h-full">
+    <div className="flex-1 min-w-0 rounded-2xl border border-slate-100 bg-white flex flex-col min-h-0">
       {/* Header - fixed */}
       <div className="flex items-center justify-between px-3 py-2 border-b border-slate-100 shrink-0">
         <div className="flex items-center gap-2">
