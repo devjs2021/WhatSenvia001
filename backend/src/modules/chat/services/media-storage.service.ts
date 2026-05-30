@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import { randomUUID } from "crypto";
 import { logger } from "../../../config/logger.js";
+import { env } from "../../../config/env.js";
 
 type MediaType = "image" | "video" | "audio" | "document";
 
@@ -52,8 +53,9 @@ class MediaStorageService {
     const filename = `${randomUUID()}.${ext}`;
     fs.writeFileSync(path.join(dir, filename), buffer);
 
+    const baseUrl = env.APP_URL.replace(/\/+$/, "");
     return {
-      url: `/uploads/${subdir}/${filename}`,
+      url: `${baseUrl}/uploads/${subdir}/${filename}`,
       mediaType: getMediaTypeFromMime(mimetype),
     };
   }

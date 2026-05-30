@@ -106,7 +106,10 @@ export default function ChatLivePage() {
         const formData = new FormData();
         formData.append("file", attachedFile);
         const token = localStorage.getItem("token");
-        const res = await fetch("/api/chat/upload", {
+        const apiBase = process.env.NEXT_PUBLIC_API_URL
+          ? `${process.env.NEXT_PUBLIC_API_URL}/api`
+          : "/api";
+        const res = await fetch(`${apiBase}/chat/upload`, {
           method: "POST",
           headers: token ? { Authorization: `Bearer ${token}` } : {},
           body: formData,
