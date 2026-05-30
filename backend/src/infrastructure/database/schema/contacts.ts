@@ -12,6 +12,7 @@ export const contacts = pgTable(
     tags: jsonb("tags").$type<string[]>().default([]),
     metadata: jsonb("metadata").$type<Record<string, string>>().default({}),
     notes: text("notes"),
+    stage: varchar("stage", { length: 20 }).default("new"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },

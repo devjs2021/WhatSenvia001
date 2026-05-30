@@ -99,4 +99,26 @@ export async function chatRoutes(app: FastifyInstance) {
     chatBroadcast.broadcast(sessionId, "new_message", saved);
     return saved;
   });
+
+  app.patch("/conversations/stage", { preHandler: [authGuard, licenseGuard("chatLive")] }, async (req) => {
+    const { phone, stage } = req.body as { phone: string; stage: string };
+    const userId = (req as any).user.id;
+    if (!phone || !stage) throw new Error("phone and stage required");
+    if (!["new", "in_progress", "waiting", "closed"].includes(stage)) throw new Error("Invalid stage");
+    return chatService.updateConversationStage(userId, phone, stage);
+  });
+
+  app.patch("/conversations/notes", { preHandler: [authGuard, licenseGuard("chatLive")] }, async (req) => {
+    const { phone, notes } = req.body as { phone: string; notes: string };
+    const userId = (req as any).user.id;
+    if (!phone) throw new Error("phone required");
+    return chatService.updateConversationNotes(userId, phone, notes || "");
+  });
+
+  app.patch("/conversations/tags", { preHandler: [authGuard, licenseGuard("chatLive")] }, async (req) => {
+    const { phone, tags } = req.body as { phone: string; tags: string[] };
+    const userId = (req as any).user.id;
+    if (!phone) throw new Error("phone required");
+    return chatService.updateConversationTags(userId, phone, tags || []);
+  });
 }

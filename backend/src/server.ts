@@ -244,6 +244,13 @@ async function bootstrap() {
     app.log.warn({ error: err.message }, "Meta templates table setup warning");
   }
 
+  // Auto-migration: contacts stage column
+  try {
+    await db.execute(sql`ALTER TABLE contacts ADD COLUMN IF NOT EXISTS stage VARCHAR(20) DEFAULT 'new'`);
+  } catch (err: any) {
+    app.log.warn({ error: err.message }, "Contacts stage column warning");
+  }
+
   // Auto-migration: ensure facebook_id column exists
   try {
     await db.execute(sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS facebook_id VARCHAR(255) UNIQUE`);

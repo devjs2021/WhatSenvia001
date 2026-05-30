@@ -505,6 +505,41 @@
     "section10Desc": "If you have questions, concerns, or requests related to these Terms of Service, you can contact us at:",
     "allRightsReserved": "CallMesd - Smart communication for your business"
   },
+  "chatLive": {
+    "title": "Live Chat",
+    "description": "Manage real-time conversations",
+    "searchContact": "Search contact...",
+    "selectContact": "Select a contact",
+    "selectContactDesc": "Choose a contact to view the conversation",
+    "noContacts": "No contacts found",
+    "noSessions": "No connected sessions",
+    "noSessionsDesc": "Connect a WhatsApp session to start chatting",
+    "writeMessage": "Write a message...",
+    "fileTooLarge": "File cannot exceed 10MB",
+    "sendError": "Error sending message",
+    "noMessages": "No messages. Send the first one!",
+    "downloadDoc": "Download document",
+    "allChat": "All",
+    "viewChat": "Chat",
+    "viewKanban": "Kanban",
+    "kanban": {
+      "new": "New",
+      "inProgress": "In progress",
+      "waiting": "Waiting",
+      "closed": "Closed",
+      "empty": "No conversations"
+    },
+    "crm": {
+      "contactInfo": "Contact info",
+      "stage": "Stage",
+      "tags": "Tags",
+      "notes": "Notes",
+      "addTag": "Add tag",
+      "notesPlaceholder": "Notes about this contact...",
+      "email": "Email",
+      "saved": "Saved"
+    }
+  },
   "unifiedCampaign": {
     "tabLabel": "Meta Campaigns",
     "title": "Unified Meta Campaigns",

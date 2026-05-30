@@ -505,6 +505,41 @@
     "section10Desc": "Si tiene preguntas, inquietudes o solicitudes relacionadas con estos Términos de Servicio, puede contactarnos en:",
     "allRightsReserved": "CallMesd - Comunicación inteligente para tu negocio"
   },
+  "chatLive": {
+    "title": "Chat en Vivo",
+    "description": "Gestiona conversaciones en tiempo real",
+    "searchContact": "Buscar contacto...",
+    "selectContact": "Selecciona un contacto",
+    "selectContactDesc": "Elige un contacto para ver la conversacion",
+    "noContacts": "No se encontraron contactos",
+    "noSessions": "Sin sesiones conectadas",
+    "noSessionsDesc": "Conecta una sesion de WhatsApp para comenzar",
+    "writeMessage": "Escribe un mensaje...",
+    "fileTooLarge": "El archivo no puede superar 10MB",
+    "sendError": "Error al enviar mensaje",
+    "noMessages": "No hay mensajes. Envia el primero!",
+    "downloadDoc": "Descargar documento",
+    "allChat": "Todos",
+    "viewChat": "Chat",
+    "viewKanban": "Kanban",
+    "kanban": {
+      "new": "Nuevos",
+      "inProgress": "En curso",
+      "waiting": "Esperando",
+      "closed": "Cerrados",
+      "empty": "Sin conversaciones"
+    },
+    "crm": {
+      "contactInfo": "Info del contacto",
+      "stage": "Etapa",
+      "tags": "Etiquetas",
+      "notes": "Notas",
+      "addTag": "Agregar etiqueta",
+      "notesPlaceholder": "Notas sobre este contacto...",
+      "email": "Email",
+      "saved": "Guardado"
+    }
+  },
   "unifiedCampaign": {
     "tabLabel": "Campanas Meta",
     "title": "Campanas Meta Unificadas",

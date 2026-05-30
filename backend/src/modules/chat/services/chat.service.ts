@@ -1,5 +1,6 @@
 import { db } from "../../../config/database.js";
 import { chatMessages } from "../../../infrastructure/database/schema/chat.js";
+import { contacts } from "../../../infrastructure/database/schema/contacts.js";
 import { whatsappSessions } from "../../../infrastructure/database/schema/whatsapp-sessions.js";
 import { eq, and, desc, sql, lt } from "drizzle-orm";
 import { getWhatsAppProvider } from "../../../infrastructure/whatsapp/whatsapp.factory.js";
@@ -55,6 +56,12 @@ export class ChatService {
       return {
         phone: row.phone,
         pushName: row.push_name || "",
+        contactId: row.contact_id || null,
+        contactName: row.contact_name || null,
+        tags: row.tags || [],
+        notes: row.notes || null,
+        stage: row.stage || "new",
+        email: row.contact_email || null,
         lastMessage,
         lastMessageDirection: row.direction,
         lastMessageSenderType: row.sender_type,
@@ -75,13 +82,14 @@ export class ChatService {
     if (userSessions.length === 0) return [];
 
     const sessionIds = userSessions.map((s) => s.id);
-    // Use ANY with a properly cast PostgreSQL array literal
     const result = await db.execute(sql`
-      SELECT DISTINCT ON (phone)
-        phone, push_name, content, media_url, media_type, direction, sender_type, created_at, status, session_id
-      FROM chat_messages
-      WHERE session_id = ANY(ARRAY[${sql.join(sessionIds, sql`, `)}]::uuid[])
-      ORDER BY phone, created_at DESC
+      SELECT DISTINCT ON (cm.phone)
+        cm.phone, cm.push_name, cm.content, cm.media_url, cm.media_type, cm.direction, cm.sender_type, cm.created_at, cm.status, cm.session_id,
+        c.id as contact_id, c.name as contact_name, c.tags, c.notes, c.stage, c.email as contact_email
+      FROM chat_messages cm
+      LEFT JOIN contacts c ON c.phone = cm.phone AND c.user_id = ${userId}
+      WHERE cm.session_id = ANY(ARRAY[${sql.join(sessionIds, sql`, `)}]::uuid[])
+      ORDER BY cm.phone, cm.created_at DESC
     `);
 
     return this.mapConversationRows(result.rows as any[]);
@@ -90,11 +98,13 @@ export class ChatService {
   async getConversations(sessionId: string, userId: string) {
     await this.verifySessionOwnership(sessionId, userId);
     const result = await db.execute(sql`
-      SELECT DISTINCT ON (phone)
-        phone, push_name, content, media_url, media_type, direction, sender_type, created_at, status, session_id
-      FROM chat_messages
-      WHERE session_id = ${sessionId}
-      ORDER BY phone, created_at DESC
+      SELECT DISTINCT ON (cm.phone)
+        cm.phone, cm.push_name, cm.content, cm.media_url, cm.media_type, cm.direction, cm.sender_type, cm.created_at, cm.status, cm.session_id,
+        c.id as contact_id, c.name as contact_name, c.tags, c.notes, c.stage, c.email as contact_email
+      FROM chat_messages cm
+      LEFT JOIN contacts c ON c.phone = cm.phone AND c.user_id = ${userId}
+      WHERE cm.session_id = ${sessionId}
+      ORDER BY cm.phone, cm.created_at DESC
     `);
 
     return this.mapConversationRows(result.rows as any[]);
@@ -167,6 +177,40 @@ export class ChatService {
     });
 
     return saved;
+  }
+  private async upsertContact(userId: string, phone: string) {
+    const cleanPhone = phone.replace(/\D/g, "");
+    const [existing] = await db
+      .select({ id: contacts.id })
+      .from(contacts)
+      .where(and(eq(contacts.userId, userId), eq(contacts.phone, cleanPhone)))
+      .limit(1);
+
+    if (existing) return existing.id;
+
+    const [created] = await db
+      .insert(contacts)
+      .values({ userId, phone: cleanPhone, name: "", tags: [] })
+      .returning({ id: contacts.id });
+    return created.id;
+  }
+
+  async updateConversationStage(userId: string, phone: string, stage: string) {
+    const contactId = await this.upsertContact(userId, phone);
+    await db.update(contacts).set({ stage, updatedAt: new Date() }).where(eq(contacts.id, contactId));
+    return { success: true };
+  }
+
+  async updateConversationNotes(userId: string, phone: string, notes: string) {
+    const contactId = await this.upsertContact(userId, phone);
+    await db.update(contacts).set({ notes, updatedAt: new Date() }).where(eq(contacts.id, contactId));
+    return { success: true };
+  }
+
+  async updateConversationTags(userId: string, phone: string, tags: string[]) {
+    const contactId = await this.upsertContact(userId, phone);
+    await db.update(contacts).set({ tags, updatedAt: new Date() }).where(eq(contacts.id, contactId));
+    return { success: true };
   }
 }
 
