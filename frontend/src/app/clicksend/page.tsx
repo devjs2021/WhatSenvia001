@@ -65,7 +65,20 @@ function FAQItem({ question, answer }: { question: string; answer: string }) {
   );
 }
 
+const PLANS = [
+  { name: "Starter", usd: 29, cop: 120000, features: ["1 número de WhatsApp", "Bot básico", "500 conversaciones/mes", "Plantillas HSM"], highlight: false },
+  { name: "Pro", usd: 49, cop: 200000, features: ["3 números de WhatsApp", "Bot con calificación", "2,000 conversaciones/mes", "Click-to-WhatsApp", "Analíticas"], highlight: true },
+  { name: "Business", usd: 99, cop: 400000, features: ["Números ilimitados", "Múltiples agentes", "10,000 conversaciones/mes", "Onboarding dedicado", "SLA garantizado"], highlight: false },
+];
+
+function formatPrice(amount: number, currency: "USD" | "COP"): string {
+  if (currency === "COP") return new Intl.NumberFormat("es-CO").format(amount);
+  return amount.toString();
+}
+
 export default function ClickSendLanding() {
+  const [currency, setCurrency] = useState<"USD" | "COP">("USD");
+
   return (
     <div className="min-h-screen bg-white">
 
@@ -202,81 +215,77 @@ export default function ClickSendLanding() {
       {/* ═══ PRECIOS ═══ */}
       <section className="bg-slate-50 py-10 sm:py-20">
         <div className="max-w-5xl mx-auto px-4">
-          <h2 className="text-xl sm:text-3xl font-extrabold text-slate-900 text-center mb-6 sm:mb-10">
+          <h2 className="text-xl sm:text-3xl font-extrabold text-slate-900 text-center mb-4 sm:mb-6">
             Planes simples, sin sorpresas
           </h2>
 
-          {/* Mobile: horizontal scroll / Desktop: grid */}
+          {/* Currency toggle */}
+          <div className="flex justify-center mb-6 sm:mb-10">
+            <div className="flex gap-0.5 bg-slate-100 rounded-lg p-0.5">
+              <button
+                onClick={() => setCurrency("USD")}
+                className={`px-4 py-1.5 rounded-md text-xs font-semibold transition-all ${
+                  currency === "USD" ? "bg-white text-slate-900 shadow-sm" : "text-slate-400 hover:text-slate-600"
+                }`}
+              >
+                USD $
+              </button>
+              <button
+                onClick={() => setCurrency("COP")}
+                className={`px-4 py-1.5 rounded-md text-xs font-semibold transition-all ${
+                  currency === "COP" ? "bg-white text-slate-900 shadow-sm" : "text-slate-400 hover:text-slate-600"
+                }`}
+              >
+                COP $
+              </button>
+            </div>
+          </div>
+
+          {/* Plans */}
           <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory -mx-4 px-4 sm:mx-0 sm:px-0 sm:grid sm:grid-cols-3 sm:overflow-visible sm:pb-0 max-w-4xl sm:mx-auto">
-            {/* Starter */}
-            <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200 p-5 sm:p-8 flex flex-col min-w-[280px] sm:min-w-0 snap-center">
-              <h3 className="text-base sm:text-lg font-bold text-slate-900">Starter</h3>
-              <div className="mt-2 mb-4 sm:mt-3 sm:mb-5">
-                <span className="text-2xl sm:text-3xl font-extrabold text-slate-900">$29</span>
-                <span className="text-xs sm:text-sm text-slate-400">/mes</span>
+            {PLANS.map((plan) => (
+              <div
+                key={plan.name}
+                className={`bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-8 flex flex-col min-w-[280px] sm:min-w-0 snap-center relative ${
+                  plan.highlight
+                    ? "border-2 border-emerald-500 shadow-lg shadow-emerald-100"
+                    : "border border-slate-200"
+                }`}
+              >
+                {plan.highlight && (
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-emerald-600 text-white text-[10px] sm:text-xs font-bold px-3 py-0.5 sm:px-4 sm:py-1 rounded-full flex items-center gap-1">
+                    <Star className="h-3 w-3" />
+                    Más elegido
+                  </div>
+                )}
+                <h3 className="text-base sm:text-lg font-bold text-slate-900">{plan.name}</h3>
+                <div className="mt-2 mb-4 sm:mt-3 sm:mb-5">
+                  <span className={`text-2xl sm:text-3xl font-extrabold ${plan.highlight ? "text-emerald-600" : "text-slate-900"}`}>
+                    {currency === "USD" ? "$" : "$"}{formatPrice(currency === "USD" ? plan.usd : plan.cop, currency)}
+                  </span>
+                  <span className="text-xs sm:text-sm text-slate-400">
+                    {currency === "COP" ? " COP" : ""}/mes
+                  </span>
+                </div>
+                <ul className="space-y-2 mb-6 sm:mb-8 flex-1">
+                  {plan.features.map((f) => (
+                    <li key={f} className="flex items-start gap-2 text-xs sm:text-sm text-slate-600">
+                      <Check className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
+                      {f}
+                    </li>
+                  ))}
+                </ul>
+                <WAButton className="text-xs sm:text-sm px-4 py-2.5 sm:py-3 w-full rounded-xl">
+                  {plan.highlight ? "Empezar con Pro" : "Empezar"}
+                </WAButton>
               </div>
-              <ul className="space-y-2 mb-6 sm:mb-8 flex-1">
-                {["1 número de WhatsApp", "Bot básico", "500 conversaciones/mes", "Plantillas HSM"].map((f) => (
-                  <li key={f} className="flex items-start gap-2 text-xs sm:text-sm text-slate-600">
-                    <Check className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
-                    {f}
-                  </li>
-                ))}
-              </ul>
-              <WAButton className="text-xs sm:text-sm px-4 py-2.5 sm:py-3 w-full rounded-xl">
-                Empezar
-              </WAButton>
-            </div>
-
-            {/* Pro */}
-            <div className="bg-white rounded-2xl sm:rounded-3xl border-2 border-emerald-500 p-5 sm:p-8 flex flex-col relative shadow-lg shadow-emerald-100 min-w-[280px] sm:min-w-0 snap-center">
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-emerald-600 text-white text-[10px] sm:text-xs font-bold px-3 py-0.5 sm:px-4 sm:py-1 rounded-full flex items-center gap-1">
-                <Star className="h-3 w-3" />
-                Más elegido
-              </div>
-              <h3 className="text-base sm:text-lg font-bold text-slate-900">Pro</h3>
-              <div className="mt-2 mb-4 sm:mt-3 sm:mb-5">
-                <span className="text-2xl sm:text-3xl font-extrabold text-emerald-600">$49</span>
-                <span className="text-xs sm:text-sm text-slate-400">/mes</span>
-              </div>
-              <ul className="space-y-2 mb-6 sm:mb-8 flex-1">
-                {["3 números de WhatsApp", "Bot con calificación", "2,000 conversaciones/mes", "Click-to-WhatsApp", "Analíticas"].map((f) => (
-                  <li key={f} className="flex items-start gap-2 text-xs sm:text-sm text-slate-600">
-                    <Check className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
-                    {f}
-                  </li>
-                ))}
-              </ul>
-              <WAButton className="text-xs sm:text-sm px-4 py-2.5 sm:py-3 w-full rounded-xl">
-                Empezar con Pro
-              </WAButton>
-            </div>
-
-            {/* Business */}
-            <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200 p-5 sm:p-8 flex flex-col min-w-[280px] sm:min-w-0 snap-center">
-              <h3 className="text-base sm:text-lg font-bold text-slate-900">Business</h3>
-              <div className="mt-2 mb-4 sm:mt-3 sm:mb-5">
-                <span className="text-2xl sm:text-3xl font-extrabold text-slate-900">$99</span>
-                <span className="text-xs sm:text-sm text-slate-400">/mes</span>
-              </div>
-              <ul className="space-y-2 mb-6 sm:mb-8 flex-1">
-                {["Números ilimitados", "Múltiples agentes", "10,000 conversaciones/mes", "Onboarding dedicado", "SLA garantizado"].map((f) => (
-                  <li key={f} className="flex items-start gap-2 text-xs sm:text-sm text-slate-600">
-                    <Check className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
-                    {f}
-                  </li>
-                ))}
-              </ul>
-              <WAButton className="text-xs sm:text-sm px-4 py-2.5 sm:py-3 w-full rounded-xl">
-                Empezar
-              </WAButton>
-            </div>
+            ))}
           </div>
 
           <div className="mt-6 sm:mt-8 text-center">
             <p className="text-xs sm:text-sm text-slate-500 px-2">
               <span className="font-bold text-emerald-600">Oferta:</span>{" "}
-              14 días gratis + primer mes al 50% ($24.50) + configuración incluida.
+              14 días gratis + primer mes al 50% ({currency === "USD" ? "$24.50" : "$100,000 COP"}) + configuración incluida.
             </p>
           </div>
         </div>
