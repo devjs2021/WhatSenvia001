@@ -88,17 +88,8 @@ export default function ClickSendLanding() {
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-slate-50 via-white to-emerald-50/30" />
         <div className="relative max-w-5xl mx-auto px-4 sm:px-6 pt-12 pb-16 sm:pt-16 sm:pb-24">
-          {/* Banner */}
-          <div className="mb-10">
-            <img
-              src="/banner-clicksend.png"
-              alt="ClickSend — Verificado por Meta"
-              className="w-full max-w-3xl mx-auto rounded-3xl shadow-lg shadow-emerald-100"
-            />
-          </div>
-
           <div className="max-w-3xl mx-auto text-center">
-            <div className="inline-flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 text-emerald-700 px-3 py-1 rounded-full text-xs font-semibold mb-6">
+            <div className="inline-flex items-center gap-1.5 bg-blue-50 border border-blue-200 text-blue-700 px-3 py-1 rounded-full text-xs font-semibold mb-6">
               <Shield className="h-3.5 w-3.5" />
               API Oficial de Meta
             </div>
@@ -109,6 +100,16 @@ export default function ClickSendLanding() {
             <p className="text-base sm:text-lg text-slate-500 mb-8 max-w-2xl mx-auto leading-relaxed">
               ClickSend resuelve los dos. API oficial de Meta, bot 24/7 y Click-to-WhatsApp — todo en uno.
             </p>
+
+            {/* Banner */}
+            <div className="mb-8">
+              <img
+                src="/banner-clicksend.png"
+                alt="ClickSend — Verificado por Meta"
+                className="w-full max-w-3xl mx-auto rounded-3xl shadow-lg shadow-emerald-100"
+              />
+            </div>
+
             <WAButton className="text-base sm:text-lg px-8 py-4 sm:px-10 sm:py-5">
               Escríbenos por WhatsApp — es gratis
             </WAButton>
