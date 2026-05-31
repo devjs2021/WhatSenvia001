@@ -14,7 +14,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 
-const WA_NUMBER = "573202101789";
+const WA_NUMBER = "573138418314";
 const WA_LINK = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent("Hola, vi tu página crmcontactsop.uk/clicksend. Quiero proteger mi WhatsApp")}`;
 
 function trackWAClick() {
