@@ -73,7 +73,9 @@ export default function ClickSendLanding() {
       <header className="border-b border-slate-100 bg-white/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <img src="/logo-clicksend.png" alt="ClickSend" className="h-9 w-9 rounded-full" />
+            <div className="h-8 w-8 rounded-lg bg-emerald-600 flex items-center justify-center">
+              <Clock className="h-4 w-4 text-white" />
+            </div>
             <span className="font-extrabold text-lg text-slate-900 tracking-tight">
               Click<span className="text-emerald-600">Send</span>
             </span>
@@ -89,10 +91,6 @@ export default function ClickSendLanding() {
         <div className="absolute inset-0 bg-gradient-to-br from-slate-50 via-white to-emerald-50/30" />
         <div className="relative max-w-5xl mx-auto px-4 sm:px-6 pt-12 pb-16 sm:pt-16 sm:pb-24">
           <div className="max-w-3xl mx-auto text-center">
-            <div className="inline-flex items-center gap-1.5 bg-blue-50 border border-blue-200 text-blue-700 px-3 py-1 rounded-full text-xs font-semibold mb-6">
-              <Shield className="h-3.5 w-3.5" />
-              API Oficial de Meta
-            </div>
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-slate-900 tracking-tight leading-tight mb-5">
               Pierdes clientes por responder tarde.{" "}
               <span className="text-emerald-600">Y tu WhatsApp puede desaparecer mañana.</span>
@@ -110,11 +108,17 @@ export default function ClickSendLanding() {
               />
             </div>
 
-            <WAButton className="text-base sm:text-lg px-8 py-4 sm:px-10 sm:py-5">
-              Escríbenos por WhatsApp — es gratis
-            </WAButton>
+            <div className="inline-flex items-center gap-1.5 bg-blue-50 border border-blue-200 text-blue-700 px-3 py-1 rounded-full text-xs font-semibold mb-6">
+              <Shield className="h-3.5 w-3.5" />
+              API Oficial de Meta
+            </div>
+            <div>
+              <WAButton className="text-base sm:text-lg px-8 py-4 sm:px-10 sm:py-5">
+                Escríbenos por WhatsApp — es gratis
+              </WAButton>
+            </div>
             <p className="text-xs text-slate-400 mt-4">
-              API Oficial Meta · Sin riesgo de baneo · 14 días gratis
+              Sin riesgo de baneo · 14 días gratis
             </p>
           </div>
         </div>
