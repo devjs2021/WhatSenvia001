@@ -66,9 +66,9 @@ function FAQItem({ question, answer }: { question: string; answer: string }) {
 }
 
 const PLANS = [
-  { name: "Starter", usd: 29, cop: 120000, features: ["1 número de WhatsApp", "Bot básico", "500 conversaciones/mes", "Plantillas HSM"], highlight: false },
-  { name: "Pro", usd: 49, cop: 200000, features: ["3 números de WhatsApp", "Bot con calificación", "2,000 conversaciones/mes", "Click-to-WhatsApp", "Analíticas"], highlight: true },
-  { name: "Business", usd: 99, cop: 400000, features: ["Números ilimitados", "Múltiples agentes", "10,000 conversaciones/mes", "Onboarding dedicado", "SLA garantizado"], highlight: false },
+  { name: "Starter", usd: 39, cop: 159000, features: ["1 número de WhatsApp", "Bot básico", "500 conversaciones/mes", "Plantillas HSM"], highlight: false },
+  { name: "Pro", usd: 69, cop: 289000, features: ["3 números de WhatsApp", "Bot con calificación", "2,000 conversaciones/mes", "Click-to-WhatsApp", "Analíticas"], highlight: true },
+  { name: "Business", usd: 129, cop: 539000, features: ["Números ilimitados", "Múltiples agentes", "10,000 conversaciones/mes", "Onboarding dedicado", "SLA garantizado"], highlight: false },
 ];
 
 function formatPrice(amount: number, currency: "USD" | "COP"): string {
@@ -285,7 +285,7 @@ export default function ClickSendLanding() {
           <div className="mt-6 sm:mt-8 text-center">
             <p className="text-xs sm:text-sm text-slate-500 px-2">
               <span className="font-bold text-emerald-600">Oferta:</span>{" "}
-              14 días gratis + primer mes al 50% ({currency === "USD" ? "$24.50" : "$100,000 COP"}) + configuración incluida.
+              14 días gratis + primer mes al 50% ({currency === "USD" ? "$34.50" : "$144,500 COP"}) + configuración incluida.
             </p>
           </div>
         </div>
