@@ -73,9 +73,7 @@ export default function ClickSendLanding() {
       <header className="border-b border-slate-100 bg-white/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-lg bg-emerald-600 flex items-center justify-center">
-              <span className="text-white font-extrabold text-sm">C</span>
-            </div>
+            <img src="/logo-clicksend.png" alt="ClickSend" className="h-9 w-9 rounded-full" />
             <span className="font-extrabold text-lg text-slate-900 tracking-tight">
               Click<span className="text-emerald-600">Send</span>
             </span>
@@ -89,7 +87,16 @@ export default function ClickSendLanding() {
       {/* ═══ HERO ═══ */}
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-slate-50 via-white to-emerald-50/30" />
-        <div className="relative max-w-5xl mx-auto px-4 sm:px-6 pt-16 pb-20 sm:pt-24 sm:pb-28">
+        <div className="relative max-w-5xl mx-auto px-4 sm:px-6 pt-12 pb-16 sm:pt-16 sm:pb-24">
+          {/* Banner */}
+          <div className="mb-10">
+            <img
+              src="/banner-clicksend.png"
+              alt="ClickSend — Verificado por Meta"
+              className="w-full max-w-3xl mx-auto rounded-3xl shadow-lg shadow-emerald-100"
+            />
+          </div>
+
           <div className="max-w-3xl mx-auto text-center">
             <div className="inline-flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 text-emerald-700 px-3 py-1 rounded-full text-xs font-semibold mb-6">
               <Shield className="h-3.5 w-3.5" />
