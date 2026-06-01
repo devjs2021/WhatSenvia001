@@ -215,7 +215,7 @@ export default function LoginPage() {
                       </>
                     )}
                   </h1>
-                  <div className="mt-4">
+                  <div className="mt-4 flex flex-wrap items-center gap-2">
                     <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-50 border border-slate-200 text-slate-500 select-none">
                       <svg
                         className="w-4 h-4 text-[#0064E0] fill-current"
@@ -227,6 +227,14 @@ export default function LoginPage() {
                         {locale === "es"
                           ? "Verificados por Meta"
                           : "Verified by Meta"}
+                      </span>
+                    </div>
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 select-none">
+                      <Clock className="h-3.5 w-3.5 text-emerald-600" strokeWidth={2} />
+                      <span className="text-emerald-700 font-bold text-[10px] tracking-wider uppercase">
+                        {locale === "es"
+                          ? "Prueba tu cuenta 7 días gratis"
+                          : "Try your account free for 7 days"}
                       </span>
                     </div>
                   </div>
