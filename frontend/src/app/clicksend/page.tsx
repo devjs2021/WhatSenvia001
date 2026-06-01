@@ -131,7 +131,7 @@ export default function ClickSendLanding() {
               </WAButton>
             </div>
             <p className="text-[11px] text-slate-400 mt-3">
-              Sin riesgo de baneo · 14 días gratis
+              Sin riesgo de baneo · 7 días gratis
             </p>
           </div>
         </div>
@@ -285,7 +285,7 @@ export default function ClickSendLanding() {
           <div className="mt-6 sm:mt-8 text-center">
             <p className="text-xs sm:text-sm text-slate-500 px-2">
               <span className="font-bold text-emerald-600">Oferta:</span>{" "}
-              14 días gratis + primer mes al 50% ({currency === "USD" ? "$34.50" : "$144,500 COP"}) + configuración incluida.
+              7 días gratis + primer mes al 50% ({currency === "USD" ? "$34.50" : "$144,500 COP"}) + configuración incluida.
             </p>
           </div>
         </div>
@@ -301,7 +301,7 @@ export default function ClickSendLanding() {
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 max-w-2xl mx-auto mb-6 sm:mb-8 text-left">
                 {[
-                  "14 días gratis — sin tarjeta",
+                  "7 días gratis — sin tarjeta",
                   "Primer mes al 50% — $24.50",
                   "Configuración de 30 min incluida",
                   "Garantía de 30 días",
