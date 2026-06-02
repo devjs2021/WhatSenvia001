@@ -132,9 +132,9 @@ export default function ChatLivePage() {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-64px)]">
+    <div className="flex flex-col h-[calc(100dvh-64px)] -mx-4 -my-5 sm:-m-6 md:-m-10">
       {/* Header - fixed */}
-      <div className="shrink-0 space-y-2 md:space-y-3 pb-2">
+      <div className={`shrink-0 space-y-2 md:space-y-3 px-4 pt-4 pb-2 sm:px-6 sm:pt-5 md:px-10 md:pt-8 ${selectedContact ? "hidden lg:block" : ""}`}>
         <DashboardHeader
           title={
             <div className="flex items-center gap-2">
@@ -208,7 +208,7 @@ export default function ChatLivePage() {
       </div>
 
       {/* Scrollable content area */}
-      <div className="flex-1 min-h-0">
+      <div className="flex-1 min-h-0 lg:px-10 lg:pb-6">
         {sessions.length === 0 ? (
           <DashboardCard>
             <div className="flex flex-col items-center justify-center py-16 text-center">
@@ -225,7 +225,7 @@ export default function ChatLivePage() {
           />
         ) : (
           /* Chat view */
-          <div className="flex flex-col lg:flex-row gap-3 h-full min-h-0">
+          <div className="flex flex-col lg:flex-row gap-0 lg:gap-3 h-full min-h-0">
             {/* Contact list */}
             <ChatContactList
               contacts={contacts}

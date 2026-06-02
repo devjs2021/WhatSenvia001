@@ -25,19 +25,19 @@ export function ChatContactList({ contacts, selectedPhone, searchTerm, onSearchC
   });
 
   return (
-    <div className={`w-full lg:w-60 flex flex-col ${hidden ? "hidden lg:flex" : "flex"}`}>
-      <div className="relative mb-1.5">
-        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+    <div className={`w-full lg:w-64 flex flex-col ${hidden ? "hidden lg:flex" : "flex"}`}>
+      <div className="relative mb-2">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
         <input
           placeholder={t("chatLive.searchContact")}
           value={searchTerm}
           onChange={(e) => onSearchChange(e.target.value)}
-          className="bg-slate-50 border border-slate-200 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 w-full"
+          className="bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-3 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 w-full"
         />
       </div>
-      <div className="flex-1 overflow-y-auto space-y-0.5">
+      <div className="flex-1 overflow-y-auto space-y-0.5 overscroll-contain">
         {filtered.length === 0 ? (
-          <p className="text-[11px] text-slate-400 p-2 text-center">{t("chatLive.noContacts")}</p>
+          <p className="text-xs text-slate-400 p-4 text-center">{t("chatLive.noContacts")}</p>
         ) : (
           filtered.map((contact) => (
             <ChatContactItem
