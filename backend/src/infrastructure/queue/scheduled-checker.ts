@@ -4,6 +4,7 @@ import { messageQueue } from "./message.queue.js";
 import { db } from "../../config/database.js";
 import { scheduledCampaigns } from "../database/schema/scheduled-campaigns.js";
 import { eq } from "drizzle-orm";
+import { notificationService } from "../../modules/notifications/services/notification.service.js";
 
 async function checkScheduledCampaigns() {
   try {
@@ -56,6 +57,14 @@ async function checkScheduledCampaigns() {
         .where(eq(scheduledCampaigns.id, campaign.id));
 
       await scheduledService.markCompleted(campaign.id, queuedCount, 0);
+
+      notificationService.create(
+        campaign.userId,
+        "campaign_scheduled",
+        `Campaña programada "${campaign.name}" iniciada`,
+        `${queuedCount} mensajes en cola de envío`,
+        { scheduledCampaignId: campaign.id, queued: queuedCount }
+      ).catch(() => {});
 
       logger.info(
         { id: campaign.id, queued: queuedCount },

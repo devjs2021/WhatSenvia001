@@ -13,6 +13,7 @@ import { chatService } from '../../chat/services/chat.service.js'
 import { mediaStorageService } from '../../chat/services/media-storage.service.js'
 import { decrypt } from '../../../infrastructure/security/encryption.service.js'
 import { logger } from '../../../config/logger.js'
+import { notificationService } from '../../notifications/services/notification.service.js'
 
 function verifyWebhookSignature(rawBody: Buffer, signature: string | undefined): boolean {
   if (!env.META_APP_SECRET) return true // Skip in dev if not configured
@@ -206,6 +207,13 @@ export async function metaWebhookRoutes(app: FastifyInstance) {
                   logger.debug({ sessionId: session.id }, 'Message saved to chat_messages')
 
                   chatBroadcast.broadcast(session.id, 'new_message', saved)
+                  notificationService.create(
+                    session.userId,
+                    "new_chat",
+                    `Nuevo mensaje de ${contactName || message.from}`,
+                    messageContent.substring(0, 100),
+                    { phone: message.from, sessionId: session.id }
+                  ).catch(() => {})
                 } catch (err: any) {
                   logger.error({ error: err.message }, 'Error saving message to chat_messages')
                 }

@@ -9,6 +9,7 @@ import { eq, sql } from "drizzle-orm";
 import { campaignBroadcast } from "../../modules/campaign-control/websocket/campaign-broadcast.js";
 import { sendCampaignCompletedEmail } from "../email/email.service.js";
 import { users } from "../database/schema/users.js";
+import { notificationService } from "../../modules/notifications/services/notification.service.js";
 import { getCountryFromPhone, getConversationRate, getCategoryFromTemplate } from "../../modules/consumption/meta-pricing.js";
 import { whatsappSessions } from "../database/schema/whatsapp-sessions.js";
 
@@ -147,6 +148,14 @@ export function startMessageWorker() {
               const [user] = await db.select({ email: users.email, name: users.name }).from(users).where(eq(users.id, updatedCampaign.userId)).limit(1);
               if (user) {
                 sendCampaignCompletedEmail(user.email, user.name, campaignRow?.name || "Campaña", { sent, failed, total }).catch(() => {});
+                const campaignName = campaignRow?.name || "Campaña";
+                notificationService.create(
+                  updatedCampaign.userId,
+                  "campaign_completed",
+                  `Campaña "${campaignName}" completada`,
+                  `${sent} enviados, ${failed} fallidos de ${total} total`,
+                  { campaignId, sent, failed, total }
+                ).catch(() => {});
               }
             }
           }

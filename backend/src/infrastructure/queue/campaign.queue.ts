@@ -8,6 +8,7 @@ import { messages } from "../database/schema/messages.js";
 import { metaTemplates } from "../database/schema/meta-templates.js";
 import { messageQueue } from "./message.queue.js";
 import { eq, and, sql } from "drizzle-orm";
+import { notificationService } from "../../modules/notifications/services/notification.service.js";
 
 export interface CampaignJobData {
   campaignId: string;
@@ -208,6 +209,13 @@ export function startCampaignWorker() {
         .set({ status: "failed" })
         .where(eq(campaigns.id, job.data.campaignId))
         .catch(() => {});
+      notificationService.create(
+        job.data.userId,
+        "campaign_failed",
+        "Error en campaña",
+        `La campaña falló: ${err.message}`,
+        { campaignId: job.data.campaignId, error: err.message }
+      ).catch(() => {});
     }
   });
 

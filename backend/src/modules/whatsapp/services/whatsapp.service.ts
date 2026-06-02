@@ -11,6 +11,7 @@ import { PollService } from "../../polls/services/poll.service.js";
 import { chatService } from "../../chat/services/chat.service.js";
 import { chatBroadcast } from "../../chat/websocket/chat-broadcast.js";
 import { logger } from "../../../config/logger.js";
+import { notificationService } from "../../notifications/services/notification.service.js";
 
 const pollService = new PollService();
 const DEV_USER_ID = "00000000-0000-0000-0000-000000000000";
@@ -128,6 +129,13 @@ export class WhatsAppService {
                 mediaType: msg.mediaType,
               });
               chatBroadcast.broadcast(session.id, "new_message", chatMsg);
+              notificationService.create(
+                session.userId,
+                "new_chat",
+                `Nuevo mensaje de ${msg.pushName || msg.from}`,
+                (msg.message || "").substring(0, 100),
+                { phone: msg.from, sessionId: session.id }
+              ).catch(() => {});
             } catch (chatErr: any) {
               logger.error({ error: chatErr.message }, 'Chat save error');
             }
@@ -271,6 +279,13 @@ export class WhatsAppService {
               mediaType: msg.mediaType,
             });
             chatBroadcast.broadcast(sessionId, "new_message", chatMsg);
+            notificationService.create(
+              userId,
+              "new_chat",
+              `Nuevo mensaje de ${msg.pushName || msg.from}`,
+              (msg.message || "").substring(0, 100),
+              { phone: msg.from, sessionId }
+            ).catch(() => {});
           } catch (chatErr: any) {
             logger.error({ error: chatErr.message }, 'Chat save error');
           }
