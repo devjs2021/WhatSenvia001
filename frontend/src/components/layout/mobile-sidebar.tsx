@@ -1,12 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 import { useI18n } from "@/i18n";
 import { dashboardNavGroups } from "@/config/dashboard-navigation";
-import { Clock, X, AlertTriangle, LogOut } from "lucide-react";
+import { Clock, X, AlertTriangle, LogOut, ChevronDown } from "lucide-react";
 import { getLicenseStatus } from "@/lib/license-utils";
 
 interface MobileSidebarProps {
@@ -18,23 +19,28 @@ export function MobileSidebar({ open, onClose }: MobileSidebarProps) {
   const pathname = usePathname();
   const { user, logout } = useAuth();
   const { t } = useI18n();
-
   const licenseStatus = getLicenseStatus(user, t);
+
+  const [expandedGroup, setExpandedGroup] = useState<string | null>(() => {
+    const active = dashboardNavGroups.find((g) =>
+      g.children.some((c) => pathname === c.href || pathname.startsWith(c.href + "/"))
+    );
+    return active?.nameKey || null;
+  });
 
   if (!open) return null;
 
+  function toggleGroup(nameKey: string) {
+    setExpandedGroup((prev) => (prev === nameKey ? null : nameKey));
+  }
+
   return (
     <div className="fixed inset-0 z-50 md:hidden">
-      {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-        onClick={onClose}
-      />
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
 
-      {/* Sidebar panel */}
-      <aside className="absolute left-0 top-0 bottom-0 w-[85vw] max-w-72 bg-white flex flex-col">
+      <aside className="absolute left-0 top-0 bottom-0 w-[85vw] max-w-80 bg-white flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between px-4 h-20 border-b border-slate-100">
+        <div className="flex items-center justify-between px-4 h-16 border-b border-slate-100 shrink-0">
           <div className="flex items-center gap-2">
             <div className="h-8 w-8 rounded-lg bg-emerald-500 flex items-center justify-center">
               <Clock className="h-4 w-4 text-white" strokeWidth={2} />
@@ -68,34 +74,89 @@ export function MobileSidebar({ open, onClose }: MobileSidebarProps) {
           </div>
         )}
 
-        {/* Navigation - solo grupos */}
-        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-0.5">
+        {/* Navigation with expandable groups */}
+        <nav className="flex-1 overflow-y-auto overscroll-contain px-3 py-4 space-y-1">
           {dashboardNavGroups.map((group) => {
-            const isActive = group.children.some(
+            const isGroupActive = group.children.some(
               (child) => pathname === child.href || pathname.startsWith(child.href + "/")
             );
+            const hasMultipleChildren = group.children.length > 1;
+            const isExpanded = expandedGroup === group.nameKey;
+
+            if (!hasMultipleChildren) {
+              const child = group.children[0];
+              const isActive = pathname === child.href || pathname.startsWith(child.href + "/");
+              return (
+                <Link
+                  key={group.nameKey}
+                  href={child.href}
+                  onClick={onClose}
+                  className={cn(
+                    "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-colors",
+                    isActive
+                      ? "text-emerald-600 bg-emerald-50/50"
+                      : "text-slate-500 hover:text-slate-900 hover:bg-slate-50"
+                  )}
+                >
+                  <group.icon className="w-5 h-5 shrink-0" strokeWidth={1.5} />
+                  <span>{t(group.nameKey)}</span>
+                </Link>
+              );
+            }
 
             return (
-              <Link
-                key={group.nameKey}
-                href={group.href}
-                onClick={onClose}
-                className={cn(
-                  "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-colors duration-150",
-                  isActive
-                    ? "text-emerald-600 bg-emerald-50/50"
-                    : "text-slate-500 hover:text-slate-900 hover:bg-slate-50"
+              <div key={group.nameKey}>
+                <button
+                  onClick={() => toggleGroup(group.nameKey)}
+                  className={cn(
+                    "w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold transition-colors",
+                    isGroupActive
+                      ? "text-emerald-600 bg-emerald-50/50"
+                      : "text-slate-500 hover:text-slate-900 hover:bg-slate-50"
+                  )}
+                >
+                  <div className="flex items-center gap-3">
+                    <group.icon className="w-5 h-5 shrink-0" strokeWidth={1.5} />
+                    <span>{t(group.nameKey)}</span>
+                  </div>
+                  <ChevronDown
+                    className={cn(
+                      "w-4 h-4 transition-transform duration-200",
+                      isExpanded && "rotate-180"
+                    )}
+                  />
+                </button>
+
+                {isExpanded && (
+                  <div className="ml-4 pl-4 border-l border-slate-100 mt-0.5 mb-1 space-y-0.5">
+                    {group.children.map((child) => {
+                      const isActive = pathname === child.href || pathname.startsWith(child.href + "/");
+                      return (
+                        <Link
+                          key={child.href}
+                          href={child.href}
+                          onClick={onClose}
+                          className={cn(
+                            "flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-colors",
+                            isActive
+                              ? "text-emerald-600 bg-emerald-50/50"
+                              : "text-slate-400 hover:text-slate-700 hover:bg-slate-50"
+                          )}
+                        >
+                          <child.icon className="w-4 h-4 shrink-0" strokeWidth={1.5} />
+                          <span>{t(child.nameKey)}</span>
+                        </Link>
+                      );
+                    })}
+                  </div>
                 )}
-              >
-                <group.icon className="w-5 h-5 shrink-0" strokeWidth={1.5} />
-                <span>{t(group.nameKey)}</span>
-              </Link>
+              </div>
             );
           })}
         </nav>
 
         {/* User footer */}
-        <div className="px-3 pb-4 border-t border-slate-100 pt-3">
+        <div className="px-3 pb-4 border-t border-slate-100 pt-3 shrink-0">
           <div className="flex items-center justify-between">
             <div className="min-w-0">
               <p className="text-xs font-semibold text-slate-900 truncate">

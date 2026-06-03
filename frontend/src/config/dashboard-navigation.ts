@@ -10,6 +10,12 @@ import {
   BarChart3,
   Settings,
   Crown,
+  SlidersHorizontal,
+  Activity,
+  CalendarClock,
+  FileText,
+  FileCheck,
+  Mail,
   type LucideIcon,
 } from "lucide-react";
 
@@ -49,6 +55,26 @@ export const dashboardNavGroups: DashboardNavGroup[] = [
     ],
   },
   {
+    nameKey: "nav.campaigns",
+    icon: Send,
+    href: "/campaign-control",
+    children: [
+      { nameKey: "nav.control", href: "/campaign-control", icon: SlidersHorizontal, feature: "campaignControl" },
+      { nameKey: "nav.monitor", href: "/campaign-monitor", icon: Activity, feature: "campaigns" },
+      { nameKey: "nav.scheduled", href: "/scheduled", icon: CalendarClock, feature: "scheduledCampaigns" },
+      { nameKey: "nav.messages", href: "/messages", icon: Mail, feature: null },
+    ],
+  },
+  {
+    nameKey: "nav.templates",
+    icon: FileText,
+    href: "/templates",
+    children: [
+      { nameKey: "nav.templates", href: "/templates", icon: FileText, feature: "templates" },
+      { nameKey: "nav.metaTemplates", href: "/meta-templates", icon: FileCheck, feature: "templates" },
+    ],
+  },
+  {
     nameKey: "nav.contactsGroup",
     icon: Users,
     href: "/contacts",
@@ -56,14 +82,6 @@ export const dashboardNavGroups: DashboardNavGroup[] = [
       { nameKey: "nav.contacts", href: "/contacts", icon: Users, feature: null },
       { nameKey: "nav.import", href: "/import", icon: Upload, feature: "import" },
       { nameKey: "nav.extractContacts", href: "/extract-contacts", icon: UserPlus, feature: "contactExtraction" },
-    ],
-  },
-  {
-    nameKey: "nav.campaigns",
-    icon: Send,
-    href: "/campaigns",
-    children: [
-      { nameKey: "nav.campaigns", href: "/campaigns", icon: Send, feature: "campaigns" },
     ],
   },
   {

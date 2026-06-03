@@ -28,6 +28,9 @@ const breadcrumbKeys: Record<string, string> = {
   "/bot-builder": "nav.botBuilder",
   "/chat-live": "nav.chatLive",
   "/campaigns": "nav.bulkSend",
+  "/campaign-control": "nav.control",
+  "/campaign-monitor": "nav.monitor",
+  "/scheduled": "nav.scheduled",
   "/templates": "nav.templates",
   "/meta-templates": "nav.metaTemplates",
   "/poll-results": "nav.polls",
@@ -35,6 +38,7 @@ const breadcrumbKeys: Record<string, string> = {
   "/extract-contacts": "nav.extractContacts",
   "/import": "nav.import",
   "/messages": "nav.messages",
+  "/reports": "nav.reports",
   "/settings": "nav.settings",
 };
 
