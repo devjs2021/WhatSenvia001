@@ -1,65 +1,47 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { api } from "@/lib/api";
 
+const VAPID_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "";
+
 export function PwaRegister() {
   const { token } = useAuth();
-  const [swRegistration, setSwRegistration] = useState<ServiceWorkerRegistration | null>(null);
+  const subscribedRef = useRef(false);
 
-  // Register service worker
   useEffect(() => {
     if (typeof window === "undefined" || !("serviceWorker" in navigator)) return;
-
-    navigator.serviceWorker
-      .register("/sw.js")
-      .then((reg) => {
-        setSwRegistration(reg);
-      })
-      .catch(() => {});
+    navigator.serviceWorker.register("/sw.js").catch(() => {});
   }, []);
 
-  // Subscribe to push when logged in
   useEffect(() => {
-    if (!token || !swRegistration) return;
+    if (!token || subscribedRef.current) return;
 
     async function subscribePush() {
-      if (!("PushManager" in window)) return;
-
-      const permission = await Notification.requestPermission();
-      if (permission !== "granted") return;
+      if (!("PushManager" in window) || !VAPID_KEY) return;
 
       try {
-        const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-        if (!vapidKey) return;
+        const permission = await Notification.requestPermission();
+        if (permission !== "granted") return;
 
-        let subscription = await swRegistration!.pushManager.getSubscription();
+        const reg = await navigator.serviceWorker.ready;
+        let subscription = await reg.pushManager.getSubscription();
 
         if (!subscription) {
-          subscription = await swRegistration!.pushManager.subscribe({
+          subscription = await reg.pushManager.subscribe({
             userVisibleOnly: true,
-            applicationServerKey: urlBase64ToUint8Array(vapidKey) as BufferSource,
+            applicationServerKey: VAPID_KEY,
           });
         }
 
         await api.post("/push/subscribe", { subscription: subscription.toJSON() });
+        subscribedRef.current = true;
       } catch {}
     }
 
     subscribePush();
-  }, [token, swRegistration]);
+  }, [token]);
 
   return null;
-}
-
-function urlBase64ToUint8Array(base64String: string): Uint8Array {
-  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
-  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
-  const rawData = atob(base64);
-  const outputArray = new Uint8Array(rawData.length);
-  for (let i = 0; i < rawData.length; ++i) {
-    outputArray[i] = rawData.charCodeAt(i);
-  }
-  return outputArray;
 }
