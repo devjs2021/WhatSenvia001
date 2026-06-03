@@ -133,14 +133,14 @@ export function DashboardTopbar({ onMobileMenuToggle }: DashboardTopbarProps) {
         <div className="flex items-center gap-2 sm:gap-4 shrink-0">
           {/* Estado Conectado a Meta */}
           {hasMetaConnection ? (
-            <div className="hidden sm:flex items-center gap-2 bg-emerald-50 border border-emerald-100 px-3 py-1.5 rounded-full">
+            <div className="hidden sm:flex items-center gap-2 bg-[#E7F0FF] border border-[#1877F2]/20 px-3 py-1.5 rounded-full">
               <svg
-                className="w-4 h-4 text-emerald-600 fill-current"
+                className="w-4 h-4 text-[#1877F2] fill-current"
                 viewBox="0 0 24 24"
               >
                 <path d="M16.4 6c-1.8 0-3.4 1-4.4 2.5C11 7 9.4 6 7.6 6 4.5 6 2 8.5 2 11.6s2.5 5.6 5.6 5.6c1.8 0 3.4-1 4.4-2.5 1 1.5 2.6 2.5 4.4 2.5 3.1 0 5.6-2.5 5.6-5.6S19.5 6 16.4 6zm-8.8 9.2c-2 0-3.6-1.6-3.6-3.6S5.6 8 7.6 8c1.3 0 2.5.7 3.1 1.8-.8 1.4-.8 3.2 0 4.6-.6 1.1-1.8 1.8-3.1 1.8zm8.8 0c-1.3 0-2.5-.7-3.1-1.8.8-1.4.8-3.2 0-4.6.6-1.1 1.8-1.8 3.1-1.8 2 0 3.6 1.6 3.6 3.6s-1.6 3.6-3.6 3.6z" />
               </svg>
-              <span className="text-[11px] font-bold text-emerald-700 uppercase tracking-wider">
+              <span className="text-[11px] font-bold text-[#1877F2] uppercase tracking-wider">
                 {t("topbar.connectedMeta")}
               </span>
             </div>
