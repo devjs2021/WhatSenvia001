@@ -40,6 +40,7 @@ const breadcrumbKeys: Record<string, string> = {
   "/messages": "nav.messages",
   "/reports": "nav.reports",
   "/settings": "nav.settings",
+  "/admin": "nav.adminPanel",
 };
 
 interface DashboardTopbarProps {

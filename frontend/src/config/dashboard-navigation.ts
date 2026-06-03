@@ -98,6 +98,7 @@ export const dashboardNavGroups: DashboardNavGroup[] = [
     href: "/settings",
     children: [
       { nameKey: "nav.settings", href: "/settings", icon: Crown, feature: null },
+      { nameKey: "nav.adminPanel", href: "/admin", icon: Crown, feature: null },
     ],
   },
 ];
