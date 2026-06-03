@@ -2,7 +2,16 @@ import { db } from "../../../config/database.js";
 import { notifications } from "../../../infrastructure/database/schema/notifications.js";
 import type { NotificationType } from "../../../infrastructure/database/schema/notifications.js";
 import { notificationBroadcast } from "../websocket/notification-broadcast.js";
+import { pushService } from "../../push/push.service.js";
 import { eq, and, desc } from "drizzle-orm";
+
+const typeUrlMap: Record<string, string> = {
+  new_chat: "/chat-live",
+  campaign_completed: "/campaigns",
+  campaign_failed: "/campaigns",
+  campaign_scheduled: "/campaigns",
+  system_error: "/dashboard",
+};
 
 export const notificationService = {
   async create(userId: string, type: NotificationType, title: string, body?: string, metadata?: Record<string, any>) {
@@ -18,6 +27,14 @@ export const notificationService = {
       .returning();
 
     notificationBroadcast.broadcast(userId, "new_notification", notification);
+
+    pushService.sendToUser(userId, {
+      title,
+      body: body || undefined,
+      type,
+      url: typeUrlMap[type] || "/dashboard",
+    }).catch(() => {});
+
     return notification;
   },
 

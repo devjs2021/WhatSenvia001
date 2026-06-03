@@ -15,3 +15,4 @@ export { refreshTokens } from "./refresh-tokens";
 export { metaTemplates } from "./meta-templates";
 export { verificationJobs } from "./verification-jobs";
 export { notifications } from "./notifications";
+export { pushSubscriptions } from "./push-subscriptions";

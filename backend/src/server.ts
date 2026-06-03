@@ -33,6 +33,7 @@ import { metaWebhookRoutes } from "./modules/meta-webhook/routes/meta-webhook.ro
 import { metaExchangeRoutes } from "./modules/meta-webhook/routes/meta-exchange.routes.js";
 import { consumptionRoutes } from "./modules/consumption/consumption.routes.js";
 import { notificationRoutes } from "./modules/notifications/routes/notification.routes.js";
+import { pushRoutes } from "./modules/push/push.routes.js";
 import { startMessageWorker } from "./infrastructure/queue/message.queue.js";
 import { startCampaignWorker } from "./infrastructure/queue/campaign.queue.js";
 import { startScheduledChecker } from "./infrastructure/queue/scheduled-checker.js";
@@ -127,6 +128,7 @@ async function bootstrap() {
   await app.register(metaTemplateRoutes, { prefix: "/api/meta-templates" });
   await app.register(consumptionRoutes, { prefix: "/api/consumption" });
   await app.register(notificationRoutes, { prefix: "/api/notifications" });
+  await app.register(pushRoutes, { prefix: "/api/push" });
 
   // Meta Webhook (sin prefijo /api porque Meta llama directamente a /meta-webhook)
   await app.register(metaWebhookRoutes);

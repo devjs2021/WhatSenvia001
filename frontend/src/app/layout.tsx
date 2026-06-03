@@ -6,6 +6,16 @@ import { Providers } from "./providers";
 export const metadata: Metadata = {
   title: "ClickSend - Solución Inteligente de Comunicación",
   description: "Conecta con tus clientes a través de múltiples canales de mensajería",
+  manifest: "/manifest.json",
+  themeColor: "#10B981",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "ClickSend",
+  },
+  other: {
+    "mobile-web-app-capable": "yes",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

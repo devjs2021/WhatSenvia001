@@ -45,6 +45,11 @@ const envSchema = z.object({
   // Email (Resend for password reset)
   RESEND_API_KEY: z.string().optional(),
   APP_URL: z.string().default("http://localhost:3000"),
+
+  // Web Push (VAPID)
+  VAPID_PUBLIC_KEY: z.string().optional(),
+  VAPID_PRIVATE_KEY: z.string().optional(),
+  VAPID_EMAIL: z.string().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);
