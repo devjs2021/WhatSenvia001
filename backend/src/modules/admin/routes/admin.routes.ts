@@ -7,6 +7,13 @@ import { LICENSE_PLANS } from "../../../infrastructure/database/schema/licenses.
 import { licenseService } from "../services/license.service.js";
 import { eq, desc, count } from "drizzle-orm";
 import bcrypt from "bcryptjs";
+import { contacts } from "../../../infrastructure/database/schema/contacts.js";
+import { campaigns } from "../../../infrastructure/database/schema/campaigns.js";
+import { messages } from "../../../infrastructure/database/schema/messages.js";
+import { chatMessages } from "../../../infrastructure/database/schema/chat.js";
+import { whatsappSessions } from "../../../infrastructure/database/schema/whatsapp-sessions.js";
+import { notifications } from "../../../infrastructure/database/schema/notifications.js";
+import { metaTemplates } from "../../../infrastructure/database/schema/meta-templates.js";
 
 export async function adminRoutes(app: FastifyInstance) {
   // All admin routes require admin role
@@ -336,5 +343,143 @@ export async function adminRoutes(app: FastifyInstance) {
         planStats: Object.fromEntries(planStats.map((p) => [p.plan, p.total])),
       },
     };
+  });
+
+  // ============================================================
+  // SEED DEMO DATA (for video recording)
+  // ============================================================
+  app.post("/seed-demo", async (request: FastifyRequest) => {
+    const userId = (request as any).user.id;
+
+    const [session] = await db.select().from(whatsappSessions).where(eq(whatsappSessions.userId, userId)).limit(1);
+    const sessionId = session?.id || null;
+    const wabaId = "1186945711159195";
+
+    const demoContacts = [
+      { phone: "573001234567", name: "Carlos Méndez", email: "carlos@empresa.co", tags: ["cliente", "premium"] },
+      { phone: "573009876543", name: "María García", email: "maria@tienda.co", tags: ["cliente", "nuevo"] },
+      { phone: "573005551234", name: "Andrés López", email: "andres@startup.io", tags: ["lead", "interesado"] },
+      { phone: "573008884321", name: "Laura Rodríguez", email: "laura@marketing.co", tags: ["cliente", "premium"] },
+      { phone: "573002223344", name: "Juan Pérez", email: "juan@comercio.co", tags: ["lead"] },
+      { phone: "573007776655", name: "Sofía Martínez", email: "sofia@digital.co", tags: ["cliente", "vip"] },
+      { phone: "573004443322", name: "Diego Herrera", email: "diego@corp.co", tags: ["cliente"] },
+      { phone: "573006665544", name: "Valentina Torres", email: "val@shop.co", tags: ["lead", "interesado"] },
+      { phone: "573003332211", name: "Santiago Ruiz", email: "santi@tech.co", tags: ["cliente", "premium"] },
+      { phone: "573001119988", name: "Camila Vargas", email: "camila@negocios.co", tags: ["cliente"] },
+      { phone: "573008887766", name: "Felipe Castro", email: "felipe@ventas.co", tags: ["lead"] },
+      { phone: "573005554433", name: "Isabella Moreno", email: "isabella@moda.co", tags: ["cliente", "vip"] },
+    ];
+
+    // Contacts
+    const contactIds: Record<string, string> = {};
+    for (const c of demoContacts) {
+      const existing = await db.select().from(contacts).where(eq(contacts.phone, c.phone)).limit(1);
+      if (existing.length > 0) { contactIds[c.phone] = existing[0].id; continue; }
+      const [created] = await db.insert(contacts).values({ userId, phone: c.phone, name: c.name, email: c.email, tags: c.tags, stage: "new" }).returning();
+      contactIds[c.phone] = created.id;
+    }
+
+    // Campaigns
+    const demoCampaigns = [
+      { name: "Black Friday 2026 — Ofertas Exclusivas", message: "🔥 ¡Black Friday! Hasta 70% OFF", status: "completed" as const, totalContacts: 3500, sentCount: 3420, deliveredCount: 3380, failedCount: 80, daysAgo: 3 },
+      { name: "Lanzamiento Colección Verano", message: "☀️ Nueva colección de verano disponible", status: "completed" as const, totalContacts: 2150, sentCount: 2130, deliveredCount: 2100, failedCount: 20, daysAgo: 7 },
+      { name: "Recordatorio Pago Mensual", message: "Recordamos que tu pago vence pronto", status: "completed" as const, totalContacts: 1200, sentCount: 1195, deliveredCount: 1180, failedCount: 5, daysAgo: 1 },
+      { name: "Encuesta Satisfacción — Mayo", message: "Tu opinión nos importa. Responde nuestra encuesta", status: "completed" as const, totalContacts: 5000, sentCount: 4920, deliveredCount: 4850, failedCount: 80, daysAgo: 14 },
+      { name: "Promo Navidad — Early Bird", message: "🎄 30% en toda la tienda. Código NAVIDAD30", status: "scheduled" as const, totalContacts: 8000, sentCount: 0, deliveredCount: 0, failedCount: 0, daysAgo: 0 },
+      { name: "Bienvenida Nuevos Suscriptores", message: "¡Bienvenido/a! Cupón 15%: BIENVENIDO15", status: "completed" as const, totalContacts: 450, sentCount: 448, deliveredCount: 445, failedCount: 2, daysAgo: 5 },
+    ];
+
+    for (const camp of demoCampaigns) {
+      const startedAt = new Date(Date.now() - camp.daysAgo * 86400000);
+      const completedAt = camp.status === "completed" ? new Date(startedAt.getTime() + 3600000) : null;
+      const [created] = await db.insert(campaigns).values({ userId, sessionId, name: camp.name, message: camp.message, status: camp.status, totalContacts: camp.totalContacts, sentCount: camp.sentCount, deliveredCount: camp.deliveredCount, failedCount: camp.failedCount, startedAt, completedAt, createdAt: startedAt }).returning();
+      if (camp.status === "completed") {
+        for (const [phone, contactId] of Object.entries(contactIds).slice(0, 5)) {
+          await db.insert(messages).values({ userId, contactId, campaignId: created.id, phone, content: camp.message, status: "delivered", sentAt: new Date(startedAt.getTime() + Math.random() * 3600000), deliveredAt: new Date(startedAt.getTime() + Math.random() * 3600000 + 60000) });
+        }
+      }
+    }
+
+    // Chat conversations
+    if (sessionId) {
+      const chatConvos = [
+        { phone: "573001234567", pushName: "Carlos Méndez", msgs: [
+          { c: "Hola, me interesa saber más sobre sus planes de envío masivo", d: "incoming" as const, m: 45 },
+          { c: "¡Hola Carlos! Tenemos planes desde $69/mes con envíos ilimitados", d: "outgoing" as const, m: 43 },
+          { c: "¿Incluye conexión con la API de Meta?", d: "incoming" as const, m: 40 },
+          { c: "Sí, todos incluyen Meta Cloud API, verificación oficial y sin riesgo de baneo", d: "outgoing" as const, m: 38 },
+          { c: "Excelente, me gustaría activar el plan Pro", d: "incoming" as const, m: 35 },
+          { c: "¡Perfecto! Te envío el link. Tendrás 7 días gratis", d: "outgoing" as const, m: 33 },
+          { c: "Gracias, ya lo activé. ¿Cómo conecto mi número?", d: "incoming" as const, m: 10 },
+        ]},
+        { phone: "573009876543", pushName: "María García", msgs: [
+          { c: "Buenos días, necesito enviar una promo a 2,000 clientes", d: "incoming" as const, m: 120 },
+          { c: "¡Buenos días María! Con ClickSend puedes hacerlo fácil. ¿Tienes tu lista?", d: "outgoing" as const, m: 118 },
+          { c: "Sí, tengo un Excel con todos los números", d: "incoming" as const, m: 115 },
+          { c: "Ve a Contactos > Importar y sube tu archivo", d: "outgoing" as const, m: 113 },
+          { c: "Listo, importé 2,150 contactos. ¿Ahora cómo creo la campaña?", d: "incoming" as const, m: 60 },
+          { c: "¡Increíble! Ya quedó programada para las 10am 🎉", d: "incoming" as const, m: 30 },
+        ]},
+        { phone: "573008884321", pushName: "Laura Rodríguez", msgs: [
+          { c: "La campaña de Black Friday fue un éxito total 🔥", d: "incoming" as const, m: 15 },
+          { c: "¡Qué buena noticia Laura! ¿Cuántas conversiones tuviste?", d: "outgoing" as const, m: 13 },
+          { c: "342 ventas directas. ROI del 850%", d: "incoming" as const, m: 10 },
+          { c: "¡Increíble! ¿Quieres que programemos la de Navidad?", d: "outgoing" as const, m: 8 },
+          { c: "Sí, quiero enviar a toda mi base de 8,000 clientes", d: "incoming" as const, m: 5 },
+        ]},
+        { phone: "573007776655", pushName: "Sofía Martínez", msgs: [
+          { c: "El chatbot está respondiendo perfecto, mis clientes encantados", d: "incoming" as const, m: 90 },
+          { c: "¡Me alegra Sofía! ¿Necesitas agregar algún flujo nuevo?", d: "outgoing" as const, m: 88 },
+          { c: "Sí, quiero uno de seguimiento post-venta", d: "incoming" as const, m: 85 },
+        ]},
+        { phone: "573002223344", pushName: "Juan Pérez", msgs: [
+          { c: "Hola, ¿tienen descuento para agencias?", d: "incoming" as const, m: 3 },
+        ]},
+      ];
+
+      for (const conv of chatConvos) {
+        const existing = await db.select().from(chatMessages).where(eq(chatMessages.phone, conv.phone)).limit(1);
+        if (existing.length > 0) continue;
+        for (const msg of conv.msgs) {
+          await db.insert(chatMessages).values({ sessionId, phone: conv.phone, content: msg.c, direction: msg.d, senderType: msg.d === "incoming" ? "user" : "human", pushName: conv.pushName, status: msg.d === "outgoing" ? "delivered" : "sent", createdAt: new Date(Date.now() - msg.m * 60000) });
+        }
+      }
+    }
+
+    // Meta Templates
+    const demoTemplates = [
+      { mid: "tmpl_001", name: "promo_imagen", cat: "MARKETING", comps: [{ type: "HEADER", format: "IMAGE" }, { type: "BODY", text: "Hola {{1}}, tenemos una promoción especial para ti. ¡Descuentos de hasta {{2}}% en toda la tienda!", example: { body_text: [["Carlos", "50"]] } }, { type: "FOOTER", text: "Válido hasta agotar existencias" }, { type: "BUTTONS", buttons: [{ type: "URL", text: "Ver ofertas", url: "https://tienda.com/ofertas" }] }] },
+      { mid: "tmpl_002", name: "bienvenida_cliente", cat: "MARKETING", comps: [{ type: "BODY", text: "¡Hola {{1}}! 🎉 Bienvenido/a. Cupón 15%: BIENVENIDO15", example: { body_text: [["María"]] } }, { type: "BUTTONS", buttons: [{ type: "URL", text: "Ir a la tienda", url: "https://tienda.com" }] }] },
+      { mid: "tmpl_003", name: "recordatorio_pago", cat: "UTILITY", comps: [{ type: "BODY", text: "Hola {{1}}, tu pago de {{2}} vence el {{3}}. Evita recargos.", example: { body_text: [["Juan", "$150.000", "15 de junio"]] } }, { type: "BUTTONS", buttons: [{ type: "URL", text: "Pagar ahora", url: "https://pagos.com" }] }] },
+      { mid: "tmpl_004", name: "confirmacion_pedido", cat: "UTILITY", comps: [{ type: "BODY", text: "¡Gracias {{1}}! 🛍️ Pedido #{{2}} confirmado. Llega en {{3}} días hábiles.", example: { body_text: [["Laura", "ORD-5847", "3-5"]] } }] },
+      { mid: "tmpl_005", name: "encuesta_satisfaccion", cat: "MARKETING", comps: [{ type: "BODY", text: "Hola {{1}}, ¿podrías responder nuestra encuesta de 2 minutos?", example: { body_text: [["Sofía"]] } }, { type: "BUTTONS", buttons: [{ type: "URL", text: "Responder", url: "https://encuesta.com" }, { type: "QUICK_REPLY", text: "Ahora no" }] }] },
+      { mid: "tmpl_006", name: "oferta_flash", cat: "MARKETING", comps: [{ type: "HEADER", format: "IMAGE" }, { type: "BODY", text: "⚡ {{1}}, solo por {{2}} horas: {{3}}% OFF en seleccionados", example: { body_text: [["Diego", "24", "40"]] } }, { type: "BUTTONS", buttons: [{ type: "URL", text: "Comprar", url: "https://tienda.com/flash" }] }] },
+      { mid: "tmpl_007", name: "seguimiento_envio", cat: "UTILITY", comps: [{ type: "BODY", text: "Hola {{1}}, pedido #{{2}} despachado 📦. Tracking: {{3}}", example: { body_text: [["Valentina", "ORD-3921", "COL-892741"]] } }, { type: "BUTTONS", buttons: [{ type: "URL", text: "Rastrear", url: "https://rastreo.com" }] }] },
+      { mid: "tmpl_008", name: "reactivacion_cliente", cat: "MARKETING", comps: [{ type: "BODY", text: "¡Hola {{1}}! Te extrañamos 😊. Vuelve y recibe {{2}}% OFF exclusivo.", example: { body_text: [["Santiago", "20"]] } }, { type: "BUTTONS", buttons: [{ type: "URL", text: "Ver novedades", url: "https://tienda.com" }] }] },
+      { mid: "tmpl_009", name: "cita_recordatorio", cat: "UTILITY", comps: [{ type: "BODY", text: "Hola {{1}}, tu cita es el {{2}} a las {{3}}.", example: { body_text: [["Camila", "lunes 10", "3:00 PM"]] } }, { type: "BUTTONS", buttons: [{ type: "QUICK_REPLY", text: "Confirmar" }, { type: "QUICK_REPLY", text: "Reagendar" }] }] },
+      { mid: "tmpl_010", name: "black_friday_vip", cat: "MARKETING", comps: [{ type: "HEADER", format: "VIDEO" }, { type: "BODY", text: "🔥 {{1}}, como VIP tienes acceso anticipado. Hasta {{2}}% OFF", example: { body_text: [["Isabella", "70"]] } }, { type: "BUTTONS", buttons: [{ type: "URL", text: "Acceder", url: "https://tienda.com/vip" }] }] },
+    ];
+
+    for (const t of demoTemplates) {
+      const existing = await db.select().from(metaTemplates).where(eq(metaTemplates.metaTemplateId, t.mid)).limit(1);
+      if (existing.length > 0) continue;
+      await db.insert(metaTemplates).values({ userId, wabaId, metaTemplateId: t.mid, name: t.name, status: "APPROVED", category: t.cat, language: "es", components: t.comps });
+    }
+
+    // Notifications
+    const demoNotifs = [
+      { type: "campaign_completed" as const, title: 'Campaña "Black Friday 2026" completada', body: "3,420 enviados, 80 fallidos de 3,500", m: 180 },
+      { type: "campaign_completed" as const, title: 'Campaña "Recordatorio Pago" completada', body: "1,195 enviados, 5 fallidos de 1,200", m: 60 },
+      { type: "new_chat" as const, title: "Nuevo mensaje de Carlos Méndez", body: "Gracias, ya lo activé", m: 10 },
+      { type: "new_chat" as const, title: "Nuevo mensaje de Laura Rodríguez", body: "Quiero enviar a 8,000 clientes", m: 5 },
+      { type: "campaign_scheduled" as const, title: 'Campaña "Promo Navidad" programada', body: "8,000 contactos listos", m: 30 },
+      { type: "new_chat" as const, title: "Nuevo mensaje de Juan Pérez", body: "¿Tienen descuento para agencias?", m: 3 },
+    ];
+
+    for (const n of demoNotifs) {
+      await db.insert(notifications).values({ userId, type: n.type, title: n.title, body: n.body, read: n.m > 120, createdAt: new Date(Date.now() - n.m * 60000) });
+    }
+
+    return { success: true, message: "Demo data seeded: 12 contacts, 6 campaigns, 5 chats, 10 Meta templates, 6 notifications" };
   });
 }
