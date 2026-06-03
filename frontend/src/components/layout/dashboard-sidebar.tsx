@@ -8,6 +8,7 @@ import { useI18n } from "@/i18n";
 import { dashboardNavGroups } from "@/config/dashboard-navigation";
 import { Clock, AlertTriangle } from "lucide-react";
 import { getLicenseStatus } from "@/lib/license-utils";
+import { useChatUnread } from "@/hooks/use-chat-unread";
 
 export function DashboardSidebar() {
   const pathname = usePathname();
@@ -15,6 +16,7 @@ export function DashboardSidebar() {
   const { t } = useI18n();
 
   const licenseStatus = getLicenseStatus(user, t);
+  const { totalUnread } = useChatUnread();
 
   return (
     <aside className="w-56 border-r border-slate-100 bg-white flex flex-col justify-between p-4 shrink-0 hidden md:flex sticky top-0 h-screen">
@@ -48,7 +50,12 @@ export function DashboardSidebar() {
                 )}
               >
                 <group.icon className="w-4 h-4 shrink-0" strokeWidth={1.5} />
-                <span>{t(group.nameKey)}</span>
+                <span className="flex-1">{t(group.nameKey)}</span>
+                {group.nameKey === "nav.messaging" && totalUnread > 0 && (
+                  <span className="h-5 min-w-[20px] px-1.5 rounded-full bg-emerald-500 text-white text-[10px] font-bold flex items-center justify-center">
+                    {totalUnread > 99 ? "99+" : totalUnread}
+                  </span>
+                )}
               </Link>
             );
           })}

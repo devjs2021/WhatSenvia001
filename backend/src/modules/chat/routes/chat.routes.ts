@@ -121,4 +121,19 @@ export async function chatRoutes(app: FastifyInstance) {
     if (!phone) throw new Error("phone required");
     return chatService.updateConversationTags(userId, phone, tags || []);
   });
+
+  app.get("/unread", { preHandler: [authGuard] }, async (req) => {
+    const userId = (req as any).user.id;
+    const counts = await chatService.getUnreadCounts(userId);
+    const total = Object.values(counts).reduce((sum, c) => sum + c, 0);
+    return { counts, total };
+  });
+
+  app.post("/mark-read", { preHandler: [authGuard] }, async (req) => {
+    const { phone } = req.body as { phone: string };
+    const userId = (req as any).user.id;
+    if (!phone) throw new Error("phone required");
+    await chatService.markAsRead(userId, phone);
+    return { success: true };
+  });
 }

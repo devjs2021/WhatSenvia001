@@ -3,6 +3,7 @@ import { chatMessages } from "../../../infrastructure/database/schema/chat.js";
 import { contacts } from "../../../infrastructure/database/schema/contacts.js";
 import { whatsappSessions } from "../../../infrastructure/database/schema/whatsapp-sessions.js";
 import { eq, and, desc, sql, lt } from "drizzle-orm";
+import { chatReadCursors } from "../../../infrastructure/database/schema/chat-read-cursors.js";
 import { getWhatsAppProvider } from "../../../infrastructure/whatsapp/whatsapp.factory.js";
 
 export class ChatService {
@@ -211,6 +212,47 @@ export class ChatService {
     const contactId = await this.upsertContact(userId, phone);
     await db.update(contacts).set({ tags, updatedAt: new Date() }).where(eq(contacts.id, contactId));
     return { success: true };
+  }
+
+  async markAsRead(userId: string, phone: string) {
+    await db
+      .insert(chatReadCursors)
+      .values({ userId, phone, lastReadAt: new Date() })
+      .onConflictDoUpdate({
+        target: [chatReadCursors.userId, chatReadCursors.phone],
+        set: { lastReadAt: new Date() },
+      });
+  }
+
+  async getUnreadCounts(userId: string): Promise<Record<string, number>> {
+    const userSessions = await db
+      .select({ id: whatsappSessions.id })
+      .from(whatsappSessions)
+      .where(eq(whatsappSessions.userId, userId));
+
+    if (userSessions.length === 0) return {};
+
+    const sessionIds = userSessions.map((s) => s.id);
+    const result = await db.execute(sql`
+      SELECT cm.phone, COUNT(*)::int as unread
+      FROM chat_messages cm
+      LEFT JOIN chat_read_cursors crc ON crc.user_id = ${userId} AND crc.phone = cm.phone
+      WHERE cm.session_id = ANY(ARRAY[${sql.join(sessionIds, sql`, `)}]::uuid[])
+        AND cm.direction = 'incoming'
+        AND cm.created_at > COALESCE(crc.last_read_at, '1970-01-01'::timestamp)
+      GROUP BY cm.phone
+    `);
+
+    const counts: Record<string, number> = {};
+    for (const row of result.rows as any[]) {
+      counts[row.phone] = row.unread;
+    }
+    return counts;
+  }
+
+  async getTotalUnread(userId: string): Promise<number> {
+    const counts = await this.getUnreadCounts(userId);
+    return Object.values(counts).reduce((sum, c) => sum + c, 0);
   }
 }
 

@@ -9,6 +9,7 @@ import { useI18n } from "@/i18n";
 import { dashboardNavGroups } from "@/config/dashboard-navigation";
 import { Clock, X, AlertTriangle, LogOut, ChevronDown } from "lucide-react";
 import { getLicenseStatus } from "@/lib/license-utils";
+import { useChatUnread } from "@/hooks/use-chat-unread";
 
 interface MobileSidebarProps {
   open: boolean;
@@ -20,6 +21,7 @@ export function MobileSidebar({ open, onClose }: MobileSidebarProps) {
   const { user, logout } = useAuth();
   const { t } = useI18n();
   const licenseStatus = getLicenseStatus(user, t);
+  const { totalUnread } = useChatUnread();
 
   const [expandedGroup, setExpandedGroup] = useState<string | null>(() => {
     const active = dashboardNavGroups.find((g) =>
@@ -99,7 +101,12 @@ export function MobileSidebar({ open, onClose }: MobileSidebarProps) {
                   )}
                 >
                   <group.icon className="w-5 h-5 shrink-0" strokeWidth={1.5} />
-                  <span>{t(group.nameKey)}</span>
+                  <span className="flex-1">{t(group.nameKey)}</span>
+                  {group.nameKey === "nav.messaging" && totalUnread > 0 && (
+                    <span className="h-5 min-w-[20px] px-1.5 rounded-full bg-emerald-500 text-white text-[10px] font-bold flex items-center justify-center">
+                      {totalUnread > 99 ? "99+" : totalUnread}
+                    </span>
+                  )}
                 </Link>
               );
             }
@@ -115,9 +122,14 @@ export function MobileSidebar({ open, onClose }: MobileSidebarProps) {
                       : "text-slate-500 hover:text-slate-900 hover:bg-slate-50"
                   )}
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 flex-1">
                     <group.icon className="w-5 h-5 shrink-0" strokeWidth={1.5} />
                     <span>{t(group.nameKey)}</span>
+                    {group.nameKey === "nav.messaging" && totalUnread > 0 && (
+                      <span className="h-5 min-w-[20px] px-1.5 rounded-full bg-emerald-500 text-white text-[10px] font-bold flex items-center justify-center">
+                        {totalUnread > 99 ? "99+" : totalUnread}
+                      </span>
+                    )}
                   </div>
                   <ChevronDown
                     className={cn(

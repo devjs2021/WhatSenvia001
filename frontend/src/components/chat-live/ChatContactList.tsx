@@ -12,9 +12,10 @@ interface ChatContactListProps {
   onSearchChange: (v: string) => void;
   onSelect: (contact: ChatContact) => void;
   hidden?: boolean;
+  unreadCounts?: Record<string, number>;
 }
 
-export function ChatContactList({ contacts, selectedPhone, searchTerm, onSearchChange, onSelect, hidden }: ChatContactListProps) {
+export function ChatContactList({ contacts, selectedPhone, searchTerm, onSearchChange, onSelect, hidden, unreadCounts = {} }: ChatContactListProps) {
   const { t } = useI18n();
 
   const filtered = contacts.filter((c) => {
@@ -22,6 +23,15 @@ export function ChatContactList({ contacts, selectedPhone, searchTerm, onSearchC
     const name = c.name || c.pushName || c.contactName || "";
     const s = searchTerm.toLowerCase();
     return phone.includes(s) || name.toLowerCase().includes(s);
+  });
+
+  // Sort: unread first, then by last message time
+  const sorted = [...filtered].sort((a, b) => {
+    const ua = unreadCounts[a.phone] || 0;
+    const ub = unreadCounts[b.phone] || 0;
+    if (ua > 0 && ub === 0) return -1;
+    if (ub > 0 && ua === 0) return 1;
+    return 0;
   });
 
   return (
@@ -36,15 +46,16 @@ export function ChatContactList({ contacts, selectedPhone, searchTerm, onSearchC
         />
       </div>
       <div className="flex-1 overflow-y-auto space-y-0.5 overscroll-contain">
-        {filtered.length === 0 ? (
+        {sorted.length === 0 ? (
           <p className="text-xs text-slate-400 p-4 text-center">{t("chatLive.noContacts")}</p>
         ) : (
-          filtered.map((contact) => (
+          sorted.map((contact) => (
             <ChatContactItem
               key={contact.phone}
               contact={contact}
               isSelected={selectedPhone === contact.phone}
               onClick={() => onSelect(contact)}
+              unread={unreadCounts[contact.phone] || 0}
             />
           ))
         )}

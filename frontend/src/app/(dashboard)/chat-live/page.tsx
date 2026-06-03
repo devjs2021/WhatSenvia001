@@ -14,6 +14,7 @@ import { ChatMessageArea } from "@/components/chat-live/ChatMessageArea";
 import { ChatKanbanView } from "@/components/chat-live/ChatKanbanView";
 import { ChatCrmPanel } from "@/components/chat-live/ChatCrmPanel";
 import type { ChatContact, ChatMessage, FilterMode, ViewMode } from "@/components/chat-live/chat-types";
+import { useChatUnread } from "@/hooks/use-chat-unread";
 
 export default function ChatLivePage() {
   const { t } = useI18n();
@@ -30,6 +31,7 @@ export default function ChatLivePage() {
   const [attachedPreview, setAttachedPreview] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const [showCrmPanel, setShowCrmPanel] = useState(false);
+  const { unreadCounts, markAsRead } = useChatUnread();
 
   // Sessions
   const { data: sessionsData } = useQuery({
@@ -73,6 +75,7 @@ export default function ChatLivePage() {
     setSelectedContact(contact.phone);
     if (filterMode === "all" && contact.sessionId) setActiveSessionId(contact.sessionId);
     if (viewMode === "kanban") setViewMode("chat");
+    markAsRead(contact.phone);
   }
 
   function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
@@ -234,6 +237,7 @@ export default function ChatLivePage() {
               onSearchChange={setSearchTerm}
               onSelect={handleSelectContact}
               hidden={!!selectedContact}
+              unreadCounts={unreadCounts}
             />
 
             {/* Chat area */}
