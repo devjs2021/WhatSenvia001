@@ -326,7 +326,32 @@ export async function adminRoutes(app: FastifyInstance) {
     }
 
     const license = await licenseService.getActiveLicense(id);
-    if (!license) return reply.status(404).send({ error: "El usuario no tiene licencia activa" });
+
+    // If user has no active license, create one (custom plan) carrying just this limit
+    if (!license) {
+      const created = await licenseService.createCustom(id, (request as any).user.id, {
+        plan: "custom",
+        durationDays: 30,
+        maxSessions,
+        maxContacts: 100,
+        maxCampaignsPerDay: 2,
+        maxMessagesPerDay: 100,
+        features: {
+          campaigns: true,
+          botBuilder: false,
+          chatLive: true,
+          polls: false,
+          scheduledCampaigns: false,
+          contactExtraction: false,
+          import: true,
+          reports: false,
+          templates: true,
+          campaignControl: false,
+        },
+        notes: "Creada automáticamente al asignar límite de sesiones",
+      });
+      return { success: true, data: created };
+    }
 
     const updated = await licenseService.update(license.id, { maxSessions });
     return { success: true, data: updated };

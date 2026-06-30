@@ -418,18 +418,16 @@ export default function AdminPage() {
                               </div>
                               <div className="text-xs text-slate-400">{userSessions.length} total</div>
                             </div>
-                            {user.license && (
-                              <button
-                                onClick={() => {
-                                  setEditingMaxSessions(editingMaxSessions === user.id ? null : user.id);
-                                  setMaxSessionsValue(maxSess);
-                                }}
-                                className="h-6 w-6 rounded-lg flex items-center justify-center hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-all"
-                                title="Editar límite de sesiones"
-                              >
-                                <Edit2 className="h-3 w-3" />
-                              </button>
-                            )}
+                            <button
+                              onClick={() => {
+                                setEditingMaxSessions(editingMaxSessions === user.id ? null : user.id);
+                                setMaxSessionsValue(maxSess);
+                              }}
+                              className="h-6 w-6 rounded-lg flex items-center justify-center hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-all"
+                              title={user.license ? "Editar límite de sesiones" : "Asignar límite de sesiones (crea licencia)"}
+                            >
+                              <Edit2 className="h-3 w-3" />
+                            </button>
                           </div>
                           {editingMaxSessions === user.id && (
                             <div className="mt-2 flex items-center gap-1">
