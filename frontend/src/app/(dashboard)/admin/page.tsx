@@ -75,6 +75,18 @@ const statusLabels: Record<string, string> = {
   qr_pending: "QR pendiente",
 };
 
+function daysRemaining(expiresAt: string): number {
+  const diffMs = new Date(expiresAt).getTime() - Date.now();
+  return Math.ceil(diffMs / 86400000);
+}
+
+function remainingLabel(days: number): { text: string; className: string } {
+  if (days < 0) return { text: `Expiró hace ${Math.abs(days)}d`, className: "text-red-600" };
+  if (days === 0) return { text: "Expira hoy", className: "text-red-600" };
+  if (days <= 3) return { text: `Quedan ${days}d`, className: "text-amber-600" };
+  return { text: `Quedan ${days}d`, className: "text-slate-400" };
+}
+
 export default function AdminPage() {
   const { isAdmin } = useAuth();
   const router = useRouter();
@@ -380,10 +392,17 @@ export default function AdminPage() {
                                 {user.license.plan} ({user.license.status})
                               </span>
                               {user.license.expiresAt && (
-                                <p className="text-xs text-slate-400 mt-1 flex items-center gap-1">
-                                  <Clock className="h-3 w-3" />
-                                  {new Date(user.license.expiresAt).toLocaleDateString()}
-                                </p>
+                                <>
+                                  <p className="text-xs text-slate-400 mt-1 flex items-center gap-1">
+                                    <Clock className="h-3 w-3" />
+                                    {new Date(user.license.expiresAt).toLocaleDateString()}
+                                  </p>
+                                  {(() => {
+                                    const days = daysRemaining(user.license.expiresAt);
+                                    const { text, className } = remainingLabel(days);
+                                    return <p className={`text-xs font-semibold mt-0.5 ${className}`}>{text}</p>;
+                                  })()}
+                                </>
                               )}
                             </div>
                           ) : (

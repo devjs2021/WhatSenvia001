@@ -14,7 +14,9 @@ import { chatMessages } from "../../../infrastructure/database/schema/chat.js";
 import { whatsappSessions } from "../../../infrastructure/database/schema/whatsapp-sessions.js";
 import { notifications } from "../../../infrastructure/database/schema/notifications.js";
 import { metaTemplates } from "../../../infrastructure/database/schema/meta-templates.js";
-import { whatsappService } from "../../whatsapp/services/whatsapp.service.js";
+import { WhatsAppService } from "../../whatsapp/services/whatsapp.service.js";
+
+const whatsappService = new WhatsAppService();
 
 export async function adminRoutes(app: FastifyInstance) {
   // All admin routes require admin role
