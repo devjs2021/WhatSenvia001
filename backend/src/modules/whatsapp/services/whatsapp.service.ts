@@ -2,7 +2,7 @@ import { db } from "../../../config/database.js";
 import { whatsappSessions } from "../../../infrastructure/database/schema/whatsapp-sessions.js";
 import { campaigns } from "../../../infrastructure/database/schema/campaigns.js";
 import { contacts } from "../../../infrastructure/database/schema/contacts.js";
-import { eq } from "drizzle-orm";
+import { eq, count } from "drizzle-orm";
 import { getWhatsAppProvider } from "../../../infrastructure/whatsapp/whatsapp.factory.js";
 import { decrypt } from "../../../infrastructure/security/encryption.service.js";
 import QRCode from "qrcode";
@@ -12,6 +12,7 @@ import { chatService } from "../../chat/services/chat.service.js";
 import { chatBroadcast } from "../../chat/websocket/chat-broadcast.js";
 import { logger } from "../../../config/logger.js";
 import { notificationService } from "../../notifications/services/notification.service.js";
+import { licenseService } from "../../admin/services/license.service.js";
 
 const pollService = new PollService();
 const DEV_USER_ID = "00000000-0000-0000-0000-000000000000";
@@ -203,6 +204,19 @@ export class WhatsAppService {
   }
 
   async createSession(userId: string, name: string) {
+    // Enforce maxSessions from active license
+    const license = await licenseService.getActiveLicense(userId);
+    if (license) {
+      const [{ total }] = await db
+        .select({ total: count() })
+        .from(whatsappSessions)
+        .where(eq(whatsappSessions.userId, userId));
+
+      if (total >= license.maxSessions) {
+        throw new Error(`Límite de sesiones alcanzado (máx. ${license.maxSessions}). Contacta al administrador para ampliar tu plan.`);
+      }
+    }
+
     const [session] = await db
       .insert(whatsappSessions)
       .values({ userId, name, status: "disconnected" })

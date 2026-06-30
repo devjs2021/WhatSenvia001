@@ -14,6 +14,7 @@ import { chatMessages } from "../../../infrastructure/database/schema/chat.js";
 import { whatsappSessions } from "../../../infrastructure/database/schema/whatsapp-sessions.js";
 import { notifications } from "../../../infrastructure/database/schema/notifications.js";
 import { metaTemplates } from "../../../infrastructure/database/schema/meta-templates.js";
+import { whatsappService } from "../../whatsapp/services/whatsapp.service.js";
 
 export async function adminRoutes(app: FastifyInstance) {
   // All admin routes require admin role
@@ -311,6 +312,115 @@ export async function adminRoutes(app: FastifyInstance) {
     const { id } = request.params as { id: string };
     const usage = await licenseService.checkLimits(id);
     return { success: true, data: usage };
+  });
+
+  // Update maxSessions for a user's active license
+  app.patch("/users/:id/max-sessions", async (request: FastifyRequest, reply: FastifyReply) => {
+    const { id } = request.params as { id: string };
+    const { maxSessions } = request.body as { maxSessions: number };
+
+    if (typeof maxSessions !== "number" || maxSessions < 0) {
+      return reply.status(422).send({ error: "maxSessions debe ser un número >= 0" });
+    }
+
+    const license = await licenseService.getActiveLicense(id);
+    if (!license) return reply.status(404).send({ error: "El usuario no tiene licencia activa" });
+
+    const updated = await licenseService.update(license.id, { maxSessions });
+    return { success: true, data: updated };
+  });
+
+  // ============================================================
+  // WHATSAPP SESSIONS MANAGEMENT (ADMIN)
+  // ============================================================
+
+  // List ALL sessions from all users with user info and usage
+  app.get("/sessions", async () => {
+    const allSessions = await db
+      .select({
+        id: whatsappSessions.id,
+        userId: whatsappSessions.userId,
+        name: whatsappSessions.name,
+        phone: whatsappSessions.phone,
+        status: whatsappSessions.status,
+        connectionType: whatsappSessions.connectionType,
+        wabaId: whatsappSessions.wabaId,
+        lastConnectedAt: whatsappSessions.lastConnectedAt,
+        createdAt: whatsappSessions.createdAt,
+        userName: users.name,
+        userEmail: users.email,
+        userCompany: users.company,
+        userIsActive: users.isActive,
+      })
+      .from(whatsappSessions)
+      .leftJoin(users, eq(whatsappSessions.userId, users.id))
+      .orderBy(desc(whatsappSessions.createdAt));
+
+    // Attach maxSessions from active license per user
+    const userIds = [...new Set(allSessions.map((s) => s.userId))];
+    const licenseLimits: Record<string, number> = {};
+    const sessionCounts: Record<string, number> = {};
+
+    for (const userId of userIds) {
+      const license = await licenseService.getActiveLicense(userId);
+      licenseLimits[userId] = license?.maxSessions ?? 0;
+      sessionCounts[userId] = allSessions.filter((s) => s.userId === userId).length;
+    }
+
+    const result = allSessions.map((s) => ({
+      ...s,
+      maxSessions: licenseLimits[s.userId] ?? 0,
+      totalSessionsForUser: sessionCounts[s.userId] ?? 0,
+    }));
+
+    return { success: true, data: result };
+  });
+
+  // Delete/force-remove a specific session (admin power)
+  app.delete("/sessions/:sessionId", async (request: FastifyRequest, reply: FastifyReply) => {
+    const { sessionId } = request.params as { sessionId: string };
+
+    const [session] = await db
+      .select()
+      .from(whatsappSessions)
+      .where(eq(whatsappSessions.id, sessionId))
+      .limit(1);
+
+    if (!session) return reply.status(404).send({ error: "Sesión no encontrada" });
+
+    // Disconnect active provider if needed
+    try {
+      await whatsappService.deleteSession(sessionId, session.userId);
+    } catch {
+      // Force delete even if disconnect fails
+      await db.delete(whatsappSessions).where(eq(whatsappSessions.id, sessionId));
+    }
+
+    return { success: true };
+  });
+
+  // Disconnect (but keep) a session
+  app.post("/sessions/:sessionId/disconnect", async (request: FastifyRequest, reply: FastifyReply) => {
+    const { sessionId } = request.params as { sessionId: string };
+
+    const [session] = await db
+      .select()
+      .from(whatsappSessions)
+      .where(eq(whatsappSessions.id, sessionId))
+      .limit(1);
+
+    if (!session) return reply.status(404).send({ error: "Sesión no encontrada" });
+
+    try {
+      await whatsappService.disconnectSession(sessionId, session.userId);
+    } catch {
+      await db
+        .update(whatsappSessions)
+        .set({ status: "disconnected", updatedAt: new Date() })
+        .where(eq(whatsappSessions.id, sessionId));
+    }
+
+    return { success: true };
   });
 
   // ============================================================

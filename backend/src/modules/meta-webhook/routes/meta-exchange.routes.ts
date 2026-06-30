@@ -3,8 +3,9 @@ import { env } from '../../../config/env.js'
 import { authGuard } from '../../../shared/middleware/auth.middleware.js'
 import { db } from '../../../config/database.js'
 import { whatsappSessions } from '../../../infrastructure/database/schema/whatsapp-sessions.js'
-import { eq, and } from 'drizzle-orm'
+import { eq, and, count } from 'drizzle-orm'
 import { encrypt, decrypt } from '../../../infrastructure/security/encryption.service.js'
+import { licenseService } from '../../admin/services/license.service.js'
 import crypto from 'crypto'
 
 export async function metaExchangeRoutes(fastify: FastifyInstance) {
@@ -93,6 +94,23 @@ export async function metaExchangeRoutes(fastify: FastifyInstance) {
           )
         )
         .limit(1)
+
+      // Enforce maxSessions only when creating a new session (not updating existing)
+      if (existingSession.length === 0) {
+        const license = await licenseService.getActiveLicense(userId)
+        if (license) {
+          const [{ total }] = await db
+            .select({ total: count() })
+            .from(whatsappSessions)
+            .where(eq(whatsappSessions.userId, userId))
+
+          if (total >= license.maxSessions) {
+            return reply.status(403).send({
+              error: `Límite de sesiones alcanzado (máx. ${license.maxSessions}). Contacta al administrador para ampliar tu plan.`
+            })
+          }
+        }
+      }
 
       // Encriptar token antes de guardarlo en BD
       const encryptedToken = encrypt(accessToken)

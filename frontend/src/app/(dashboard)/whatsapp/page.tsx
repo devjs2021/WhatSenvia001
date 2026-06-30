@@ -127,7 +127,6 @@ export default function WhatsAppPage() {
   });
 
   const sessions = data?.data || [];
-  const hasMetaCloudSession = sessions.some((s) => s.connectionType === "meta_cloud");
 
   useEffect(() => {
     if (connectingId) {
@@ -162,8 +161,7 @@ export default function WhatsAppPage() {
       />
 
       {/* ─── META CLOUD: Connect Button (Top) + Step-by-step Guide ─── */}
-      {!hasMetaCloudSession && (
-        <DashboardCard padding="lg">
+      <DashboardCard padding="lg">
           <DashboardCardHeader>
             <div>
               <DashboardCardTitle className="text-lg">
@@ -222,7 +220,6 @@ export default function WhatsAppPage() {
             <MetaSignupButton onSuccess={handleMetaSuccess} />
           </div>
         </DashboardCard>
-      )}
 
       {/* ─── BAILEYS: Create QR Session ─── */}
       <DashboardCard>
