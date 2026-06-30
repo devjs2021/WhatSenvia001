@@ -44,24 +44,26 @@ export default function ChatLivePage() {
   });
   const sessions = (sessionsData?.data || []).filter((s) => s.status === "connected");
   const metaSessions = sessions.filter((s) => s.connectionType === "meta_cloud");
-  const baileysSessions = sessions.filter((s) => s.connectionType !== "meta_cloud");
-  const sessionColors = getSessionColorMap(sessions);
+  const sessionColors = getSessionColorMap(metaSessions);
   const sessionsById: Record<string, WhatsAppSession> = {};
-  for (const s of sessions) sessionsById[s.id] = s;
+  for (const s of metaSessions) sessionsById[s.id] = s;
 
-  // Real-time WebSocket per connected session
-  useChatWebSocket(sessions.map((s) => s.id), token);
+  // Real-time WebSocket — only Meta Cloud sessions in live chat
+  useChatWebSocket(metaSessions.map((s) => s.id), token);
 
   const querySessionId = filterMode === "all" ? "all" : filterMode;
 
-  // Contacts
+  // Contacts — only from Meta Cloud sessions
+  const metaSessionIds = metaSessions.map((s) => s.id);
   const { data: contactsData } = useQuery({
     queryKey: ["chat-contacts", querySessionId],
     queryFn: () => api.get<ChatContact[]>(`/chat/conversations?sessionId=${querySessionId}`),
-    enabled: sessions.length > 0,
+    enabled: metaSessions.length > 0,
     refetchInterval: 10000,
   });
-  const contacts = contactsData || [];
+  const contacts = (contactsData || []).filter(
+    (c) => !c.sessionId || metaSessionIds.includes(c.sessionId)
+  );
 
   const effectiveSessionId = filterMode === "all" ? activeSessionId : filterMode;
 
@@ -180,8 +182,8 @@ export default function ChatLivePage() {
           </div>
         </DashboardHeader>
 
-        {/* Filter buttons - fixed */}
-        {sessions.length > 0 && (
+        {/* Filter buttons — one per Meta Cloud account */}
+        {metaSessions.length > 0 && (
           <div className="flex gap-1.5 overflow-x-auto pb-1">
             <button
               onClick={() => { setFilterMode("all"); setSelectedContact(null); setActiveSessionId(""); }}
@@ -201,19 +203,7 @@ export default function ChatLivePage() {
                 }`}
               >
                 <span className={`inline-block w-1.5 h-1.5 rounded-full mr-1 ${sessionColors[s.id].dot}`} />
-                Meta {formatPhone(s)}
-              </button>
-            ))}
-            {baileysSessions.map((s) => (
-              <button
-                key={s.id}
-                onClick={() => { setFilterMode(s.id); setSelectedContact(null); }}
-                className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all border whitespace-nowrap ${
-                  filterMode === s.id ? `${sessionColors[s.id].badge}` : "border-slate-200 text-slate-500 hover:bg-slate-50"
-                }`}
-              >
-                <span className={`inline-block w-1.5 h-1.5 rounded-full mr-1 ${sessionColors[s.id].dot}`} />
-                WhatsApp {formatPhone(s)}
+                {s.name || formatPhone(s)}
               </button>
             ))}
           </div>
@@ -222,7 +212,7 @@ export default function ChatLivePage() {
 
       {/* Scrollable content area */}
       <div className="flex-1 min-h-0 lg:px-10 lg:pb-6">
-        {sessions.length === 0 ? (
+        {metaSessions.length === 0 ? (
           <DashboardCard>
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <MessageSquare className="h-10 w-10 text-slate-300 mb-3" />
