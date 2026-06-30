@@ -221,11 +221,12 @@ export async function adminRoutes(app: FastifyInstance) {
 
   // Create license from plan
   app.post("/licenses/plan", async (request: FastifyRequest, reply: FastifyReply) => {
-    const { userId, plan, durationDays, notes } = request.body as {
+    const { userId, plan, durationDays, notes, maxSessions } = request.body as {
       userId: string;
       plan: string;
       durationDays?: number;
       notes?: string;
+      maxSessions?: number;
     };
 
     if (!userId || !plan) {
@@ -240,7 +241,7 @@ export async function adminRoutes(app: FastifyInstance) {
       userId,
       plan as keyof typeof LICENSE_PLANS,
       (request as any).user.id,
-      { durationDays, notes }
+      { durationDays, notes, maxSessions }
     );
 
     return { success: true, data: license };

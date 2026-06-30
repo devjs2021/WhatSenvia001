@@ -15,6 +15,7 @@ import { ChatKanbanView } from "@/components/chat-live/ChatKanbanView";
 import { ChatCrmPanel } from "@/components/chat-live/ChatCrmPanel";
 import type { ChatContact, ChatMessage, FilterMode, ViewMode } from "@/components/chat-live/chat-types";
 import { useChatUnread } from "@/hooks/use-chat-unread";
+import { getSessionColorMap, getSessionColor } from "@/lib/session-colors";
 
 export default function ChatLivePage() {
   const { t } = useI18n();
@@ -41,6 +42,9 @@ export default function ChatLivePage() {
   const sessions = (sessionsData?.data || []).filter((s) => s.status === "connected");
   const metaSessions = sessions.filter((s) => s.connectionType === "meta_cloud");
   const baileysSessions = sessions.filter((s) => s.connectionType !== "meta_cloud");
+  const sessionColors = getSessionColorMap(sessions);
+  const sessionsById: Record<string, WhatsAppSession> = {};
+  for (const s of sessions) sessionsById[s.id] = s;
 
   const querySessionId = filterMode === "all" ? "all" : filterMode;
 
@@ -187,10 +191,10 @@ export default function ChatLivePage() {
                 key={s.id}
                 onClick={() => { setFilterMode(s.id); setSelectedContact(null); }}
                 className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all border whitespace-nowrap ${
-                  filterMode === s.id ? "bg-blue-50 border-blue-500 text-blue-600" : "border-slate-200 text-slate-500 hover:bg-blue-50/50"
+                  filterMode === s.id ? `${sessionColors[s.id].badge}` : "border-slate-200 text-slate-500 hover:bg-slate-50"
                 }`}
               >
-                <span className={`inline-block w-1.5 h-1.5 rounded-full mr-1 ${filterMode === s.id ? "bg-blue-500" : "bg-blue-400"}`} />
+                <span className={`inline-block w-1.5 h-1.5 rounded-full mr-1 ${sessionColors[s.id].dot}`} />
                 Meta {formatPhone(s)}
               </button>
             ))}
@@ -199,10 +203,10 @@ export default function ChatLivePage() {
                 key={s.id}
                 onClick={() => { setFilterMode(s.id); setSelectedContact(null); }}
                 className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all border whitespace-nowrap ${
-                  filterMode === s.id ? "bg-emerald-50 border-emerald-500 text-emerald-600" : "border-slate-200 text-slate-500 hover:bg-emerald-50/50"
+                  filterMode === s.id ? `${sessionColors[s.id].badge}` : "border-slate-200 text-slate-500 hover:bg-slate-50"
                 }`}
               >
-                <span className={`inline-block w-1.5 h-1.5 rounded-full mr-1 ${filterMode === s.id ? "bg-emerald-500" : "bg-emerald-400"}`} />
+                <span className={`inline-block w-1.5 h-1.5 rounded-full mr-1 ${sessionColors[s.id].dot}`} />
                 WhatsApp {formatPhone(s)}
               </button>
             ))}
@@ -238,6 +242,7 @@ export default function ChatLivePage() {
               onSelect={handleSelectContact}
               hidden={!!selectedContact}
               unreadCounts={unreadCounts}
+              sessionColors={sessionColors}
             />
 
             {/* Chat area */}
@@ -254,6 +259,12 @@ export default function ChatLivePage() {
               onClearAttachment={clearAttachment}
               onBack={() => setSelectedContact(null)}
               onToggleCrm={() => setShowCrmPanel(!showCrmPanel)}
+              accountColor={selectedContactObj?.sessionId ? getSessionColor(selectedContactObj.sessionId) : undefined}
+              accountLabel={
+                selectedContactObj?.sessionId && sessionsById[selectedContactObj.sessionId]
+                  ? `${sessionsById[selectedContactObj.sessionId].connectionType === "meta_cloud" ? "Meta" : "WhatsApp"} ${formatPhone(sessionsById[selectedContactObj.sessionId])}`.trim()
+                  : undefined
+              }
             />
 
             {/* CRM Panel */}

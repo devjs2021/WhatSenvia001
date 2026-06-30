@@ -33,6 +33,7 @@ import {
   File,
   Phone,
 } from "lucide-react";
+import { getSessionColor } from "@/lib/session-colors";
 
 interface MetaTemplate {
   id: string;
@@ -653,6 +654,8 @@ export default function MetaTemplatesPage() {
   );
 
   const activeSessionId = sessionId || metaSessions[0]?.id || "";
+  const activeSessionColor = getSessionColor(activeSessionId);
+  const activeSession = metaSessions.find((s) => s.id === activeSessionId);
 
   const { data: templatesData, isLoading } = useQuery({
     queryKey: ["meta-templates", activeSessionId],
@@ -719,7 +722,11 @@ export default function MetaTemplatesPage() {
         <div className="flex items-center gap-2">
           {/* Session selector */}
           <div className="relative">
-            <Smartphone className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+            {activeSession ? (
+              <span className={`absolute left-2.5 top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full ${activeSessionColor.dot}`} />
+            ) : (
+              <Smartphone className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+            )}
             <select
               value={activeSessionId}
               onChange={(e) => setSessionId(e.target.value)}
@@ -939,7 +946,7 @@ export default function MetaTemplatesPage() {
                       return (
                         <tr
                           key={tpl.id}
-                          className="border-b hover:bg-muted/30 transition-colors group cursor-pointer"
+                          className={`border-b border-l-4 ${activeSessionColor.border} hover:bg-muted/30 transition-colors group cursor-pointer`}
                           onClick={() => setPreviewTemplate(tpl)}
                         >
                           <td className="px-4 py-2.5">

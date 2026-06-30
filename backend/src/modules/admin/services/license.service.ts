@@ -69,7 +69,7 @@ export class LicenseService {
     userId: string,
     plan: keyof typeof LICENSE_PLANS,
     createdBy: string,
-    options?: { durationDays?: number; notes?: string }
+    options?: { durationDays?: number; notes?: string; maxSessions?: number }
   ) {
     const preset = LICENSE_PLANS[plan];
     const durationDays = options?.durationDays || preset.durationDays;
@@ -91,7 +91,7 @@ export class LicenseService {
         status: "active",
         startsAt: new Date(),
         expiresAt,
-        maxSessions: preset.maxSessions,
+        maxSessions: options?.maxSessions ?? preset.maxSessions,
         maxContacts: preset.maxContacts,
         maxCampaignsPerDay: preset.maxCampaignsPerDay,
         maxMessagesPerDay: preset.maxMessagesPerDay,

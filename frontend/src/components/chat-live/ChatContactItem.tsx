@@ -4,6 +4,7 @@ import { User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ChatContact } from "./chat-types";
 import { formatTime, getContactMediaPrefix, getContactDisplayName } from "./chat-utils";
+import type { SessionColor } from "@/lib/session-colors";
 
 interface ChatContactItemProps {
   contact: ChatContact;
@@ -13,9 +14,10 @@ interface ChatContactItemProps {
   draggable?: boolean;
   onDragStart?: (e: React.DragEvent) => void;
   unread?: number;
+  accountColor?: SessionColor;
 }
 
-export function ChatContactItem({ contact, isSelected, onClick, compact = false, draggable, onDragStart, unread = 0 }: ChatContactItemProps) {
+export function ChatContactItem({ contact, isSelected, onClick, compact = false, draggable, onDragStart, unread = 0, accountColor }: ChatContactItemProps) {
   return (
     <button
       onClick={onClick}
@@ -33,11 +35,17 @@ export function ChatContactItem({ contact, isSelected, onClick, compact = false,
     >
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-3 lg:gap-2 min-w-0">
-          <div className={cn(
-            "h-11 w-11 lg:h-9 lg:w-9 rounded-full flex items-center justify-center shrink-0",
-            unread > 0 ? "bg-emerald-100" : "bg-slate-100"
-          )}>
-            <User className={cn("h-5 w-5 lg:h-4 lg:w-4", unread > 0 ? "text-emerald-500" : "text-slate-400")} />
+          <div className="relative shrink-0">
+            <div className={cn(
+              "h-11 w-11 lg:h-9 lg:w-9 rounded-full flex items-center justify-center",
+              unread > 0 ? "bg-emerald-100" : "bg-slate-100",
+              accountColor && `ring-2 ${accountColor.ring}`
+            )}>
+              <User className={cn("h-5 w-5 lg:h-4 lg:w-4", unread > 0 ? "text-emerald-500" : "text-slate-400")} />
+            </div>
+            {accountColor && (
+              <span className={cn("absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-white", accountColor.dot)} />
+            )}
           </div>
           <div className="min-w-0">
             <p className={cn(

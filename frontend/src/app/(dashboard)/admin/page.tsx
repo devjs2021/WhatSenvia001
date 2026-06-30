@@ -102,7 +102,7 @@ export default function AdminPage() {
   const [maxSessionsValue, setMaxSessionsValue] = useState<number>(1);
 
   const [newUser, setNewUser] = useState({ email: "", password: "", name: "", company: "", role: "user" });
-  const [newLicense, setNewLicense] = useState({ plan: "basic", durationDays: 30 });
+  const [newLicense, setNewLicense] = useState({ plan: "basic", durationDays: 30, maxSessions: 1 });
   const [newPassword, setNewPassword] = useState("");
 
   useEffect(() => {
@@ -159,7 +159,7 @@ export default function AdminPage() {
 
   async function handleCreateLicense(userId: string) {
     try {
-      await api.post("/admin/licenses/plan", { userId, plan: newLicense.plan, durationDays: newLicense.durationDays });
+      await api.post("/admin/licenses/plan", { userId, plan: newLicense.plan, durationDays: newLicense.durationDays, maxSessions: newLicense.maxSessions });
       toast.success(`Licencia ${newLicense.plan} creada`);
       setShowCreateLicense(null);
       loadData();
@@ -498,6 +498,10 @@ export default function AdminPage() {
                                 onChange={(e) => setNewLicense({ ...newLicense, durationDays: Number(e.target.value) })}
                                 className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 w-full"
                                 placeholder="Días de duración" min={1} />
+                              <input type="number" value={newLicense.maxSessions}
+                                onChange={(e) => setNewLicense({ ...newLicense, maxSessions: Number(e.target.value) })}
+                                className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 w-full"
+                                placeholder="Cuentas conectadas (máx. sesiones)" min={0} />
                               <button onClick={() => handleCreateLicense(user.id)}
                                 className="w-full bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl px-3 py-1.5 text-xs font-semibold transition-all">
                                 Asignar Licencia

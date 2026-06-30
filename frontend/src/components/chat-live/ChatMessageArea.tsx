@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import type { ChatContact, ChatMessage } from "./chat-types";
 import { formatTime, getContactDisplayName } from "./chat-utils";
+import type { SessionColor } from "@/lib/session-colors";
 
 interface ChatMessageAreaProps {
   contact: ChatContact | null;
@@ -21,11 +22,14 @@ interface ChatMessageAreaProps {
   onClearAttachment: () => void;
   onBack: () => void;
   onToggleCrm?: () => void;
+  accountColor?: SessionColor;
+  accountLabel?: string;
 }
 
 export function ChatMessageArea({
   contact, messages, messageText, onMessageChange, onSend, sending,
   attachedFile, attachedPreview, onFileSelect, onClearAttachment, onBack, onToggleCrm,
+  accountColor, accountLabel,
 }: ChatMessageAreaProps) {
   const { t } = useI18n();
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -77,12 +81,24 @@ export function ChatMessageArea({
           <button onClick={onBack} className="lg:hidden h-9 w-9 rounded-full flex items-center justify-center hover:bg-slate-50 active:bg-slate-100 text-slate-500 shrink-0 -ml-1">
             <ArrowLeft className="h-5 w-5" />
           </button>
-          <div className="h-10 w-10 lg:h-8 lg:w-8 rounded-full bg-slate-100 flex items-center justify-center shrink-0">
-            <User className="h-5 w-5 lg:h-4 lg:w-4 text-slate-400" />
+          <div className="relative shrink-0">
+            <div className={`h-10 w-10 lg:h-8 lg:w-8 rounded-full bg-slate-100 flex items-center justify-center ${accountColor ? `ring-2 ${accountColor.ring}` : ""}`}>
+              <User className="h-5 w-5 lg:h-4 lg:w-4 text-slate-400" />
+            </div>
+            {accountColor && (
+              <span className={`absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-white ${accountColor.dot}`} />
+            )}
           </div>
           <div className="min-w-0">
             <p className="text-sm lg:text-xs font-bold text-slate-900 truncate">{getContactDisplayName(contact)}</p>
-            <p className="text-xs lg:text-[11px] text-slate-400">{contact.phone}</p>
+            <div className="flex items-center gap-1.5">
+              <p className="text-xs lg:text-[11px] text-slate-400">{contact.phone}</p>
+              {accountColor && accountLabel && (
+                <span className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium border ${accountColor.badge}`}>
+                  {accountLabel}
+                </span>
+              )}
+            </div>
           </div>
         </div>
         {onToggleCrm && (

@@ -4,6 +4,7 @@ import { Search } from "lucide-react";
 import { useI18n } from "@/i18n";
 import type { ChatContact } from "./chat-types";
 import { ChatContactItem } from "./ChatContactItem";
+import type { SessionColor } from "@/lib/session-colors";
 
 interface ChatContactListProps {
   contacts: ChatContact[];
@@ -13,9 +14,10 @@ interface ChatContactListProps {
   onSelect: (contact: ChatContact) => void;
   hidden?: boolean;
   unreadCounts?: Record<string, number>;
+  sessionColors?: Record<string, SessionColor>;
 }
 
-export function ChatContactList({ contacts, selectedPhone, searchTerm, onSearchChange, onSelect, hidden, unreadCounts = {} }: ChatContactListProps) {
+export function ChatContactList({ contacts, selectedPhone, searchTerm, onSearchChange, onSelect, hidden, unreadCounts = {}, sessionColors = {} }: ChatContactListProps) {
   const { t } = useI18n();
 
   const filtered = contacts.filter((c) => {
@@ -56,6 +58,7 @@ export function ChatContactList({ contacts, selectedPhone, searchTerm, onSearchC
               isSelected={selectedPhone === contact.phone}
               onClick={() => onSelect(contact)}
               unread={unreadCounts[contact.phone] || 0}
+              accountColor={contact.sessionId ? sessionColors[contact.sessionId] : undefined}
             />
           ))
         )}
