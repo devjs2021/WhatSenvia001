@@ -214,6 +214,12 @@ export class ChatService {
     return { success: true };
   }
 
+  async updateConversationName(userId: string, phone: string, name: string) {
+    const contactId = await this.upsertContact(userId, phone);
+    await db.update(contacts).set({ name: name.trim(), updatedAt: new Date() }).where(eq(contacts.id, contactId));
+    return { success: true };
+  }
+
   async markAsRead(userId: string, phone: string) {
     await db
       .insert(chatReadCursors)

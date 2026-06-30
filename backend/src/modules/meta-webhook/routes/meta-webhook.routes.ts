@@ -240,20 +240,35 @@ export async function metaWebhookRoutes(app: FastifyInstance) {
               for (const status of value.statuses) {
                 logger.debug({ messageId: status.id, status: status.status }, 'Meta message status update')
 
-                // Actualizar estado en tabla messages
+                // Map Meta status to internal status
+                const dbStatus = status.status === 'read' ? 'read'
+                  : status.status === 'delivered' ? 'delivered'
+                  : status.status === 'failed' ? 'failed'
+                  : 'sent'
+
+                // Update chat_messages (live chat)
                 try {
-                  const dbStatus = status.status === 'failed' ? 'failed' : 'sent'
+                  await db
+                    .update(chatMessages)
+                    .set({ status: dbStatus })
+                    .where(eq(chatMessages.whatsappMessageId, status.id))
+                } catch (err: any) {
+                  logger.error({ error: err.message }, 'Error updating chat_messages status')
+                }
+
+                // Update campaign messages table
+                try {
                   await db
                     .update(messages)
                     .set({
-                      status: dbStatus,
+                      status: dbStatus === 'read' || dbStatus === 'delivered' ? 'delivered' : dbStatus,
                       errorMessage: status.errors?.[0]?.title,
                       sentAt: new Date(parseInt(status.timestamp) * 1000),
                     })
                     .where(eq(messages.whatsappMessageId, status.id))
                   logger.debug({ messageId: status.id, dbStatus }, 'Message status updated')
                 } catch (err: any) {
-                  logger.error({ error: err.message }, 'Error updating message status')
+                  logger.error({ error: err.message }, 'Error updating messages status')
                 }
               }
             }

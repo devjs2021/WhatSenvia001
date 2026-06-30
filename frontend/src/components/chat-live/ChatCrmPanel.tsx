@@ -4,9 +4,9 @@ import { useState, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { useI18n } from "@/i18n";
-import { X, Plus, User } from "lucide-react";
+import { X, Plus, User, Check, Pencil } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import type { ChatContact, ConversationStage } from "./chat-types";
+import type { ChatContact } from "./chat-types";
 import { KANBAN_COLUMNS } from "./chat-types";
 import { getContactDisplayName } from "./chat-utils";
 import { toast } from "sonner";
@@ -22,10 +22,14 @@ export function ChatCrmPanel({ contact, onClose, querySessionId }: ChatCrmPanelP
   const queryClient = useQueryClient();
   const [notes, setNotes] = useState(contact.notes || "");
   const [newTag, setNewTag] = useState("");
+  const [editingName, setEditingName] = useState(false);
+  const [nameValue, setNameValue] = useState(contact.contactName || contact.name || "");
 
   useEffect(() => {
     setNotes(contact.notes || "");
-  }, [contact.phone, contact.notes]);
+    setNameValue(contact.contactName || contact.name || "");
+    setEditingName(false);
+  }, [contact.phone, contact.notes, contact.contactName, contact.name]);
 
   const stageMutation = useMutation({
     mutationFn: ({ phone, stage }: { phone: string; stage: string }) =>
@@ -52,9 +56,29 @@ export function ChatCrmPanel({ contact, onClose, querySessionId }: ChatCrmPanelP
     },
   });
 
+  const nameMutation = useMutation({
+    mutationFn: ({ phone, name }: { phone: string; name: string }) =>
+      api.patch("/chat/conversations/name", { phone, name }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["chat-contacts"] });
+      setEditingName(false);
+      toast.success(t("chatLive.crm.saved"));
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
   function handleSaveNotes() {
     if (notes !== (contact.notes || "")) {
       notesMutation.mutate({ phone: contact.phone, notes });
+    }
+  }
+
+  function handleSaveName() {
+    const trimmed = nameValue.trim();
+    if (trimmed !== (contact.contactName || contact.name || "")) {
+      nameMutation.mutate({ phone: contact.phone, name: trimmed });
+    } else {
+      setEditingName(false);
     }
   }
 
@@ -92,14 +116,37 @@ export function ChatCrmPanel({ contact, onClose, querySessionId }: ChatCrmPanelP
         </div>
 
         <div className="flex-1 overflow-y-auto overscroll-contain p-4 lg:p-3 space-y-5 lg:space-y-4">
-          {/* Contact info */}
-          <div className="flex items-center gap-3 lg:gap-2">
-            <div className="h-12 w-12 lg:h-10 lg:w-10 rounded-full bg-slate-100 flex items-center justify-center shrink-0">
+          {/* Contact info with editable name */}
+          <div className="flex items-start gap-3 lg:gap-2">
+            <div className="h-12 w-12 lg:h-10 lg:w-10 rounded-full bg-slate-100 flex items-center justify-center shrink-0 mt-0.5">
               <User className="h-6 w-6 lg:h-5 lg:w-5 text-slate-400" />
             </div>
-            <div className="min-w-0">
-              <p className="text-sm lg:text-xs font-bold text-slate-900 truncate">{getContactDisplayName(contact)}</p>
-              <p className="text-xs lg:text-[10px] text-slate-400 font-mono">{contact.phone}</p>
+            <div className="min-w-0 flex-1">
+              {editingName ? (
+                <div className="flex items-center gap-1">
+                  <input
+                    autoFocus
+                    value={nameValue}
+                    onChange={(e) => setNameValue(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter") handleSaveName(); if (e.key === "Escape") setEditingName(false); }}
+                    className="flex-1 min-w-0 bg-white border border-emerald-300 rounded-lg px-2 py-1 text-sm lg:text-xs text-slate-900 font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+                    placeholder="Nombre del contacto"
+                  />
+                  <button onClick={handleSaveName} disabled={nameMutation.isPending}
+                    className="shrink-0 h-7 w-7 rounded-lg bg-emerald-600 hover:bg-emerald-500 flex items-center justify-center">
+                    <Check className="h-3.5 w-3.5 text-white" />
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1 group">
+                  <p className="text-sm lg:text-xs font-bold text-slate-900 truncate">{getContactDisplayName(contact)}</p>
+                  <button onClick={() => setEditingName(true)}
+                    className="shrink-0 h-5 w-5 rounded-md flex items-center justify-center text-slate-300 hover:text-slate-500 hover:bg-slate-100 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Pencil className="h-3 w-3" />
+                  </button>
+                </div>
+              )}
+              <p className="text-xs lg:text-[10px] text-slate-400 font-mono mt-0.5">{contact.phone}</p>
               {contact.email && <p className="text-xs lg:text-[10px] text-slate-400 truncate">{contact.email}</p>}
             </div>
           </div>

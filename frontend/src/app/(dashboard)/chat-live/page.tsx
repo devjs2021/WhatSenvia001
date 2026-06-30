@@ -14,7 +14,9 @@ import { ChatMessageArea } from "@/components/chat-live/ChatMessageArea";
 import { ChatKanbanView } from "@/components/chat-live/ChatKanbanView";
 import { ChatCrmPanel } from "@/components/chat-live/ChatCrmPanel";
 import type { ChatContact, ChatMessage, FilterMode, ViewMode } from "@/components/chat-live/chat-types";
+import { useAuth } from "@/hooks/use-auth";
 import { useChatUnread } from "@/hooks/use-chat-unread";
+import { useChatWebSocket } from "@/hooks/use-chat-websocket";
 import { getSessionColorMap, getSessionColor } from "@/lib/session-colors";
 
 export default function ChatLivePage() {
@@ -33,6 +35,7 @@ export default function ChatLivePage() {
   const [sending, setSending] = useState(false);
   const [showCrmPanel, setShowCrmPanel] = useState(false);
   const { unreadCounts, markAsRead } = useChatUnread();
+  const { token } = useAuth();
 
   // Sessions
   const { data: sessionsData } = useQuery({
@@ -45,6 +48,9 @@ export default function ChatLivePage() {
   const sessionColors = getSessionColorMap(sessions);
   const sessionsById: Record<string, WhatsAppSession> = {};
   for (const s of sessions) sessionsById[s.id] = s;
+
+  // Real-time WebSocket per connected session
+  useChatWebSocket(sessions.map((s) => s.id), token);
 
   const querySessionId = filterMode === "all" ? "all" : filterMode;
 
@@ -263,6 +269,11 @@ export default function ChatLivePage() {
               accountLabel={
                 selectedContactObj?.sessionId && sessionsById[selectedContactObj.sessionId]
                   ? `${sessionsById[selectedContactObj.sessionId].connectionType === "meta_cloud" ? "Meta" : "WhatsApp"} ${formatPhone(sessionsById[selectedContactObj.sessionId])}`.trim()
+                  : undefined
+              }
+              sessionId={
+                selectedContactObj?.sessionId && sessionsById[selectedContactObj.sessionId]?.connectionType === "meta_cloud"
+                  ? selectedContactObj.sessionId
                   : undefined
               }
             />

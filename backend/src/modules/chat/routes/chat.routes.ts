@@ -5,7 +5,9 @@ import { chatBroadcast } from "../websocket/chat-broadcast.js";
 import { mediaStorageService } from "../services/media-storage.service.js";
 import { db } from "../../../config/database.js";
 import { whatsappSessions } from "../../../infrastructure/database/schema/whatsapp-sessions.js";
-import { eq } from "drizzle-orm";
+import { chatMessages } from "../../../infrastructure/database/schema/chat.js";
+import { decrypt } from "../../../infrastructure/security/encryption.service.js";
+import { eq, and } from "drizzle-orm";
 
 export async function chatRoutes(app: FastifyInstance) {
   app.get("/ws", { websocket: true }, async (socket, req) => {
@@ -108,6 +110,13 @@ export async function chatRoutes(app: FastifyInstance) {
     return chatService.updateConversationStage(userId, phone, stage);
   });
 
+  app.patch("/conversations/name", { preHandler: [authGuard, licenseGuard("chatLive")] }, async (req) => {
+    const { phone, name } = req.body as { phone: string; name: string };
+    const userId = (req as any).user.id;
+    if (!phone) throw new Error("phone required");
+    return chatService.updateConversationName(userId, phone, name || "");
+  });
+
   app.patch("/conversations/notes", { preHandler: [authGuard, licenseGuard("chatLive")] }, async (req) => {
     const { phone, notes } = req.body as { phone: string; notes: string };
     const userId = (req as any).user.id;
@@ -120,6 +129,74 @@ export async function chatRoutes(app: FastifyInstance) {
     const userId = (req as any).user.id;
     if (!phone) throw new Error("phone required");
     return chatService.updateConversationTags(userId, phone, tags || []);
+  });
+
+  // Send approved Meta Cloud template from live chat
+  app.post("/send-template", { preHandler: [authGuard, licenseGuard("chatLive")] }, async (req, reply) => {
+    const { sessionId, phone, templateName, language, components } = req.body as {
+      sessionId: string;
+      phone: string;
+      templateName: string;
+      language: string;
+      components?: any[];
+    };
+    const userId = (req as any).user.id;
+
+    if (!sessionId || !phone || !templateName || !language) {
+      return reply.status(422).send({ error: "sessionId, phone, templateName and language are required" });
+    }
+
+    const [session] = await db
+      .select()
+      .from(whatsappSessions)
+      .where(and(eq(whatsappSessions.id, sessionId), eq(whatsappSessions.userId, userId)))
+      .limit(1);
+
+    if (!session) return reply.status(404).send({ error: "Session not found" });
+    if (session.connectionType !== "meta_cloud") return reply.status(400).send({ error: "Template sending only supported for Meta Cloud sessions" });
+    if (!session.metaAccessToken || !session.metaPhoneNumberId) return reply.status(400).send({ error: "Session missing Meta credentials" });
+
+    const accessToken = decrypt(session.metaAccessToken);
+
+    const payload: any = {
+      messaging_product: "whatsapp",
+      to: phone.replace(/\D/g, ""),
+      type: "template",
+      template: {
+        name: templateName,
+        language: { code: language },
+      },
+    };
+    if (components && components.length > 0) {
+      payload.template.components = components;
+    }
+
+    const metaRes = await fetch(
+      `https://graph.facebook.com/v21.0/${session.metaPhoneNumberId}/messages`,
+      {
+        method: "POST",
+        headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }
+    );
+
+    const metaData: any = await metaRes.json();
+    if (!metaRes.ok) {
+      return reply.status(502).send({ error: metaData.error?.message || "Meta API error" });
+    }
+
+    const [saved] = await db.insert(chatMessages).values({
+      sessionId,
+      phone: phone.replace(/\D/g, ""),
+      content: `[Plantilla: ${templateName}]`,
+      direction: "outgoing",
+      senderType: "human",
+      whatsappMessageId: metaData.messages?.[0]?.id,
+      status: "sent",
+    }).returning();
+
+    chatBroadcast.broadcast(sessionId, "new_message", saved);
+    return { success: true, data: saved };
   });
 
   app.get("/unread", { preHandler: [authGuard] }, async (req) => {

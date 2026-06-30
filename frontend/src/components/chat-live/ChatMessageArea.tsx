@@ -1,13 +1,25 @@
 "use client";
 
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useI18n } from "@/i18n";
 import {
-  Send, Loader2, User, Paperclip, X, FileText, Download, ArrowLeft, MoreVertical,
+  Send, Loader2, User, Paperclip, X, FileText, Download, ArrowLeft, MoreVertical, LayoutTemplate, Search,
 } from "lucide-react";
+import { api } from "@/lib/api";
+import { toast } from "sonner";
 import type { ChatContact, ChatMessage } from "./chat-types";
 import { formatTime, getContactDisplayName } from "./chat-utils";
 import type { SessionColor } from "@/lib/session-colors";
+
+interface MetaTemplate {
+  id: string;
+  name: string;
+  status: string;
+  category: string;
+  language: string;
+  components: any[];
+}
 
 interface ChatMessageAreaProps {
   contact: ChatContact | null;
@@ -24,20 +36,61 @@ interface ChatMessageAreaProps {
   onToggleCrm?: () => void;
   accountColor?: SessionColor;
   accountLabel?: string;
+  sessionId?: string;
 }
 
 export function ChatMessageArea({
   contact, messages, messageText, onMessageChange, onSend, sending,
   attachedFile, attachedPreview, onFileSelect, onClearAttachment, onBack, onToggleCrm,
-  accountColor, accountLabel,
+  accountColor, accountLabel, sessionId,
 }: ChatMessageAreaProps) {
   const { t } = useI18n();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [showTemplates, setShowTemplates] = useState(false);
+  const [templateSearch, setTemplateSearch] = useState("");
+  const [sendingTemplate, setSendingTemplate] = useState(false);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  // Fetch approved templates for current Meta session
+  const { data: templatesData } = useQuery({
+    queryKey: ["chat-templates", sessionId],
+    queryFn: () => api.get<{ success: boolean; data: MetaTemplate[] }>(`/meta-templates?sessionId=${sessionId}`),
+    enabled: !!sessionId && showTemplates,
+  });
+
+  const approvedTemplates = (templatesData?.data || []).filter((t) => t.status === "APPROVED");
+  const filteredTemplates = templateSearch
+    ? approvedTemplates.filter((t) => t.name.toLowerCase().includes(templateSearch.toLowerCase()))
+    : approvedTemplates;
+
+  async function handleSendTemplate(template: MetaTemplate) {
+    if (!contact || !sessionId) return;
+    setSendingTemplate(true);
+    try {
+      await api.post("/chat/send-template", {
+        sessionId,
+        phone: contact.phone,
+        templateName: template.name,
+        language: template.language,
+      });
+      setShowTemplates(false);
+      setTemplateSearch("");
+      toast.success(`Plantilla "${template.name}" enviada`);
+    } catch (err: any) {
+      toast.error(err.message || "Error al enviar plantilla");
+    } finally {
+      setSendingTemplate(false);
+    }
+  }
+
+  function getTemplatePreview(template: MetaTemplate): string {
+    const body = template.components?.find((c: any) => c.type === "BODY");
+    return body?.text ? body.text.substring(0, 80) + (body.text.length > 80 ? "…" : "") : "";
+  }
 
   if (!contact) {
     return (
@@ -73,8 +126,13 @@ export function ChatMessageArea({
     }
   }
 
+  // Detect if a message is a template placeholder
+  function isTemplatePlaceholder(content: string): boolean {
+    return /^\[Plantilla:/.test(content);
+  }
+
   return (
-    <div className="flex-1 min-w-0 lg:rounded-2xl lg:border lg:border-slate-100 bg-white flex flex-col min-h-0">
+    <div className="flex-1 min-w-0 lg:rounded-2xl lg:border lg:border-slate-100 bg-white flex flex-col min-h-0 relative">
       {/* Header */}
       <div className="flex items-center justify-between px-3 lg:px-3 py-2.5 lg:py-2 border-b border-slate-100 shrink-0 bg-white">
         <div className="flex items-center gap-2.5">
@@ -120,6 +178,7 @@ export function ChatMessageArea({
         ) : (
           messages.map((msg, i) => {
             const isOutgoing = msg.direction === "outgoing";
+            const isTemplate = isTemplatePlaceholder(msg.content);
             const showText = msg.content && !msg.content.match(/^\[(image|video|audio|document)\]$/i);
             return (
               <div key={msg.id || i} className={`flex ${isOutgoing ? "justify-end" : "justify-start"}`}>
@@ -128,6 +187,12 @@ export function ChatMessageArea({
                     ? "bg-emerald-500 text-white rounded-br-md"
                     : "bg-white text-slate-800 rounded-bl-md border border-slate-100"
                 }`}>
+                  {isTemplate && (
+                    <div className={`flex items-center gap-1.5 mb-1 text-[11px] font-semibold ${isOutgoing ? "text-emerald-100" : "text-slate-400"}`}>
+                      <LayoutTemplate className="h-3 w-3" />
+                      Plantilla Meta
+                    </div>
+                  )}
                   {renderMedia(msg)}
                   {showText && <p className="text-[14px] lg:text-[13px] leading-relaxed">{msg.content}</p>}
                   <div className={`flex items-center gap-1 mt-1 ${isOutgoing ? "justify-end" : "justify-start"}`}>
@@ -135,7 +200,7 @@ export function ChatMessageArea({
                       {formatTime(msg.createdAt)}
                     </span>
                     {isOutgoing && msg.status && (
-                      <span className="text-[10px] text-emerald-200">
+                      <span className={`text-[11px] ${msg.status === "read" ? "text-blue-200" : "text-emerald-200"}`}>
                         {msg.status === "sent" ? "✓" : msg.status === "delivered" ? "✓✓" : msg.status === "read" ? "✓✓" : ""}
                       </span>
                     )}
@@ -147,6 +212,58 @@ export function ChatMessageArea({
         )}
         <div ref={messagesEndRef} />
       </div>
+
+      {/* Template picker panel */}
+      {showTemplates && (
+        <div className="absolute bottom-[64px] left-0 right-0 lg:bottom-[56px] bg-white border-t border-slate-100 shadow-lg z-20 rounded-t-2xl lg:rounded-t-xl max-h-72 flex flex-col">
+          <div className="flex items-center justify-between px-3 py-2 border-b border-slate-100 shrink-0">
+            <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+              <LayoutTemplate className="h-3.5 w-3.5 text-slate-400" />
+              Plantillas aprobadas
+            </span>
+            <button onClick={() => { setShowTemplates(false); setTemplateSearch(""); }}
+              className="h-6 w-6 rounded-lg flex items-center justify-center hover:bg-slate-100 text-slate-400">
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
+          <div className="relative px-3 py-2 shrink-0">
+            <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+            <input
+              autoFocus
+              placeholder="Buscar plantilla..."
+              value={templateSearch}
+              onChange={(e) => setTemplateSearch(e.target.value)}
+              className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-emerald-500/30"
+            />
+          </div>
+          <div className="flex-1 overflow-y-auto overscroll-contain px-3 pb-3 space-y-1.5">
+            {!sessionId ? (
+              <p className="text-xs text-slate-400 text-center py-4">Solo disponible en sesiones Meta Cloud</p>
+            ) : filteredTemplates.length === 0 ? (
+              <p className="text-xs text-slate-400 text-center py-4">
+                {approvedTemplates.length === 0 ? "No hay plantillas aprobadas para esta cuenta" : "Sin resultados"}
+              </p>
+            ) : (
+              filteredTemplates.map((tpl) => (
+                <button
+                  key={tpl.id}
+                  onClick={() => handleSendTemplate(tpl)}
+                  disabled={sendingTemplate}
+                  className="w-full text-left rounded-xl border border-slate-100 hover:border-emerald-200 hover:bg-emerald-50/50 px-3 py-2 transition-all group disabled:opacity-50"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-xs font-semibold text-slate-800 truncate group-hover:text-emerald-700">{tpl.name}</p>
+                    <span className="shrink-0 text-[10px] text-slate-400 font-mono">{tpl.language}</span>
+                  </div>
+                  {getTemplatePreview(tpl) && (
+                    <p className="text-[11px] text-slate-400 truncate mt-0.5">{getTemplatePreview(tpl)}</p>
+                  )}
+                </button>
+              ))
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Attachment preview */}
       {attachedFile && (
@@ -172,6 +289,17 @@ export function ChatMessageArea({
           className="h-11 w-11 lg:h-9 lg:w-9 rounded-full lg:rounded-lg border border-slate-200 hover:bg-slate-50 active:bg-slate-100 flex items-center justify-center transition-colors shrink-0">
           <Paperclip className="h-5 w-5 lg:h-4 lg:w-4 text-slate-400" />
         </button>
+        {sessionId && (
+          <button type="button"
+            onClick={() => setShowTemplates(!showTemplates)}
+            className={`h-11 w-11 lg:h-9 lg:w-9 rounded-full lg:rounded-lg border flex items-center justify-center transition-colors shrink-0 ${
+              showTemplates ? "border-emerald-400 bg-emerald-50 text-emerald-600" : "border-slate-200 hover:bg-slate-50 active:bg-slate-100 text-slate-400"
+            }`}
+            title="Enviar plantilla aprobada"
+          >
+            <LayoutTemplate className="h-5 w-5 lg:h-4 lg:w-4" />
+          </button>
+        )}
         <input
           placeholder={t("chatLive.writeMessage")}
           value={messageText}
