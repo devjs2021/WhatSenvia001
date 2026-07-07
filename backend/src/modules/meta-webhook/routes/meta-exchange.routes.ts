@@ -84,13 +84,15 @@ export async function metaExchangeRoutes(fastify: FastifyInstance) {
       }
 
       // 3. Guardar o actualizar sesión en BD
+      // Lookup by phone_number_id so each number is an independent session.
+      // Using wabaId would overwrite existing sessions when the same WABA adds a second number.
       const existingSession = await db
         .select()
         .from(whatsappSessions)
         .where(
           and(
             eq(whatsappSessions.userId, userId),
-            eq(whatsappSessions.wabaId, waba_id)
+            eq(whatsappSessions.metaPhoneNumberId, phone_number_id)
           )
         )
         .limit(1)
