@@ -8,6 +8,13 @@
       "when": 1779142054127,
       "tag": "0000_yielding_peter_quill",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1751846400000,
+      "tag": "0001_chat_optimizations",
+      "breakpoints": true
     }
   ]
 }

@@ -19,5 +19,6 @@ export const contacts = pgTable(
   (table) => [
     index("contacts_user_id_idx").on(table.userId),
     index("contacts_phone_idx").on(table.phone),
+    index("contacts_user_id_phone_idx").on(table.userId, table.phone),
   ]
 );

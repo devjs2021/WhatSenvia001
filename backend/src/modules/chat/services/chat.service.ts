@@ -75,22 +75,30 @@ export class ChatService {
   }
 
   async getAllConversations(userId: string) {
+    // Only Meta Cloud sessions — Baileys/QR excluded from live chat
     const userSessions = await db
       .select({ id: whatsappSessions.id })
       .from(whatsappSessions)
-      .where(eq(whatsappSessions.userId, userId));
+      .where(and(
+        eq(whatsappSessions.userId, userId),
+        eq(whatsappSessions.connectionType, "meta_cloud")
+      ));
 
     if (userSessions.length === 0) return [];
 
     const sessionIds = userSessions.map((s) => s.id);
     const result = await db.execute(sql`
-      SELECT DISTINCT ON (cm.phone)
-        cm.phone, cm.push_name, cm.content, cm.media_url, cm.media_type, cm.direction, cm.sender_type, cm.created_at, cm.status, cm.session_id,
-        c.id as contact_id, c.name as contact_name, c.tags, c.notes, c.stage, c.email as contact_email
-      FROM chat_messages cm
-      LEFT JOIN contacts c ON c.phone = cm.phone AND c.user_id = ${userId}
-      WHERE cm.session_id = ANY(ARRAY[${sql.join(sessionIds, sql`, `)}]::uuid[])
-      ORDER BY cm.phone, cm.created_at DESC
+      SELECT * FROM (
+        SELECT DISTINCT ON (cm.phone)
+          cm.phone, cm.push_name, cm.content, cm.media_url, cm.media_type, cm.direction, cm.sender_type, cm.created_at, cm.status, cm.session_id,
+          c.id as contact_id, c.name as contact_name, c.tags, c.notes, c.stage, c.email as contact_email
+        FROM chat_messages cm
+        LEFT JOIN contacts c ON c.phone = cm.phone AND c.user_id = ${userId}
+        WHERE cm.session_id = ANY(ARRAY[${sql.join(sessionIds, sql`, `)}]::uuid[])
+        ORDER BY cm.phone, cm.created_at DESC
+      ) sub
+      ORDER BY sub.created_at DESC
+      LIMIT 100
     `);
 
     return this.mapConversationRows(result.rows as any[]);
@@ -99,13 +107,17 @@ export class ChatService {
   async getConversations(sessionId: string, userId: string) {
     await this.verifySessionOwnership(sessionId, userId);
     const result = await db.execute(sql`
-      SELECT DISTINCT ON (cm.phone)
-        cm.phone, cm.push_name, cm.content, cm.media_url, cm.media_type, cm.direction, cm.sender_type, cm.created_at, cm.status, cm.session_id,
-        c.id as contact_id, c.name as contact_name, c.tags, c.notes, c.stage, c.email as contact_email
-      FROM chat_messages cm
-      LEFT JOIN contacts c ON c.phone = cm.phone AND c.user_id = ${userId}
-      WHERE cm.session_id = ${sessionId}
-      ORDER BY cm.phone, cm.created_at DESC
+      SELECT * FROM (
+        SELECT DISTINCT ON (cm.phone)
+          cm.phone, cm.push_name, cm.content, cm.media_url, cm.media_type, cm.direction, cm.sender_type, cm.created_at, cm.status, cm.session_id,
+          c.id as contact_id, c.name as contact_name, c.tags, c.notes, c.stage, c.email as contact_email
+        FROM chat_messages cm
+        LEFT JOIN contacts c ON c.phone = cm.phone AND c.user_id = ${userId}
+        WHERE cm.session_id = ${sessionId}
+        ORDER BY cm.phone, cm.created_at DESC
+      ) sub
+      ORDER BY sub.created_at DESC
+      LIMIT 100
     `);
 
     return this.mapConversationRows(result.rows as any[]);
