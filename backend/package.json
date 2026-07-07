@@ -16,6 +16,7 @@
     "db:seed-reviewer": "tsx src/scripts/seed-reviewer.ts",
     "db:reseed-templates": "tsx src/scripts/reseed-templates.ts",
     "db:seed-demo": "tsx src/scripts/seed-demo.ts",
+    "db:seed-bagon": "tsx src/scripts/seed-bagon-users.ts",
     "lint": "eslint src/",
     "typecheck": "tsc --noEmit"
   },
