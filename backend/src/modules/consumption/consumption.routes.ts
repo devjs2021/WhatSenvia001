@@ -51,15 +51,22 @@ export async function consumptionRoutes(app: FastifyInstance) {
     }
 
     // Get sent messages from meta sessions this month
-    const sentMessages = await db.execute(sql`
-      SELECT m.phone, m.estimated_cost, m.conversation_category
-      FROM messages m
-      JOIN campaigns c ON m.campaign_id = c.id
-      WHERE m.user_id = ${userId}
-        AND m.status IN ('sent', 'delivered', 'read')
-        AND m.sent_at >= ${monthStart}
-        AND c.session_id = ANY(${metaSessionIds}::uuid[])
-    `);
+    const sentMessages = await db
+      .select({
+        phone: messages.phone,
+        estimatedCost: messages.estimatedCost,
+        conversationCategory: messages.conversationCategory,
+      })
+      .from(messages)
+      .innerJoin(campaigns, eq(messages.campaignId, campaigns.id))
+      .where(
+        and(
+          eq(messages.userId, userId),
+          inArray(messages.status, ["sent", "delivered", "read"]),
+          gte(messages.sentAt, monthStart),
+          inArray(campaigns.sessionId, metaSessionIds)
+        )
+      );
 
     let totalCost = 0;
     let totalConversations = 0;
@@ -71,9 +78,9 @@ export async function consumptionRoutes(app: FastifyInstance) {
     };
     const byCountry: Record<string, { count: number; cost: number }> = {};
 
-    for (const row of sentMessages.rows as any[]) {
-      const cost = parseFloat(row.estimated_cost) || 0;
-      const category = row.conversation_category || "service";
+    for (const row of sentMessages) {
+      const cost = parseFloat(row.estimatedCost || "0") || 0;
+      const category = row.conversationCategory || "service";
       const country = getCountryFromPhone(row.phone);
 
       totalCost += cost;

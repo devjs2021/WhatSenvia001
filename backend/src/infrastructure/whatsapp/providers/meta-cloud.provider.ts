@@ -15,6 +15,12 @@ import { metaRateLimiter } from "./meta-rate-limiter.js";
  * Each instance is configured with its own access token and phone number ID
  * (per-session, not global env vars).
  */
+// Sin esto, una llamada a Meta que nunca responde (caída de red, Meta lento)
+// se queda colgada para siempre. Como los mensajes se procesan de a uno a la
+// vez en todo el sistema, un solo request colgado bloqueaba la fila completa
+// para todos los usuarios — ningún otro mensaje volvía a salir.
+const META_REQUEST_TIMEOUT_MS = 30_000;
+
 export class MetaCloudProvider implements IWhatsAppProvider {
   readonly providerName = "meta-cloud";
   private readonly baseUrl = "https://graph.facebook.com/v21.0";
@@ -33,6 +39,7 @@ export class MetaCloudProvider implements IWhatsAppProvider {
       try {
         const res = await fetch(`${this.baseUrl}/${this.phoneNumberId}?fields=display_phone_number`, {
           headers: { Authorization: `Bearer ${this.accessToken}` },
+          signal: AbortSignal.timeout(META_REQUEST_TIMEOUT_MS),
         });
         const data: any = await res.json();
         if (data.display_phone_number) {
@@ -112,6 +119,7 @@ export class MetaCloudProvider implements IWhatsAppProvider {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(body),
+        signal: AbortSignal.timeout(META_REQUEST_TIMEOUT_MS),
       });
 
       const data: any = await response.json();
@@ -171,6 +179,7 @@ export class MetaCloudProvider implements IWhatsAppProvider {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(body),
+        signal: AbortSignal.timeout(META_REQUEST_TIMEOUT_MS),
       });
     } catch {
       // Non-critical, silently ignore
