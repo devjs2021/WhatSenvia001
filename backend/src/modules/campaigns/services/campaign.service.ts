@@ -155,6 +155,53 @@ export class CampaignService {
     return updated;
   }
 
+  /**
+   * Botón de emergencia: cancela TODO lo pendiente del usuario, incluyendo
+   * mensajes cuya campaña original ya no existe (por ejemplo, se borró en
+   * cascada al eliminar la sesión de WhatsApp a la que apuntaban). cancel()
+   * necesita que la campaña siga existiendo para autorizar/acotar la
+   * cancelación — esto no, revisa la propiedad mensaje por mensaje.
+   */
+  async cancelAllPending(userId: string) {
+    const pendingJobs = await messageQueue.getJobs(["waiting", "delayed"]);
+    const cancelledMessageIds: string[] = [];
+
+    for (const job of pendingJobs) {
+      const messageId = job.data.messageId;
+      if (!messageId) continue;
+
+      const [msg] = await db
+        .select({ userId: messages.userId })
+        .from(messages)
+        .where(eq(messages.id, messageId))
+        .limit(1);
+
+      if (!msg || msg.userId !== userId) continue;
+
+      try {
+        await job.remove();
+        cancelledMessageIds.push(messageId);
+      } catch (err: any) {
+        logger.warn({ jobId: job.id, error: err.message }, "No se pudo remover el job al cancelar todo lo pendiente");
+      }
+    }
+
+    if (cancelledMessageIds.length > 0) {
+      await db
+        .update(messages)
+        .set({ status: "cancelled" })
+        .where(and(inArray(messages.id, cancelledMessageIds), inArray(messages.status, ["queued"])));
+    }
+
+    await db
+      .update(campaigns)
+      .set({ status: "cancelled", updatedAt: new Date() })
+      .where(and(eq(campaigns.userId, userId), inArray(campaigns.status, ["running", "scheduled", "paused"])));
+
+    logger.info({ userId, removed: cancelledMessageIds.length }, "Cancelled all pending messages for user");
+    return { removed: cancelledMessageIds.length };
+  }
+
   async createUnified(userId: string, input: CreateUnifiedCampaignInput) {
     const metaTemplateService = new MetaTemplateService();
     const { template } = await metaTemplateService.createTemplate(userId, input.sessionId, {

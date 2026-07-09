@@ -14,6 +14,7 @@ import {
   sendApprovedCampaign,
   downloadCampaignReport,
   cancelCampaign,
+  cancelAllPending,
 } from "../controllers/campaign.controller.js";
 export async function campaignRoutes(app: FastifyInstance) {
   app.addHook("preHandler", authGuard);
@@ -31,4 +32,5 @@ export async function campaignRoutes(app: FastifyInstance) {
   app.post("/:id/send-approved", { preHandler: [licenseGuard("campaigns")] }, sendApprovedCampaign as any);
   app.post("/:id/pause", pauseCampaign);
   app.post("/:id/cancel", cancelCampaign);
+  app.post("/cancel-all-pending", cancelAllPending);
 }

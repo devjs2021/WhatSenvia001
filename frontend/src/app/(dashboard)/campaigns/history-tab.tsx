@@ -70,6 +70,22 @@ export default function HistoryTab() {
     cancelMutation.mutate(campaign.id);
   }
 
+  const cancelAllMutation = useMutation({
+    mutationFn: () => api.post<{ success: boolean; data: { removed: number } }>("/campaigns/cancel-all-pending"),
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ["campaigns-history"] });
+      toast.success(`Se cancelaron ${res.data.removed} envío(s) pendiente(s)`);
+    },
+    onError: (err: any) => toast.error(err.message || "No se pudo cancelar"),
+  });
+
+  function handleCancelAll() {
+    if (!confirm("¿Detener TODOS tus envíos pendientes, de todas tus campañas (incluyendo las que ya no aparezcan aquí)? Esto no se puede deshacer.")) {
+      return;
+    }
+    cancelAllMutation.mutate();
+  }
+
   if (isLoading) {
     return <div className="text-center py-12 text-slate-400">Cargando historial...</div>;
   }
@@ -90,6 +106,16 @@ export default function HistoryTab() {
 
   return (
     <div className="space-y-3">
+      <div className="flex justify-end">
+        <button
+          onClick={handleCancelAll}
+          disabled={cancelAllMutation.isPending}
+          className="flex items-center gap-2 border border-red-200 hover:bg-red-50 disabled:opacity-40 disabled:cursor-not-allowed text-red-600 rounded-xl px-4 py-2 text-sm font-medium transition-all"
+        >
+          {cancelAllMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Ban className="h-4 w-4" />}
+          Detener todos los envíos pendientes
+        </button>
+      </div>
       {campaigns.map((c) => {
         const hasResults = c.sentCount + c.failedCount > 0;
         const isDownloading = downloadingId === c.id;

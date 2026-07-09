@@ -76,6 +76,16 @@ export async function cancelCampaign(request: FastifyRequest<{ Params: { id: str
   }
 }
 
+export async function cancelAllPending(request: FastifyRequest, reply: FastifyReply) {
+  const userId = (request as any).user.id;
+  try {
+    const result = await campaignService.cancelAllPending(userId);
+    return success(reply, result);
+  } catch (err: any) {
+    return error(reply, err.message);
+  }
+}
+
 export async function getCampaignStats(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
   const userId = (request as any).user.id;
   const stats = await campaignService.getStats(userId, request.params.id);
