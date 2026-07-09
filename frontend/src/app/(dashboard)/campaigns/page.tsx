@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api } from "@/lib/api";
+import { api, uploadFile } from "@/lib/api";
 import { useI18n } from "@/i18n";
 import type { ApiResponse, WhatsAppSession, PaginatedResponse, Contact } from "@/types";
 import { toast } from "sonner";
@@ -313,9 +313,7 @@ export default function CampaignsPage() {
     try {
       const formData = new FormData();
       formData.append("file", file);
-      const res = await fetch("/api/contacts/import-excel", { method: "POST", body: formData });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || "Error al importar");
+      const json = await uploadFile<ApiResponse<{ phones: string[]; imported: number }>>("/contacts/import-excel", formData);
       const phones: string[] = json.data.phones || [];
       if (phones.length > 0) {
         setManualNumbers((prev) => {

@@ -151,4 +151,23 @@ export async function downloadFile(endpoint: string, filename: string): Promise<
   URL.revokeObjectURL(url);
 }
 
+/** Sube un archivo (FormData) autenticado. No fija Content-Type a mano: el navegador arma el boundary multipart solo. */
+export async function uploadFile<T>(endpoint: string, formData: FormData): Promise<T> {
+  const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+
+  const response = await fetch(`${API_BASE}${endpoint}`, {
+    method: "POST",
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    body: formData,
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new ApiError(response.status, data.error || "Something went wrong");
+  }
+
+  return data;
+}
+
 export { ApiError };

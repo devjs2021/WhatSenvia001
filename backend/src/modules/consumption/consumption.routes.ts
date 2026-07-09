@@ -58,7 +58,7 @@ export async function consumptionRoutes(app: FastifyInstance) {
       WHERE m.user_id = ${userId}
         AND m.status IN ('sent', 'delivered', 'read')
         AND m.sent_at >= ${monthStart}
-        AND c.session_id = ANY(${metaSessionIds})
+        AND c.session_id = ANY(${metaSessionIds}::uuid[])
     `);
 
     let totalCost = 0;

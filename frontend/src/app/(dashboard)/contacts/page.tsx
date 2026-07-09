@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api } from "@/lib/api";
+import { api, uploadFile } from "@/lib/api";
 import { useI18n } from "@/i18n";
 import type { PaginatedResponse, Contact, ApiResponse } from "@/types";
 import { Button } from "@/components/ui/button";
@@ -146,11 +146,9 @@ export default function ContactsPage() {
       formData.append("file", file);
       if (importTags.trim()) formData.append("tags", importTags.trim());
 
-      const res = await fetch("/api/contacts/import-excel", { method: "POST", body: formData });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || t('common.error'));
+      const json = await uploadFile<ApiResponse<ImportResult>>("/contacts/import-excel", formData);
 
-      const result = json.data as ImportResult;
+      const result = json.data;
       setImportResult(result);
       queryClient.invalidateQueries({ queryKey: ["contacts"] });
       toast.success(`${result.imported} ${t('campaigns.importedCount', { count: result.imported })}`);
@@ -168,9 +166,7 @@ export default function ContactsPage() {
     try {
       const formData = new FormData();
       formData.append("file", file);
-      const res = await fetch("/api/contacts/import-excel", { method: "POST", body: formData });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || t('common.error'));
+      const json = await uploadFile<ApiResponse<{ phones: string[] }>>("/contacts/import-excel", formData);
 
       const phones: string[] = json.data.phones || [];
       if (phones.length > 0) {
