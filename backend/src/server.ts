@@ -325,6 +325,25 @@ async function bootstrap() {
     app.log.warn(`Auto-migration (chat_messages media) note: ${err.message}`);
   }
 
+  // Auto-migration: notification_emails table
+  // No corre vía drizzle migrate() porque esa cadena se traba en la primera
+  // migración (bot_ai_config ya existía de antes por otro medio) y nunca
+  // llega a intentar las migraciones siguientes, incluida esta tabla.
+  try {
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS notification_emails (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        email VARCHAR(255) NOT NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+        CONSTRAINT notification_emails_user_id_email UNIQUE (user_id, email)
+      )
+    `);
+    await db.execute(sql`CREATE INDEX IF NOT EXISTS notification_emails_user_id_idx ON notification_emails(user_id)`);
+  } catch (err: any) {
+    app.log.warn(`Auto-migration (notification_emails) note: ${err.message}`);
+  }
+
   // Start queue workers
   startMessageWorker();
   startCampaignWorker();
