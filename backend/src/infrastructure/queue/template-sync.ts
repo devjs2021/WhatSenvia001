@@ -2,10 +2,8 @@ import { logger } from "../../config/logger.js";
 import { db } from "../../config/database.js";
 import { whatsappSessions } from "../database/schema/whatsapp-sessions.js";
 import { metaTemplates } from "../database/schema/meta-templates.js";
-import { campaigns } from "../database/schema/campaigns.js";
-import { users } from "../database/schema/users.js";
 import { decrypt } from "../security/encryption.service.js";
-import { sendTemplateStatusEmail } from "../email/email.service.js";
+import { notifyTemplateStatusChange } from "../../modules/meta-templates/services/template-status-notifier.js";
 import { eq, and } from "drizzle-orm";
 
 async function syncAllMetaTemplates() {
@@ -53,7 +51,7 @@ async function syncAllMetaTemplates() {
 
         for (const tpl of allTemplates) {
           const [existing] = await db
-            .select({ id: metaTemplates.id })
+            .select({ id: metaTemplates.id, status: metaTemplates.status })
             .from(metaTemplates)
             .where(
               and(
@@ -77,36 +75,13 @@ async function syncAllMetaTemplates() {
               })
               .where(eq(metaTemplates.id, existing.id));
 
-            if (tpl.status === "APPROVED" || tpl.status === "REJECTED") {
-              const pendingCampaigns = await db
-                .select({ id: campaigns.id, userId: campaigns.userId })
-                .from(campaigns)
-                .where(
-                  and(
-                    eq(campaigns.metaTemplateId, existing.id),
-                    eq(campaigns.status, "pending_approval" as any),
-                  )
-                );
-
-              for (const pc of pendingCampaigns) {
-                if (tpl.status === "REJECTED") {
-                  await db
-                    .update(campaigns)
-                    .set({ status: "rejected", rejectionReason: "Template rechazado por Meta", updatedAt: new Date() })
-                    .where(eq(campaigns.id, pc.id));
-                  logger.info({ campaignId: pc.id }, "Campaign rejected due to template rejection");
-                }
-
-                const [user] = await db.select({ email: users.email, name: users.name }).from(users).where(eq(users.id, pc.userId)).limit(1);
-                if (user) {
-                  sendTemplateStatusEmail(
-                    user.email, user.name, tpl.name,
-                    tpl.status as "APPROVED" | "REJECTED",
-                    tpl.status === "REJECTED" ? "Template rechazado por Meta" : undefined
-                  ).catch(() => {});
-                }
-              }
-            }
+            await notifyTemplateStatusChange({
+              templateId: existing.id,
+              ownerId: session.userId,
+              templateName: tpl.name,
+              oldStatus: existing.status,
+              newStatus: tpl.status,
+            });
           } else {
             await db.insert(metaTemplates).values({
               userId: session.userId,

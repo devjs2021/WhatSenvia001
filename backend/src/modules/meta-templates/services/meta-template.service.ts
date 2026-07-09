@@ -2,6 +2,7 @@ import { db } from "../../../config/database.js";
 import { metaTemplates } from "../../../infrastructure/database/schema/meta-templates.js";
 import { whatsappSessions } from "../../../infrastructure/database/schema/whatsapp-sessions.js";
 import { decrypt } from "../../../infrastructure/security/encryption.service.js";
+import { notifyTemplateStatusChange } from "./template-status-notifier.js";
 import { eq, and } from "drizzle-orm";
 
 interface CreateTemplateInput {
@@ -114,7 +115,7 @@ export class MetaTemplateService {
 
     for (const tpl of allTemplates) {
       const existing = await db
-        .select({ id: metaTemplates.id })
+        .select({ id: metaTemplates.id, status: metaTemplates.status })
         .from(metaTemplates)
         .where(
           and(
@@ -137,6 +138,14 @@ export class MetaTemplateService {
             updatedAt: new Date(),
           })
           .where(eq(metaTemplates.id, existing[0].id));
+
+        await notifyTemplateStatusChange({
+          templateId: existing[0].id,
+          ownerId: userId,
+          templateName: tpl.name,
+          oldStatus: existing[0].status,
+          newStatus: tpl.status,
+        });
       } else {
         await db.insert(metaTemplates).values({
           userId,

@@ -17,3 +17,4 @@ export { verificationJobs } from "./verification-jobs";
 export { notifications } from "./notifications";
 export { pushSubscriptions } from "./push-subscriptions";
 export { chatReadCursors } from "./chat-read-cursors";
+export { notificationEmails } from "./notification-emails";

@@ -15,6 +15,13 @@
       "when": 1751846400000,
       "tag": "0001_chat_optimizations",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1783619225789,
+      "tag": "0002_polite_pyro",
+      "breakpoints": true
     }
   ]
 }

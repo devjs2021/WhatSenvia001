@@ -2,7 +2,7 @@ import { env } from "../../config/env.js";
 import { logger } from "../../config/logger.js";
 
 interface SendEmailParams {
-  to: string;
+  to: string | string[];
   subject: string;
   html: string;
 }
@@ -125,7 +125,7 @@ export async function sendWelcomeEmail(email: string, name: string): Promise<voi
 }
 
 export async function sendCampaignCompletedEmail(
-  email: string,
+  email: string | string[],
   name: string,
   campaignName: string,
   stats: { sent: number; failed: number; total: number }
@@ -166,7 +166,7 @@ export async function sendCampaignCompletedEmail(
 }
 
 export async function sendTemplateStatusEmail(
-  email: string,
+  email: string | string[],
   name: string,
   templateName: string,
   status: "APPROVED" | "REJECTED",
@@ -198,7 +198,7 @@ export async function sendTemplateStatusEmail(
 }
 
 export async function sendLicenseExpiringEmail(
-  email: string,
+  email: string | string[],
   name: string,
   plan: string,
   expiresAt: Date

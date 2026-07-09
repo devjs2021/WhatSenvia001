@@ -1,5 +1,5 @@
 import { pgTable, uuid, varchar, jsonb, timestamp, index, unique } from "drizzle-orm/pg-core";
-import { users } from "./users.js";
+import { users } from "./users";
 
 export const metaTemplates = pgTable("meta_templates", {
   id: uuid("id").defaultRandom().primaryKey(),

@@ -2,6 +2,7 @@ import { db } from "../../config/database.js";
 import { licenses } from "../database/schema/licenses.js";
 import { users } from "../database/schema/users.js";
 import { sendLicenseExpiringEmail } from "../email/email.service.js";
+import { notificationEmailService } from "../../modules/notifications/services/notification-email.service.js";
 import { logger } from "../../config/logger.js";
 import { eq, and, between } from "drizzle-orm";
 
@@ -34,7 +35,8 @@ async function checkExpiringLicenses() {
         .limit(1);
 
       if (user) {
-        await sendLicenseExpiringEmail(user.email, user.name, license.plan, license.expiresAt);
+        const recipients = await notificationEmailService.getRecipientEmails(license.userId);
+        await sendLicenseExpiringEmail(recipients.length > 0 ? recipients : user.email, user.name, license.plan, license.expiresAt);
         logger.info({ userId: license.userId, plan: license.plan }, "License expiry email sent");
       }
     }
