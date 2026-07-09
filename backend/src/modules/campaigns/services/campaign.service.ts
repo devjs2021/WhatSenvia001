@@ -128,7 +128,10 @@ export class CampaignService {
       throw new Error(`No se puede cancelar una campaña con estado: ${campaign.status}`);
     }
 
-    const pendingJobs = await messageQueue.getJobs(["waiting", "delayed"]);
+    // "prioritized" es un estado aparte de BullMQ para jobs con `priority`
+    // (los mensajes de campaña se encolan con priority: 2) — sin incluirlo
+    // aquí, cancelar nunca los encuentra y no hace nada de verdad.
+    const pendingJobs = await messageQueue.getJobs(["waiting", "delayed", "prioritized"]);
     let removed = 0;
     for (const job of pendingJobs) {
       if (job.data.campaignId !== campaignId) continue;
@@ -163,7 +166,10 @@ export class CampaignService {
    * cancelación — esto no, revisa la propiedad mensaje por mensaje.
    */
   async cancelAllPending(userId: string) {
-    const pendingJobs = await messageQueue.getJobs(["waiting", "delayed"]);
+    // "prioritized" es un estado aparte de BullMQ para jobs con `priority`
+    // (los mensajes de campaña se encolan con priority: 2) — sin incluirlo
+    // aquí, cancelar nunca los encuentra y no hace nada de verdad.
+    const pendingJobs = await messageQueue.getJobs(["waiting", "delayed", "prioritized"]);
     const cancelledMessageIds: string[] = [];
 
     for (const job of pendingJobs) {
