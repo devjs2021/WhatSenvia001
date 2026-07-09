@@ -141,6 +141,15 @@ export default function CampaignsPage() {
   const contactLists = contactListsData?.data || [];
   const selectedSession = sessions.find((s) => s.id === sessionId);
 
+  // Si la sesión seleccionada ya no existe (se eliminó/reconectó en otra
+  // pestaña o pantalla), no la dejes seleccionada en silencio — eso mandaba
+  // campañas nuevas a una sesión muerta ("WhatsApp session not found").
+  useEffect(() => {
+    if (sessionId && sessions.length > 0 && !sessions.some((s) => s.id === sessionId)) {
+      setSessionId("");
+    }
+  }, [sessions, sessionId]);
+
   const detectedNumbers = useMemo(() => {
     if (!manualNumbers.trim()) return [];
     return manualNumbers

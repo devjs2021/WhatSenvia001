@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
@@ -168,6 +168,14 @@ export default function MetaTemplatesTab() {
   const activeSessionId = sessionId || metaSessions[0]?.id || "";
   const activeSessionColor = getSessionColor(activeSessionId);
   const activeSession = metaSessions.find((s) => s.id === activeSessionId);
+
+  // Si la sesión elegida ya no existe (se eliminó/reconectó), no seguir
+  // apuntando a ella en silencio.
+  useEffect(() => {
+    if (sessionId && metaSessions.length > 0 && !metaSessions.some((s) => s.id === sessionId)) {
+      setSessionId("");
+    }
+  }, [metaSessions, sessionId]);
 
   // Vista general: todas las plantillas de todos los números conectados,
   // sin importar cuál esté seleccionado en el selector de arriba (ese solo

@@ -107,6 +107,15 @@ export default function UnifiedMetaTab() {
   const hasBaileys = baileysSessions.length > 0;
   const campaigns = campaignsData?.data || [];
 
+  // Si la sesión seleccionada se eliminó (ej. al reconectar la cuenta de
+  // Meta), no dejarla seleccionada en silencio — mandaría la campaña a una
+  // sesión que ya no existe.
+  useEffect(() => {
+    if (sessionId && allSessions.length > 0 && !allSessions.some((s) => s.id === sessionId)) {
+      setSessionId("");
+    }
+  }, [allSessions, sessionId]);
+
   // Verification state
   const [showVerifyPrompt, setShowVerifyPrompt] = useState(false);
   const [verifying, setVerifying] = useState(false);
