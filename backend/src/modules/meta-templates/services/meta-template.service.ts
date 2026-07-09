@@ -201,4 +201,33 @@ export class MetaTemplateService {
         )
       );
   }
+
+  /**
+   * Todas las plantillas del usuario, sin importar el número/WABA, con el o
+   * los números de teléfono que pueden usarlas (una plantilla pertenece al
+   * WABA, y un WABA puede tener más de un número conectado).
+   */
+  async listAllTemplates(userId: string) {
+    const [templates, sessions] = await Promise.all([
+      db.select().from(metaTemplates).where(eq(metaTemplates.userId, userId)),
+      db
+        .select({ wabaId: whatsappSessions.wabaId, phone: whatsappSessions.phone, name: whatsappSessions.name })
+        .from(whatsappSessions)
+        .where(and(eq(whatsappSessions.userId, userId), eq(whatsappSessions.connectionType, "meta_cloud"))),
+    ]);
+
+    const numbersByWaba = new Map<string, string[]>();
+    for (const s of sessions) {
+      if (!s.wabaId) continue;
+      const label = s.phone || s.name;
+      const list = numbersByWaba.get(s.wabaId) || [];
+      list.push(label);
+      numbersByWaba.set(s.wabaId, list);
+    }
+
+    return templates.map((t) => ({
+      ...t,
+      sessionNumbers: numbersByWaba.get(t.wabaId) || [],
+    }));
+  }
 }

@@ -37,6 +37,7 @@ interface MetaTemplate {
   components: any[];
   lastSyncedAt: string;
   createdAt: string;
+  sessionNumbers?: string[];
 }
 
 interface WhatsAppSession {
@@ -177,13 +178,12 @@ export default function MetaTemplatesPage() {
   const activeSessionColor = getSessionColor(activeSessionId);
   const activeSession = metaSessions.find((s) => s.id === activeSessionId);
 
+  // Vista general: todas las plantillas de todos los números conectados,
+  // sin importar cuál esté seleccionado en el selector de arriba (ese solo
+  // se usa para elegir a qué número Crear/Sincronizar).
   const { data: templatesData, isLoading } = useQuery({
-    queryKey: ["meta-templates", activeSessionId],
-    queryFn: () =>
-      api.get<{ success: boolean; data: MetaTemplate[] }>(
-        `/meta-templates?sessionId=${activeSessionId}`
-      ),
-    enabled: !!activeSessionId,
+    queryKey: ["meta-templates", "all"],
+    queryFn: () => api.get<{ success: boolean; data: MetaTemplate[] }>("/meta-templates"),
   });
 
   const allTemplates = templatesData?.data || [];
@@ -433,11 +433,14 @@ export default function MetaTemplatesPage() {
           ) : (
             <Card>
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[700px]">
+                <table className="w-full min-w-[820px]">
                   <thead className="border-b bg-muted/50">
                     <tr>
                       <th className="px-4 py-2.5 text-left text-xs font-medium text-muted-foreground">
                         {t("metaTemplates.colName")}
+                      </th>
+                      <th className="px-4 py-2.5 text-left text-xs font-medium text-muted-foreground">
+                        {t("metaTemplates.colNumber")}
                       </th>
                       <th className="px-4 py-2.5 text-left text-xs font-medium text-muted-foreground">
                         {t("metaTemplates.colCategory")}
@@ -466,7 +469,7 @@ export default function MetaTemplatesPage() {
                       return (
                         <tr
                           key={tpl.id}
-                          className={`border-b border-l-4 ${activeSessionColor.border} hover:bg-muted/30 transition-colors group cursor-pointer`}
+                          className="border-b hover:bg-muted/30 transition-colors group cursor-pointer"
                           onClick={() => setPreviewTemplate(tpl)}
                         >
                           <td className="px-4 py-2.5">
@@ -475,6 +478,19 @@ export default function MetaTemplatesPage() {
                               <p className="text-xs text-muted-foreground truncate max-w-[250px] mt-0.5">
                                 {bodyComp.text}
                               </p>
+                            )}
+                          </td>
+                          <td className="px-4 py-2.5">
+                            {tpl.sessionNumbers && tpl.sessionNumbers.length > 0 ? (
+                              <div className="flex flex-wrap gap-1">
+                                {tpl.sessionNumbers.map((num, i) => (
+                                  <Badge key={i} variant="outline" className="text-[10px]">
+                                    {num}
+                                  </Badge>
+                                ))}
+                              </div>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">—</span>
                             )}
                           </td>
                           <td className="px-4 py-2.5">

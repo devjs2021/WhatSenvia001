@@ -51,14 +51,12 @@ export async function metaTemplateRoutes(app: FastifyInstance) {
 
   app.get("/", async (request: FastifyRequest, reply: FastifyReply) => {
     const userId = (request as any).user.id;
-    const { sessionId } = request.query as { sessionId: string };
-
-    if (!sessionId) {
-      return reply.status(400).send({ error: "sessionId query param is required" });
-    }
+    const { sessionId } = request.query as { sessionId?: string };
 
     try {
-      const templates = await service.listTemplates(userId, sessionId);
+      const templates = sessionId
+        ? await service.listTemplates(userId, sessionId)
+        : await service.listAllTemplates(userId);
       return reply.send({ success: true, data: templates });
     } catch (err: any) {
       return reply.status(400).send({ error: err.message });

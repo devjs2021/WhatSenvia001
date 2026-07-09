@@ -418,6 +418,7 @@
     "syncToLoad": "Sync templates from your Meta account",
     "noMatch": "No templates match the current filters",
     "colName": "Name",
+    "colNumber": "Number",
     "colCategory": "Category",
     "colLanguage": "Language",
     "colStatus": "Status",

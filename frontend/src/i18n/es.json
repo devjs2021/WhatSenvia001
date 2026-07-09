@@ -418,6 +418,7 @@
     "syncToLoad": "Sincroniza las plantillas desde tu cuenta de Meta",
     "noMatch": "No se encontraron plantillas con esos filtros",
     "colName": "Nombre",
+    "colNumber": "Numero",
     "colCategory": "Categoria",
     "colLanguage": "Idioma",
     "colStatus": "Estado",
