@@ -33,7 +33,7 @@ async function syncAllMetaTemplates() {
         const wabaId = session.wabaId;
 
         const allTemplates: any[] = [];
-        let url: string | null = `https://graph.facebook.com/v21.0/${wabaId}/message_templates?fields=id,name,status,category,language,components&limit=100`;
+        let url: string | null = `https://graph.facebook.com/v21.0/${wabaId}/message_templates?fields=id,name,status,category,language,components,rejected_reason&limit=100`;
 
         while (url) {
           const response = await fetch(url, {
@@ -81,6 +81,7 @@ async function syncAllMetaTemplates() {
               templateName: tpl.name,
               oldStatus: existing.status,
               newStatus: tpl.status,
+              rejectedReason: tpl.rejected_reason,
             });
           } else {
             await db.insert(metaTemplates).values({
