@@ -20,6 +20,11 @@ export interface CampaignJobData {
 export const campaignQueue = new Queue<CampaignJobData>("campaigns", {
   connection: redis as any,
   defaultJobOptions: {
+    // NOTA: attempts se mantiene en 1 a propósito. El worker de este job no es
+    // idempotente (re-inserta y re-encola un mensaje por contacto en cada corrida),
+    // así que reintentar automáticamente duplicaría envíos a los contactos ya
+    // procesados antes del fallo. Subir esto requiere primero hacer el worker
+    // idempotente (ej. saltar contactos que ya tengan un mensaje para esta campaña).
     attempts: 1,
     removeOnComplete: { count: 100 },
     removeOnFail: { count: 100 },

@@ -56,7 +56,27 @@ const envSchema = z.object({
   VAPID_EMAIL: z.string().optional(),
 });
 
-const parsed = envSchema.safeParse(process.env);
+const productionEnvSchema = envSchema.superRefine((data, ctx) => {
+  if (data.NODE_ENV !== "production") return;
+
+  if (!data.ENCRYPTION_KEY) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["ENCRYPTION_KEY"],
+      message: "ENCRYPTION_KEY is required in production (otherwise Meta access tokens are stored in plain text)",
+    });
+  }
+
+  if (!data.META_APP_SECRET) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["META_APP_SECRET"],
+      message: "META_APP_SECRET is required in production (otherwise the Meta webhook accepts unsigned requests)",
+    });
+  }
+});
+
+const parsed = productionEnvSchema.safeParse(process.env);
 
 if (!parsed.success) {
   console.error("Invalid environment variables:", parsed.error.flatten().fieldErrors);

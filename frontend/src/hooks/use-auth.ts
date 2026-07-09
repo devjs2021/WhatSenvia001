@@ -3,6 +3,7 @@
 import { create } from "zustand";
 import { api } from "@/lib/api";
 import type { User, ApiResponse } from "@/types";
+import { getStoredItem, setStoredItem, removeStoredItem } from "@/lib/safe-storage";
 
 interface AuthState {
   user: User | null;
@@ -18,7 +19,7 @@ interface AuthState {
 
 export const useAuth = create<AuthState>((set, get) => ({
   user: null,
-  token: typeof window !== "undefined" ? localStorage.getItem("token") : null,
+  token: getStoredItem("token"),
   isLoading: false,
 
   login: async (email, password) => {
@@ -28,8 +29,8 @@ export const useAuth = create<AuthState>((set, get) => ({
         email,
         password,
       });
-      localStorage.setItem("token", res.data.token);
-      localStorage.setItem("refreshToken", res.data.refreshToken);
+      setStoredItem("token", res.data.token);
+      setStoredItem("refreshToken", res.data.refreshToken);
       set({ user: res.data.user, token: res.data.token });
     } finally {
       set({ isLoading: false });
@@ -40,8 +41,8 @@ export const useAuth = create<AuthState>((set, get) => ({
     set({ isLoading: true });
     try {
       const res = await api.post<ApiResponse<{ user: User; token: string; refreshToken: string }>>("/auth/register", data);
-      localStorage.setItem("token", res.data.token);
-      localStorage.setItem("refreshToken", res.data.refreshToken);
+      setStoredItem("token", res.data.token);
+      setStoredItem("refreshToken", res.data.refreshToken);
       set({ user: res.data.user, token: res.data.token });
     } finally {
       set({ isLoading: false });
@@ -49,14 +50,14 @@ export const useAuth = create<AuthState>((set, get) => ({
   },
 
   logout: async () => {
-    const refreshToken = localStorage.getItem("refreshToken");
+    const refreshToken = getStoredItem("refreshToken");
     try {
       await api.post("/auth/logout", { refreshToken });
     } catch {
       // Ignore logout errors
     }
-    localStorage.removeItem("token");
-    localStorage.removeItem("refreshToken");
+    removeStoredItem("token");
+    removeStoredItem("refreshToken");
     set({ user: null, token: null });
     window.location.href = "/auth/login";
   },
@@ -66,8 +67,8 @@ export const useAuth = create<AuthState>((set, get) => ({
       const res = await api.get<ApiResponse<User>>("/auth/profile");
       set({ user: res.data });
     } catch {
-      localStorage.removeItem("token");
-      localStorage.removeItem("refreshToken");
+      removeStoredItem("token");
+      removeStoredItem("refreshToken");
       set({ user: null, token: null });
     }
   },

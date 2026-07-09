@@ -3,6 +3,7 @@
 import { create } from "zustand";
 import esJson from "./es.json";
 import enJson from "./en.json";
+import { getStoredItem, setStoredItem } from "@/lib/safe-storage";
 
 type Locale = "es" | "en";
 
@@ -31,9 +32,9 @@ interface I18nState {
 }
 
 export const useI18n = create<I18nState>((set, get) => ({
-  locale: (typeof window !== "undefined" && (localStorage.getItem("locale") as Locale)) || "es",
+  locale: (getStoredItem("locale") as Locale) || "es",
   setLocale: (locale: Locale) => {
-    localStorage.setItem("locale", locale);
+    setStoredItem("locale", locale);
     set({ locale });
   },
   t: (key: string, params?: Record<string, string | number>) => {

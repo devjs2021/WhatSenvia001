@@ -51,6 +51,18 @@ const app = Fastify({
     : { level: "info" },
 });
 
+// Sin esto, un error no capturado en cualquier parte del proceso (rutas, workers de
+// BullMQ, callbacks) tumbaba el servidor entero (todas las sesiones/campañas activas)
+// sin dejar rastro claro en los logs. Ahora queda registrado antes de reiniciar.
+process.on("uncaughtException", (err) => {
+  app.log.fatal({ err }, "Uncaught exception — el proceso se reiniciará");
+  process.exit(1);
+});
+
+process.on("unhandledRejection", (reason) => {
+  app.log.error({ reason }, "Unhandled promise rejection");
+});
+
 async function bootstrap() {
   // Allow empty body with content-type: application/json (Next.js proxy adds this header)
   app.addContentTypeParser("application/json", { parseAs: "string" }, (req, body, done) => {
@@ -339,5 +351,23 @@ bootstrap().catch((err) => {
   console.error("Failed to start server:", err);
   process.exit(1);
 });
+
+// Sin esto, un restart de despliegue o un `docker stop` mataba el proceso a mitad
+// de requests/jobs en curso. Con esto, Fastify deja de aceptar conexiones nuevas y
+// espera a que terminen las actuales antes de cerrar.
+async function gracefulShutdown(signal: string) {
+  app.log.info(`${signal} recibido, cerrando el servidor...`);
+  try {
+    await app.close();
+    app.log.info("Servidor cerrado correctamente");
+    process.exit(0);
+  } catch (err) {
+    app.log.error({ err }, "Error durante el cierre del servidor");
+    process.exit(1);
+  }
+}
+
+process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+process.on("SIGINT", () => gracefulShutdown("SIGINT"));
 
 export { app };
