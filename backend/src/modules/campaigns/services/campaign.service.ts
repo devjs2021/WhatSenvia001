@@ -6,6 +6,7 @@ import { eq, and, count, desc, getTableColumns } from "drizzle-orm";
 import { campaignQueue } from "../../../infrastructure/queue/campaign.queue.js";
 import { MetaTemplateService } from "../../meta-templates/services/meta-template.service.js";
 import type { CreateCampaignInput, UpdateCampaignInput, CreateUnifiedCampaignInput } from "../schemas/campaign.schema.js";
+import { buildCampaignReportWorkbook } from "./campaign-report.service.js";
 
 export class CampaignService {
   async list(userId: string, page: number, limit: number, status?: string) {
@@ -208,5 +209,27 @@ export class CampaignService {
           ? Math.round((campaign.sentCount / campaign.totalContacts) * 100)
           : 0,
     };
+  }
+
+  /** Reporte descargable (.xlsx) de una campaña: resumen + detalle por destinatario. */
+  async generateReport(userId: string, campaignId: string) {
+    const campaign = await this.getById(userId, campaignId);
+    if (!campaign) return null;
+
+    const rows = await db
+      .select({
+        phone: messages.phone,
+        status: messages.status,
+        errorMessage: messages.errorMessage,
+        estimatedCost: messages.estimatedCost,
+        sentAt: messages.sentAt,
+        deliveredAt: messages.deliveredAt,
+      })
+      .from(messages)
+      .where(eq(messages.campaignId, campaignId))
+      .orderBy(messages.createdAt);
+
+    const buffer = buildCampaignReportWorkbook(campaign, rows);
+    return { campaign, buffer };
   }
 }

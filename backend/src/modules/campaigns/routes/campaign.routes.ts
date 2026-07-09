@@ -12,6 +12,7 @@ import {
   createUnifiedCampaign,
   listUnifiedCampaigns,
   sendApprovedCampaign,
+  downloadCampaignReport,
 } from "../controllers/campaign.controller.js";
 export async function campaignRoutes(app: FastifyInstance) {
   app.addHook("preHandler", authGuard);
@@ -20,6 +21,7 @@ export async function campaignRoutes(app: FastifyInstance) {
   app.get("/unified", listUnifiedCampaigns);
   app.get("/:id", getCampaign);
   app.get("/:id/stats", getCampaignStats);
+  app.get("/:id/report", downloadCampaignReport);
   app.post("/", { preHandler: [licenseGuard("campaigns")] }, createCampaign);
   app.post("/unified", { preHandler: [licenseGuard("campaigns")] }, createUnifiedCampaign);
   app.put("/:id", updateCampaign);

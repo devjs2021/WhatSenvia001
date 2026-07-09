@@ -123,4 +123,32 @@ export const api = {
   delete: <T>(endpoint: string) => request<T>(endpoint, { method: "DELETE" }),
 };
 
+/** Descarga un archivo autenticado (respuesta binaria, no JSON) y dispara el guardado en el navegador. */
+export async function downloadFile(endpoint: string, filename: string): Promise<void> {
+  const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+
+  const response = await fetch(`${API_BASE}${endpoint}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+
+  if (!response.ok) {
+    let message = "No se pudo descargar el archivo";
+    try {
+      const data = await response.json();
+      message = data.error || message;
+    } catch {}
+    throw new ApiError(response.status, message);
+  }
+
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
 export { ApiError };

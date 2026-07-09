@@ -24,6 +24,7 @@ import {
   Radio,
   CalendarClock,
   Braces,
+  History,
 } from "lucide-react";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { DashboardCard, DashboardCardHeader, DashboardCardTitle, DashboardCardDescription } from "@/components/ui/dashboard-card";
@@ -33,6 +34,7 @@ import ScheduledTab from "./scheduled-tab";
 import TemplatesTab from "./templates-tab";
 import MetaTemplatesTab from "./meta-templates-tab";
 import UnifiedMetaTab from "./unified-meta-tab";
+import HistoryTab from "./history-tab";
 
 interface Template {
   id: string;
@@ -65,7 +67,7 @@ type SendMode = "manual" | "lists";
 type ContentType = "text" | "poll";
 type SpeedPreset = "slow" | "normal" | "fast" | "turbo";
 
-type CampaignTab = "campaigns" | "unified-meta" | "control" | "monitor" | "scheduled" | "templates" | "meta-templates";
+type CampaignTab = "campaigns" | "unified-meta" | "control" | "monitor" | "scheduled" | "templates" | "meta-templates" | "history";
 
 const tabConfig: Record<CampaignTab, { label: string; icon: any }> = {
   campaigns: { label: "Campanas", icon: Send },
@@ -75,6 +77,7 @@ const tabConfig: Record<CampaignTab, { label: string; icon: any }> = {
   scheduled: { label: "Programados", icon: CalendarClock },
   templates: { label: "Plantillas", icon: FileText },
   "meta-templates": { label: "Meta Templates", icon: FileText },
+  history: { label: "Historial", icon: History },
 };
 
 export default function CampaignsPage() {
@@ -933,6 +936,7 @@ export default function CampaignsPage() {
       {activeTab === "scheduled" && <ScheduledTab />}
       {activeTab === "templates" && <TemplatesTab />}
       {activeTab === "meta-templates" && <MetaTemplatesTab />}
+      {activeTab === "history" && <HistoryTab />}
     </div>
   );
 }

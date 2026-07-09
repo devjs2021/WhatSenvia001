@@ -72,6 +72,17 @@ export async function getCampaignStats(request: FastifyRequest<{ Params: { id: s
   return success(reply, stats);
 }
 
+export async function downloadCampaignReport(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
+  const userId = (request as any).user.id;
+  const result = await campaignService.generateReport(userId, request.params.id);
+  if (!result) return error(reply, "Campaign not found", 404);
+
+  const safeName = result.campaign.name.replace(/[^a-zA-Z0-9_-]+/g, "_") || "campana";
+  reply.header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+  reply.header("Content-Disposition", `attachment; filename="reporte-${safeName}.xlsx"`);
+  return reply.send(result.buffer);
+}
+
 export async function createUnifiedCampaign(request: FastifyRequest, reply: FastifyReply) {
   const parsed = createUnifiedCampaignSchema.safeParse(request.body);
   if (!parsed.success) return error(reply, parsed.error.errors[0].message, 422);
