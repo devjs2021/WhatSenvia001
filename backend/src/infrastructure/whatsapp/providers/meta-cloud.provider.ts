@@ -6,6 +6,7 @@ import type {
 } from "../interfaces/whatsapp-provider.interface.js";
 import { logger } from "../../../config/logger.js";
 import { env } from "../../../config/env.js";
+import { metaRateLimiter } from "./meta-rate-limiter.js";
 
 /**
  * Meta Cloud API Provider
@@ -101,6 +102,9 @@ export class MetaCloudProvider implements IWhatsAppProvider {
         }
       }
 
+      // Respeta la velocidad configurada (META_RATE_LIMIT_MPS) antes de llamar a Meta.
+      await metaRateLimiter.acquire();
+
       const response = await fetch(url, {
         method: "POST",
         headers: {
@@ -113,6 +117,9 @@ export class MetaCloudProvider implements IWhatsAppProvider {
       const data: any = await response.json();
 
       if (!response.ok) {
+        if (response.status === 429) {
+          metaRateLimiter.reportThrottled();
+        }
         return { success: false, error: data.error?.message || "Meta API error" };
       }
 

@@ -23,6 +23,10 @@ const envSchema = z.object({
   RATE_LIMIT_MAX_PER_HOUR: z.coerce.number().default(200),
   RATE_LIMIT_MAX_PER_DAY: z.coerce.number().default(1500),
 
+  // Velocidad de envío hacia la Meta WhatsApp Cloud API (mensajes por segundo).
+  // Ver backend/src/infrastructure/whatsapp/providers/meta-rate-limiter.ts
+  META_RATE_LIMIT_MPS: z.coerce.number().default(5),
+
   API_RATE_LIMIT: z.coerce.number().default(100),
   ALLOWED_ORIGINS: z.string().default("http://localhost:3000"),
 
