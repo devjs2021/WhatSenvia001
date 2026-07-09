@@ -84,112 +84,123 @@ export function startMessageWorker() {
       });
 
       if (result.success) {
-        const updateFields: Record<string, any> = {
-          status: "sent",
-          whatsappMessageId: result.messageId,
-          sentAt: new Date(),
-        };
+        // Meta ya aceptó el mensaje — a partir de aquí es solo registro y
+        // estadísticas. Un error acá NUNCA debe hacer que BullMQ reintente
+        // este job completo, porque eso volvería a llamar a sendMessage() y
+        // le mandaría al cliente el mismo mensaje por segunda vez.
+        try {
+          const updateFields: Record<string, any> = {
+            status: "sent",
+            whatsappMessageId: result.messageId,
+            sentAt: new Date(),
+          };
 
-        // Calculate estimated cost for Meta Cloud sessions
-        if (templateCategory) {
-          try {
-            const [session] = await db
-              .select({ connectionType: whatsappSessions.connectionType })
-              .from(whatsappSessions)
-              .where(eq(whatsappSessions.id, sessionId))
-              .limit(1);
+          // Calculate estimated cost for Meta Cloud sessions
+          if (templateCategory) {
+            try {
+              const [session] = await db
+                .select({ connectionType: whatsappSessions.connectionType })
+                .from(whatsappSessions)
+                .where(eq(whatsappSessions.id, sessionId))
+                .limit(1);
 
-            if (session?.connectionType === "meta_cloud") {
-              const category = getCategoryFromTemplate(templateCategory);
-              const country = getCountryFromPhone(phone);
-              const cost = getConversationRate(country, category);
-              updateFields.estimatedCost = cost.toString();
-              updateFields.conversationCategory = category;
-            }
-          } catch {}
-        }
-
-        await db
-          .update(messages)
-          .set(updateFields)
-          .where(eq(messages.id, messageId));
-
-        if (campaignId) {
-          // Refleja el envío de campaña en Chat en Vivo — así el estado (✓/✓✓)
-          // se actualiza solo, reutilizando el mismo flujo del webhook de Meta
-          // que ya marca chat_messages.status por whatsappMessageId.
-          try {
-            const [chatMsg] = await db
-              .insert(chatMessages)
-              .values({
-                sessionId,
-                phone,
-                remoteJid: `${phone.replace(/\D/g, "")}@s.whatsapp.net`,
-                content,
-                mediaUrl,
-                mediaType,
-                direction: "outgoing",
-                senderType: "bot",
-                whatsappMessageId: result.messageId,
-                status: "sent",
-              })
-              .returning();
-            if (chatMsg) chatBroadcast.broadcast(sessionId, "new_message", chatMsg);
-          } catch (err: any) {
-            logger.warn({ error: err.message, messageId }, "No se pudo reflejar el mensaje de campaña en Chat en Vivo");
+              if (session?.connectionType === "meta_cloud") {
+                const category = getCategoryFromTemplate(templateCategory);
+                const country = getCountryFromPhone(phone);
+                const cost = getConversationRate(country, category);
+                updateFields.estimatedCost = cost.toString();
+                updateFields.conversationCategory = category;
+              }
+            } catch {}
           }
 
           await db
-            .update(campaigns)
-            .set({ sentCount: sql`${campaigns.sentCount} + 1` })
-            .where(eq(campaigns.id, campaignId));
+            .update(messages)
+            .set(updateFields)
+            .where(eq(messages.id, messageId));
 
-          const [updatedCampaign] = await db
-            .select({
-              userId: campaigns.userId,
-              sentCount: campaigns.sentCount,
-              failedCount: campaigns.failedCount,
-              totalContacts: campaigns.totalContacts,
-            })
-            .from(campaigns)
-            .where(eq(campaigns.id, campaignId));
+          if (campaignId) {
+            // Refleja el envío de campaña en Chat en Vivo — así el estado (✓/✓✓)
+            // se actualiza solo, reutilizando el mismo flujo del webhook de Meta
+            // que ya marca chat_messages.status por whatsappMessageId.
+            try {
+              const [chatMsg] = await db
+                .insert(chatMessages)
+                .values({
+                  sessionId,
+                  phone,
+                  remoteJid: `${phone.replace(/\D/g, "")}@s.whatsapp.net`,
+                  content,
+                  mediaUrl,
+                  mediaType,
+                  direction: "outgoing",
+                  senderType: "bot",
+                  whatsappMessageId: result.messageId,
+                  status: "sent",
+                })
+                .returning();
+              if (chatMsg) chatBroadcast.broadcast(sessionId, "new_message", chatMsg);
+            } catch (err: any) {
+              logger.warn({ error: err.message, messageId }, "No se pudo reflejar el mensaje de campaña en Chat en Vivo");
+            }
 
-          if (updatedCampaign) {
-            const sent = updatedCampaign.sentCount ?? 0;
-            const failed = updatedCampaign.failedCount ?? 0;
-            const total = updatedCampaign.totalContacts ?? 0;
-            const pending = total - sent - failed;
-            campaignBroadcast.broadcast(updatedCampaign.userId, "campaign_progress", {
-              campaignId,
-              phone,
-              status: "sent",
-              sent,
-              failed,
-              total,
-              pending,
-            });
+            await db
+              .update(campaigns)
+              .set({ sentCount: sql`${campaigns.sentCount} + 1` })
+              .where(eq(campaigns.id, campaignId));
 
-            if (pending === 0) {
-              await db.update(campaigns).set({ status: "completed", completedAt: new Date() }).where(eq(campaigns.id, campaignId));
-              const [campaignRow] = await db.select({ name: campaigns.name }).from(campaigns).where(eq(campaigns.id, campaignId)).limit(1);
-              const [user] = await db.select({ email: users.email, name: users.name }).from(users).where(eq(users.id, updatedCampaign.userId)).limit(1);
-              if (user) {
-                const recipients = await notificationEmailService.getRecipientEmails(updatedCampaign.userId);
-                sendCampaignCompletedEmail(recipients.length > 0 ? recipients : user.email, user.name, campaignRow?.name || "Campaña", { sent, failed, total }).catch(() => {});
-                const campaignName = campaignRow?.name || "Campaña";
-                notificationService.create(
-                  updatedCampaign.userId,
-                  "campaign_completed",
-                  `Campaña "${campaignName}" completada`,
-                  `${sent} enviados, ${failed} fallidos de ${total} total`,
-                  { campaignId, sent, failed, total }
-                ).catch(() => {});
+            const [updatedCampaign] = await db
+              .select({
+                userId: campaigns.userId,
+                sentCount: campaigns.sentCount,
+                failedCount: campaigns.failedCount,
+                totalContacts: campaigns.totalContacts,
+              })
+              .from(campaigns)
+              .where(eq(campaigns.id, campaignId));
+
+            if (updatedCampaign) {
+              const sent = updatedCampaign.sentCount ?? 0;
+              const failed = updatedCampaign.failedCount ?? 0;
+              const total = updatedCampaign.totalContacts ?? 0;
+              const pending = total - sent - failed;
+              campaignBroadcast.broadcast(updatedCampaign.userId, "campaign_progress", {
+                campaignId,
+                phone,
+                status: "sent",
+                sent,
+                failed,
+                total,
+                pending,
+              });
+
+              if (pending === 0) {
+                await db.update(campaigns).set({ status: "completed", completedAt: new Date() }).where(eq(campaigns.id, campaignId));
+                const [campaignRow] = await db.select({ name: campaigns.name }).from(campaigns).where(eq(campaigns.id, campaignId)).limit(1);
+                const [user] = await db.select({ email: users.email, name: users.name }).from(users).where(eq(users.id, updatedCampaign.userId)).limit(1);
+                if (user) {
+                  const recipients = await notificationEmailService.getRecipientEmails(updatedCampaign.userId);
+                  sendCampaignCompletedEmail(recipients.length > 0 ? recipients : user.email, user.name, campaignRow?.name || "Campaña", { sent, failed, total }).catch(() => {});
+                  const campaignName = campaignRow?.name || "Campaña";
+                  notificationService.create(
+                    updatedCampaign.userId,
+                    "campaign_completed",
+                    `Campaña "${campaignName}" completada`,
+                    `${sent} enviados, ${failed} fallidos de ${total} total`,
+                    { campaignId, sent, failed, total }
+                  ).catch(() => {});
+                }
               }
             }
           }
-        }
 
-        logger.info({ messageId, whatsappId: result.messageId }, "Message sent");
+          logger.info({ messageId, whatsappId: result.messageId }, "Message sent");
+        } catch (err: any) {
+          logger.error(
+            { error: err.message, messageId, whatsappId: result.messageId },
+            "Mensaje enviado a Meta con éxito, pero falló el registro/estadísticas posterior (no se reintenta el envío)"
+          );
+        }
       } else {
         await db
           .update(messages)
