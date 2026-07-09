@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, downloadFile } from "@/lib/api";
 import type { PaginatedResponse, Campaign } from "@/types";
 import { DashboardCard } from "@/components/ui/dashboard-card";
 import { toast } from "sonner";
-import { Download, History, Users, Send, XCircle, Loader2 } from "lucide-react";
+import { Download, History, Users, Send, XCircle, Loader2, Ban } from "lucide-react";
 
 const STATUS_STYLES: Record<string, string> = {
   draft: "bg-slate-100 text-slate-500 border-slate-200",
@@ -15,6 +15,7 @@ const STATUS_STYLES: Record<string, string> = {
   paused: "bg-amber-50 text-amber-600 border-amber-200",
   completed: "bg-emerald-50 text-emerald-600 border-emerald-200",
   failed: "bg-red-50 text-red-600 border-red-200",
+  cancelled: "bg-slate-100 text-slate-500 border-slate-200",
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -24,14 +25,19 @@ const STATUS_LABELS: Record<string, string> = {
   paused: "Pausada",
   completed: "Completada",
   failed: "Fallida",
+  cancelled: "Cancelada",
 };
 
+const CANCELLABLE_STATUSES = new Set(["running", "scheduled", "paused"]);
+
 export default function HistoryTab() {
+  const queryClient = useQueryClient();
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ["campaigns-history"],
     queryFn: () => api.get<PaginatedResponse<Campaign>>("/campaigns?limit=50"),
+    refetchInterval: 5000,
   });
 
   const campaigns = data?.data || [];
@@ -45,6 +51,23 @@ export default function HistoryTab() {
     } finally {
       setDownloadingId(null);
     }
+  }
+
+  const cancelMutation = useMutation({
+    mutationFn: (campaignId: string) => api.post(`/campaigns/${campaignId}/cancel`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["campaigns-history"] });
+      toast.success("Envío cancelado");
+    },
+    onError: (err: any) => toast.error(err.message || "No se pudo cancelar el envío"),
+  });
+
+  function handleCancel(campaign: Campaign) {
+    const pending = campaign.totalContacts - campaign.sentCount - campaign.failedCount;
+    if (!confirm(`¿Cancelar el envío de "${campaign.name}"? Quedan ${pending} contacto(s) sin enviar — a esos ya no se les mandará nada.`)) {
+      return;
+    }
+    cancelMutation.mutate(campaign.id);
   }
 
   if (isLoading) {
@@ -102,19 +125,36 @@ export default function HistoryTab() {
                   <span>{new Date(c.createdAt).toLocaleString("es-CO")}</span>
                 </div>
               </div>
-              <button
-                onClick={() => handleDownload(c)}
-                disabled={!hasResults || isDownloading}
-                title={hasResults ? "Descargar reporte" : "Esta campaña aún no tiene envíos"}
-                className="flex items-center gap-2 border border-slate-200 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed text-slate-600 rounded-xl px-4 py-2 text-sm font-medium transition-all shrink-0"
-              >
-                {isDownloading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Download className="h-4 w-4" />
+              <div className="flex items-center gap-2 shrink-0">
+                {CANCELLABLE_STATUSES.has(c.status) && (
+                  <button
+                    onClick={() => handleCancel(c)}
+                    disabled={cancelMutation.isPending}
+                    title="Cancelar envío"
+                    className="flex items-center gap-2 border border-red-200 hover:bg-red-50 disabled:opacity-40 disabled:cursor-not-allowed text-red-600 rounded-xl px-4 py-2 text-sm font-medium transition-all"
+                  >
+                    {cancelMutation.isPending && cancelMutation.variables === c.id ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Ban className="h-4 w-4" />
+                    )}
+                    Cancelar envío
+                  </button>
                 )}
-                Descargar reporte
-              </button>
+                <button
+                  onClick={() => handleDownload(c)}
+                  disabled={!hasResults || isDownloading}
+                  title={hasResults ? "Descargar reporte" : "Esta campaña aún no tiene envíos"}
+                  className="flex items-center gap-2 border border-slate-200 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed text-slate-600 rounded-xl px-4 py-2 text-sm font-medium transition-all"
+                >
+                  {isDownloading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Download className="h-4 w-4" />
+                  )}
+                  Descargar reporte
+                </button>
+              </div>
             </div>
           </DashboardCard>
         );

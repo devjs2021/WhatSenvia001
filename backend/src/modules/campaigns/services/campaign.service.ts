@@ -2,11 +2,13 @@ import { db } from "../../../config/database.js";
 import { campaigns } from "../../../infrastructure/database/schema/campaigns.js";
 import { metaTemplates } from "../../../infrastructure/database/schema/meta-templates.js";
 import { messages } from "../../../infrastructure/database/schema/messages.js";
-import { eq, and, count, desc, getTableColumns } from "drizzle-orm";
+import { eq, and, count, desc, inArray, getTableColumns } from "drizzle-orm";
 import { campaignQueue } from "../../../infrastructure/queue/campaign.queue.js";
+import { messageQueue } from "../../../infrastructure/queue/message.queue.js";
 import { MetaTemplateService } from "../../meta-templates/services/meta-template.service.js";
 import type { CreateCampaignInput, UpdateCampaignInput, CreateUnifiedCampaignInput } from "../schemas/campaign.schema.js";
 import { buildCampaignReportWorkbook } from "./campaign-report.service.js";
+import { logger } from "../../../config/logger.js";
 
 export class CampaignService {
   async list(userId: string, page: number, limit: number, status?: string) {
@@ -110,6 +112,47 @@ export class CampaignService {
       .returning();
 
     return campaign || null;
+  }
+
+  /**
+   * Cancela un envío en curso de verdad: saca de la cola los mensajes que
+   * todavía no se han empezado a procesar (a diferencia de pause(), que solo
+   * cambia el estado en pantalla pero deja la cola intacta). Los mensajes que
+   * ya están "activos" en ese instante no se pueden cancelar de forma segura
+   * a mitad de camino — se dejan terminar y quedan reflejados normalmente.
+   */
+  async cancel(userId: string, campaignId: string) {
+    const campaign = await this.getById(userId, campaignId);
+    if (!campaign) return null;
+    if (!["running", "scheduled", "paused"].includes(campaign.status)) {
+      throw new Error(`No se puede cancelar una campaña con estado: ${campaign.status}`);
+    }
+
+    const pendingJobs = await messageQueue.getJobs(["waiting", "delayed"]);
+    let removed = 0;
+    for (const job of pendingJobs) {
+      if (job.data.campaignId !== campaignId) continue;
+      try {
+        await job.remove();
+        removed++;
+      } catch (err: any) {
+        logger.warn({ jobId: job.id, error: err.message }, "No se pudo remover el job de la cola al cancelar");
+      }
+    }
+
+    await db
+      .update(messages)
+      .set({ status: "cancelled" })
+      .where(and(eq(messages.campaignId, campaignId), inArray(messages.status, ["queued"])));
+
+    const [updated] = await db
+      .update(campaigns)
+      .set({ status: "cancelled", updatedAt: new Date() })
+      .where(and(eq(campaigns.id, campaignId), eq(campaigns.userId, userId)))
+      .returning();
+
+    logger.info({ campaignId, removed }, "Campaign cancelled");
+    return updated;
   }
 
   async createUnified(userId: string, input: CreateUnifiedCampaignInput) {

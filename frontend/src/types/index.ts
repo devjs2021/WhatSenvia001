@@ -55,7 +55,7 @@ export interface Campaign {
   message: string;
   mediaUrl?: string;
   mediaType?: string;
-  status: "draft" | "scheduled" | "running" | "paused" | "completed" | "failed";
+  status: "draft" | "scheduled" | "running" | "paused" | "completed" | "failed" | "cancelled";
   targetTags: string[];
   totalContacts: number;
   sentCount: number;

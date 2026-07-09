@@ -65,6 +65,17 @@ export async function pauseCampaign(request: FastifyRequest<{ Params: { id: stri
   return success(reply, campaign);
 }
 
+export async function cancelCampaign(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
+  const userId = (request as any).user.id;
+  try {
+    const campaign = await campaignService.cancel(userId, request.params.id);
+    if (!campaign) return error(reply, "Campaign not found", 404);
+    return success(reply, campaign);
+  } catch (err: any) {
+    return error(reply, err.message);
+  }
+}
+
 export async function getCampaignStats(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
   const userId = (request as any).user.id;
   const stats = await campaignService.getStats(userId, request.params.id);

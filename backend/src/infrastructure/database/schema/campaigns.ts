@@ -3,7 +3,7 @@ import { users } from "./users";
 import { whatsappSessions } from "./whatsapp-sessions";
 import { metaTemplates } from "./meta-templates";
 
-export const campaignStatusEnum = ["draft", "scheduled", "running", "paused", "completed", "failed", "pending_approval", "rejected"] as const;
+export const campaignStatusEnum = ["draft", "scheduled", "running", "paused", "completed", "failed", "pending_approval", "rejected", "cancelled"] as const;
 export type CampaignStatus = (typeof campaignStatusEnum)[number];
 
 export const campaigns = pgTable(

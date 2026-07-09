@@ -4,6 +4,8 @@ import { logger } from "../../config/logger.js";
 import { db } from "../../config/database.js";
 import { messages } from "../database/schema/messages.js";
 import { campaigns } from "../database/schema/campaigns.js";
+import { chatMessages } from "../database/schema/chat.js";
+import { chatBroadcast } from "../../modules/chat/websocket/chat-broadcast.js";
 import { getWhatsAppProvider } from "../whatsapp/whatsapp.factory.js";
 import { eq, sql } from "drizzle-orm";
 import { campaignBroadcast } from "../../modules/campaign-control/websocket/campaign-broadcast.js";
@@ -113,6 +115,30 @@ export function startMessageWorker() {
           .where(eq(messages.id, messageId));
 
         if (campaignId) {
+          // Refleja el envío de campaña en Chat en Vivo — así el estado (✓/✓✓)
+          // se actualiza solo, reutilizando el mismo flujo del webhook de Meta
+          // que ya marca chat_messages.status por whatsappMessageId.
+          try {
+            const [chatMsg] = await db
+              .insert(chatMessages)
+              .values({
+                sessionId,
+                phone,
+                remoteJid: `${phone.replace(/\D/g, "")}@s.whatsapp.net`,
+                content,
+                mediaUrl,
+                mediaType,
+                direction: "outgoing",
+                senderType: "bot",
+                whatsappMessageId: result.messageId,
+                status: "sent",
+              })
+              .returning();
+            if (chatMsg) chatBroadcast.broadcast(sessionId, "new_message", chatMsg);
+          } catch (err: any) {
+            logger.warn({ error: err.message, messageId }, "No se pudo reflejar el mensaje de campaña en Chat en Vivo");
+          }
+
           await db
             .update(campaigns)
             .set({ sentCount: sql`${campaigns.sentCount} + 1` })

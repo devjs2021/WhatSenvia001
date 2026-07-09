@@ -3,7 +3,7 @@ import { users } from "./users";
 import { contacts } from "./contacts";
 import { campaigns } from "./campaigns";
 
-export const messageStatusEnum = ["queued", "sending", "sent", "delivered", "read", "failed"] as const;
+export const messageStatusEnum = ["queued", "sending", "sent", "delivered", "read", "failed", "cancelled"] as const;
 export type MessageStatus = (typeof messageStatusEnum)[number];
 
 export const messages = pgTable(
