@@ -44,7 +44,15 @@ const INITIAL_FORM = {
 
 // ─── Main Component ───────────────────────────────────────────────────────
 
-export function TemplateWizard() {
+export function TemplateWizard({
+  sessionId,
+  onClose,
+  onSuccess,
+}: {
+  sessionId: string;
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
   const [step, setStep] = useState<WizardStep>("category");
   const [form, setForm] = useState({ ...INITIAL_FORM });
 
@@ -76,12 +84,12 @@ export function TemplateWizard() {
   const createMutation = useMutation({
     mutationFn: async () => {
       const payload = buildCreatePayload(form);
-      return api.post("/meta-templates", payload);
+      return api.post("/meta-templates/create", { sessionId, ...payload });
     },
     onSuccess: () => {
-      toast.success("Plantilla creada exitosamente");
-      setForm({ ...INITIAL_FORM });
-      setStep("category");
+      toast.success("Plantilla creada y enviada a Meta para revisión");
+      onSuccess();
+      onClose();
     },
     onError: (err: any) => {
       toast.error(err?.message || "Error al crear la plantilla");
@@ -195,18 +203,27 @@ export function TemplateWizard() {
   return (
     <DashboardCard>
       <DashboardCardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between w-full">
           <DashboardCardTitle>Crear Plantilla WhatsApp</DashboardCardTitle>
-          <button
-            type="button"
-            onClick={() => {
-              setForm({ ...INITIAL_FORM });
-              setStep("category");
-            }}
-            className="text-xs text-slate-400 hover:text-slate-600 transition-colors"
-          >
-            Reiniciar
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                setForm({ ...INITIAL_FORM });
+                setStep("category");
+              }}
+              className="text-xs text-slate-400 hover:text-slate-600 transition-colors"
+            >
+              Reiniciar
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="h-7 w-7 rounded-xl flex items-center justify-center hover:bg-slate-50 text-slate-400 hover:text-slate-600 transition-all"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
         </div>
       </DashboardCardHeader>
 

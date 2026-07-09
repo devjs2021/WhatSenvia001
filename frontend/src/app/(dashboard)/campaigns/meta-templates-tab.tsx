@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
@@ -19,17 +19,10 @@ import {
   MousePointerClick,
   AlignLeft,
   Plus,
-  Trash2,
-  Check,
-  Link as LinkIcon,
-  MessageCircle,
-  Image,
-  Video,
-  File,
-  Phone,
 } from "lucide-react";
 import { DashboardCard, DashboardCardHeader, DashboardCardTitle, DashboardCardDescription } from "@/components/ui/dashboard-card";
 import { getSessionColor } from "@/lib/session-colors";
+import { TemplateWizard } from "@/components/templates/template-wizard";
 
 interface MetaTemplate {
   id: string;
@@ -52,15 +45,6 @@ interface WhatsAppSession {
   connectionType?: string;
 }
 
-interface TemplateButton {
-  type: "URL" | "QUICK_REPLY" | "PHONE_NUMBER";
-  text: string;
-  url?: string;
-  phone_number?: string;
-}
-
-type HeaderFormat = "NONE" | "TEXT" | "IMAGE" | "VIDEO" | "DOCUMENT";
-
 const STATUS_COLORS: Record<string, string> = {
   APPROVED: "bg-green-100 text-green-700 border-green-200",
   PENDING: "bg-yellow-100 text-yellow-700 border-yellow-200",
@@ -79,25 +63,6 @@ const COMPONENT_ICONS: Record<string, typeof Type> = {
   BODY: AlignLeft,
   FOOTER: MessageSquareText,
   BUTTONS: MousePointerClick,
-};
-
-const CATEGORIES = ["MARKETING", "UTILITY", "AUTHENTICATION"] as const;
-const LANGUAGES = [
-  { code: "es", label: "Espanol (es)" },
-  { code: "en_US", label: "English (en_US)" },
-  { code: "pt_BR", label: "Portugues (pt_BR)" },
-] as const;
-
-const INITIAL_FORM = {
-  name: "",
-  category: "MARKETING" as string,
-  language: "es" as string,
-  headerFormat: "NONE" as HeaderFormat,
-  headerText: "",
-  headerMediaUrl: "",
-  bodyText: "",
-  footerText: "",
-  buttons: [] as TemplateButton[],
 };
 
 function ComponentPreview({ component }: { component: any }) {
@@ -176,391 +141,6 @@ function ComponentPreview({ component }: { component: any }) {
   }
 
   return null;
-}
-
-function CreateTemplateForm({
-  sessionId,
-  onClose,
-  onSuccess,
-}: {
-  sessionId: string;
-  onClose: () => void;
-  onSuccess: () => void;
-}) {
-  const { t } = useI18n();
-  const [form, setForm] = useState({ ...INITIAL_FORM });
-  const nameError = form.name && !/^[a-z0-9_]*$/.test(form.name);
-
-  const updateForm = useCallback(
-    <K extends keyof typeof INITIAL_FORM>(key: K, value: (typeof INITIAL_FORM)[K]) => {
-      setForm((prev) => ({ ...prev, [key]: value }));
-    },
-    []
-  );
-
-  const addButton = useCallback(() => {
-    if (form.buttons.length >= 3) return;
-    setForm((prev) => ({
-      ...prev,
-      buttons: [...prev.buttons, { type: "QUICK_REPLY", text: "" }],
-    }));
-  }, [form.buttons.length]);
-
-  const updateButton = useCallback((index: number, updates: Partial<TemplateButton>) => {
-    setForm((prev) => ({
-      ...prev,
-      buttons: prev.buttons.map((b, i) => (i === index ? { ...b, ...updates } : b)),
-    }));
-  }, []);
-
-  const removeButton = useCallback((index: number) => {
-    setForm((prev) => ({
-      ...prev,
-      buttons: prev.buttons.filter((_, i) => i !== index),
-    }));
-  }, []);
-
-  const createMutation = useMutation({
-    mutationFn: () => {
-      const components: any[] = [];
-
-      if (form.headerFormat === "TEXT" && form.headerText.trim()) {
-        components.push({ type: "HEADER", format: "TEXT", text: form.headerText.trim() });
-      } else if (form.headerFormat === "IMAGE" && form.headerMediaUrl.trim()) {
-        components.push({ type: "HEADER", format: "IMAGE", example: { header_handle: [form.headerMediaUrl.trim()] } });
-      } else if (form.headerFormat === "VIDEO" && form.headerMediaUrl.trim()) {
-        components.push({ type: "HEADER", format: "VIDEO", example: { header_handle: [form.headerMediaUrl.trim()] } });
-      } else if (form.headerFormat === "DOCUMENT" && form.headerMediaUrl.trim()) {
-        components.push({ type: "HEADER", format: "DOCUMENT", example: { header_handle: [form.headerMediaUrl.trim()] } });
-      }
-
-      components.push({ type: "BODY", text: form.bodyText.trim() });
-
-      if (form.footerText.trim()) {
-        components.push({ type: "FOOTER", text: form.footerText.trim() });
-      }
-
-      const validButtons = form.buttons.filter((b) => b.text.trim());
-      if (validButtons.length > 0) {
-        components.push({
-          type: "BUTTONS",
-          buttons: validButtons.map((b) => {
-            if (b.type === "URL") return { type: "URL", text: b.text.trim(), url: b.url?.trim() || "" };
-            if (b.type === "PHONE_NUMBER") return { type: "PHONE_NUMBER", text: b.text.trim(), phone_number: b.phone_number?.trim() || "" };
-            return { type: "QUICK_REPLY", text: b.text.trim() };
-          }),
-        });
-      }
-
-      return api.post("/meta-templates/create", {
-        sessionId,
-        name: form.name.trim(),
-        category: form.category,
-        language: form.language,
-        components,
-      });
-    },
-    onSuccess: () => {
-      toast.success(t("metaTemplates.createSuccess"));
-      onSuccess();
-      onClose();
-    },
-    onError: (err: any) => toast.error(err.message),
-  });
-
-  const canSubmit = form.name.trim() && !nameError && form.bodyText.trim() && !createMutation.isPending;
-  const bodyParams = form.bodyText.match(/\{\{\d+\}\}/g) || [];
-
-  return (
-    <DashboardCard>
-      <DashboardCardHeader>
-        <div className="flex items-center justify-between w-full">
-          <DashboardCardTitle>{t("metaTemplates.newTemplate")}</DashboardCardTitle>
-          <button onClick={onClose} className="h-7 w-7 rounded-xl flex items-center justify-center hover:bg-slate-50 text-slate-400 hover:text-slate-600 transition-all">
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-      </DashboardCardHeader>
-      <div className="space-y-4">
-        {/* Row 1: Name, Category, Language */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div>
-            <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5 block">{t("metaTemplates.formName")}</label>
-            <input
-              placeholder="mi_plantilla"
-              value={form.name}
-              onChange={(e) => updateForm("name", e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""))}
-              className={`w-full bg-slate-50 border ${nameError ? "border-red-300" : "border-slate-200"} rounded-xl px-4 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30`}
-            />
-            <p className="text-[10px] text-slate-400 mt-0.5">{t("metaTemplates.nameHint")}</p>
-          </div>
-          <div>
-            <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5 block">{t("metaTemplates.formCategory")}</label>
-            <div className="relative">
-              <select
-                value={form.category}
-                onChange={(e) => updateForm("category", e.target.value)}
-                className="appearance-none w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 cursor-pointer"
-              >
-                {CATEGORIES.map((cat) => (
-                  <option key={cat} value={cat}>{cat}</option>
-                ))}
-              </select>
-              <ChevronDown className="absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400 pointer-events-none" />
-            </div>
-          </div>
-          <div>
-            <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5 block">{t("metaTemplates.formLanguage")}</label>
-            <div className="relative">
-              <select
-                value={form.language}
-                onChange={(e) => updateForm("language", e.target.value)}
-                className="appearance-none w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 cursor-pointer"
-              >
-                {LANGUAGES.map((lang) => (
-                  <option key={lang.code} value={lang.code}>{lang.label}</option>
-                ))}
-              </select>
-              <ChevronDown className="absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400 pointer-events-none" />
-            </div>
-          </div>
-        </div>
-
-        {/* Header (optional) */}
-        <div>
-          <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5 block">
-            Header <span className="font-normal lowercase">({t("metaTemplates.optional")})</span>
-          </label>
-          <div className="flex gap-2 mb-2">
-            {(["NONE", "TEXT", "IMAGE", "VIDEO", "DOCUMENT"] as const).map((fmt) => {
-              const icons: Record<string, typeof Type> = { TEXT: Type, IMAGE: Image, VIDEO: Video, DOCUMENT: File };
-              const FmtIcon = icons[fmt];
-              return (
-                <button
-                  key={fmt}
-                  type="button"
-                  onClick={() => setForm((prev) => ({ ...prev, headerFormat: fmt, headerText: "", headerMediaUrl: "" }))}
-                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all border ${
-                    form.headerFormat === fmt
-                      ? "bg-emerald-600 text-white border-emerald-600"
-                      : "bg-white text-slate-500 border-slate-200 hover:bg-slate-50"
-                  }`}
-                >
-                  {FmtIcon && <FmtIcon className="h-3 w-3" />}
-                  {fmt === "NONE" ? t("metaTemplates.headerNone") : fmt}
-                </button>
-              );
-            })}
-          </div>
-          {form.headerFormat === "TEXT" && (
-            <>
-              <input
-                placeholder={t("metaTemplates.headerPlaceholder")}
-                value={form.headerText}
-                onChange={(e) => updateForm("headerText", e.target.value)}
-                maxLength={60}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
-              />
-              <p className="text-[10px] text-slate-400 mt-0.5 text-right">{form.headerText.length}/60</p>
-            </>
-          )}
-          {(form.headerFormat === "IMAGE" || form.headerFormat === "VIDEO" || form.headerFormat === "DOCUMENT") && (
-            <>
-              <div className="flex items-center gap-1.5">
-                {form.headerFormat === "IMAGE" && <Image className="h-3.5 w-3.5 text-slate-400 shrink-0" />}
-                {form.headerFormat === "VIDEO" && <Video className="h-3.5 w-3.5 text-slate-400 shrink-0" />}
-                {form.headerFormat === "DOCUMENT" && <File className="h-3.5 w-3.5 text-slate-400 shrink-0" />}
-                <input
-                  placeholder={t("metaTemplates.mediaUrlPlaceholder")}
-                  value={form.headerMediaUrl}
-                  onChange={(e) => updateForm("headerMediaUrl", e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
-                />
-              </div>
-              <p className="text-[10px] text-slate-400 mt-0.5">{t("metaTemplates.mediaUrlHint")}</p>
-            </>
-          )}
-        </div>
-
-        {/* Body (required) */}
-        <div>
-          <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5 block">
-            Body <span className="text-red-500">*</span>
-          </label>
-          <textarea
-            placeholder={t("metaTemplates.bodyPlaceholder")}
-            rows={4}
-            value={form.bodyText}
-            onChange={(e) => updateForm("bodyText", e.target.value)}
-            maxLength={1024}
-            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
-          />
-          <div className="flex items-center justify-between mt-0.5">
-            <div className="flex gap-1.5">
-              {bodyParams.length > 0 && bodyParams.map((p, i) => (
-                <span key={i} className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-blue-50 text-blue-600">{p}</span>
-              ))}
-            </div>
-            <p className="text-[10px] text-slate-400">{form.bodyText.length}/1024</p>
-          </div>
-        </div>
-
-        {/* Footer (optional) */}
-        <div>
-          <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5 block">
-            Footer <span className="font-normal lowercase">({t("metaTemplates.optional")})</span>
-          </label>
-          <input
-            placeholder={t("metaTemplates.footerPlaceholder")}
-            value={form.footerText}
-            onChange={(e) => updateForm("footerText", e.target.value)}
-            maxLength={60}
-            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
-          />
-          <p className="text-[10px] text-slate-400 mt-0.5 text-right">{form.footerText.length}/60</p>
-        </div>
-
-        {/* Buttons (optional) */}
-        <div>
-          <div className="flex items-center justify-between mb-1.5">
-            <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-              {t("metaTemplates.buttons")} <span className="font-normal lowercase">({t("metaTemplates.optional")}, max 3)</span>
-            </label>
-            {form.buttons.length < 3 && (
-              <button onClick={addButton} className="flex items-center gap-1 text-xs font-medium text-slate-500 hover:text-slate-700 transition-colors">
-                <Plus className="h-3 w-3" />
-                {t("metaTemplates.addButton")}
-              </button>
-            )}
-          </div>
-          {form.buttons.length > 0 && (
-            <div className="space-y-2">
-              {form.buttons.map((btn, i) => (
-                <div key={i} className="flex items-start gap-2 rounded-2xl border border-slate-200 p-3">
-                  <div className="flex-1 space-y-2">
-                    <div className="flex gap-2">
-                      <div className="relative w-40">
-                        <select
-                          value={btn.type}
-                          onChange={(e) => updateButton(i, { type: e.target.value as TemplateButton["type"], url: "", phone_number: "" })}
-                          className="appearance-none w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 cursor-pointer"
-                        >
-                          <option value="QUICK_REPLY">{t("metaTemplates.quickReply")}</option>
-                          <option value="URL">URL</option>
-                          <option value="PHONE_NUMBER">{t("metaTemplates.phoneNumber")}</option>
-                        </select>
-                        <ChevronDown className="absolute right-2 top-1/2 h-3 w-3 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                      </div>
-                      <input
-                        placeholder={t("metaTemplates.buttonText")}
-                        value={btn.text}
-                        onChange={(e) => updateButton(i, { text: e.target.value })}
-                        maxLength={25}
-                        className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
-                      />
-                    </div>
-                    {btn.type === "URL" && (
-                      <div className="flex items-center gap-1.5">
-                        <LinkIcon className="h-3 w-3 text-slate-400 shrink-0" />
-                        <input
-                          placeholder="https://ejemplo.com/{{1}}"
-                          value={btn.url || ""}
-                          onChange={(e) => updateButton(i, { url: e.target.value })}
-                          className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
-                        />
-                      </div>
-                    )}
-                    {btn.type === "PHONE_NUMBER" && (
-                      <div className="flex items-center gap-1.5">
-                        <Phone className="h-3 w-3 text-slate-400 shrink-0" />
-                        <input
-                          placeholder="+573001234567"
-                          value={btn.phone_number || ""}
-                          onChange={(e) => updateButton(i, { phone_number: e.target.value })}
-                          className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
-                        />
-                      </div>
-                    )}
-                  </div>
-                  <button onClick={() => removeButton(i)} className="h-7 w-7 rounded-xl flex items-center justify-center hover:bg-red-50 text-slate-400 hover:text-red-600 transition-all shrink-0">
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Live preview */}
-        {(form.headerFormat !== "NONE" || form.bodyText || form.footerText || form.buttons.length > 0) && (
-          <div>
-            <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5 block">{t("metaTemplates.livePreview")}</label>
-            <div className="rounded-2xl border border-slate-200 bg-[#e5ddd5] p-4">
-              <div className="max-w-[320px] mx-auto rounded-lg bg-white overflow-hidden shadow-sm">
-                {form.headerFormat === "IMAGE" && (
-                  <div className="bg-slate-100 flex items-center justify-center h-40">
-                    {form.headerMediaUrl ? (
-                      <img src={form.headerMediaUrl} alt="Header" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                    ) : (
-                      <Image className="h-10 w-10 text-slate-300" />
-                    )}
-                  </div>
-                )}
-                {form.headerFormat === "VIDEO" && (
-                  <div className="bg-slate-100 flex items-center justify-center h-40">
-                    <Video className="h-10 w-10 text-slate-300" />
-                  </div>
-                )}
-                {form.headerFormat === "DOCUMENT" && (
-                  <div className="bg-slate-100 flex items-center justify-center h-16">
-                    <div className="flex items-center gap-2 text-slate-400">
-                      <File className="h-6 w-6" />
-                      <span className="text-xs">document.pdf</span>
-                    </div>
-                  </div>
-                )}
-                <div className="p-3 space-y-1.5">
-                  {form.headerFormat === "TEXT" && form.headerText && (
-                    <p className="text-sm font-semibold text-slate-800">{form.headerText}</p>
-                  )}
-                  {form.bodyText && <p className="text-sm text-slate-700 whitespace-pre-wrap">{form.bodyText}</p>}
-                  {form.footerText && <p className="text-[11px] text-slate-400">{form.footerText}</p>}
-                </div>
-                {form.buttons.filter((b) => b.text.trim()).length > 0 && (
-                  <div className="border-t border-slate-100 px-3 pb-2 pt-1.5 space-y-1">
-                    {form.buttons.filter((b) => b.text.trim()).map((btn, i) => (
-                      <div key={i} className="flex items-center justify-center gap-1.5 py-1 text-xs text-blue-500 font-medium">
-                        {btn.type === "URL" && <LinkIcon className="h-3 w-3" />}
-                        {btn.type === "PHONE_NUMBER" && <Phone className="h-3 w-3" />}
-                        {btn.type === "QUICK_REPLY" && <MessageCircle className="h-3 w-3" />}
-                        {btn.text}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Actions */}
-        <div className="flex justify-end gap-2 pt-2">
-          <button onClick={onClose} className="border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-xl px-4 py-2 text-sm font-medium transition-all">
-            <X className="mr-1 h-4 w-4 inline" />
-            {t("common.cancel")}
-          </button>
-          <button onClick={() => createMutation.mutate()} disabled={!canSubmit} className="bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl px-5 py-2.5 text-sm font-semibold transition-all disabled:opacity-50 flex items-center gap-2">
-            {createMutation.isPending ? (
-              <RefreshCw className="h-4 w-4 animate-spin" />
-            ) : (
-              <Check className="h-4 w-4" />
-            )}
-            {createMutation.isPending ? t("metaTemplates.creating") : t("metaTemplates.createBtn")}
-          </button>
-        </div>
-      </div>
-    </DashboardCard>
-  );
 }
 
 export default function MetaTemplatesTab() {
@@ -686,9 +266,9 @@ export default function MetaTemplatesTab() {
 
       {metaSessions.length > 0 && (
         <>
-          {/* Create form */}
+          {/* Create wizard */}
           {showCreate && (
-            <CreateTemplateForm
+            <TemplateWizard
               sessionId={activeSessionId}
               onClose={() => setShowCreate(false)}
               onSuccess={() => queryClient.invalidateQueries({ queryKey: ["meta-templates"] })}
