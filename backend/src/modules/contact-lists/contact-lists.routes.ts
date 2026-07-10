@@ -182,4 +182,60 @@ export async function contactListRoutes(app: FastifyInstance) {
 
     return { success: true, data: { added: normalizedPhones.length } };
   });
+
+  // Remove a single member from a list
+  app.delete("/:id/members/:memberId", async (request: FastifyRequest, reply: FastifyReply) => {
+    const { id, memberId } = request.params as { id: string; memberId: string };
+    const userId = (request as any).user.id;
+
+    const [list] = await db
+      .select({ id: contactLists.id })
+      .from(contactLists)
+      .where(and(eq(contactLists.id, id), eq(contactLists.userId, userId)))
+      .limit(1);
+
+    if (!list) return reply.status(404).send({ error: "Lista no encontrada" });
+
+    const [deleted] = await db
+      .delete(contactListMembers)
+      .where(and(eq(contactListMembers.id, memberId), eq(contactListMembers.listId, id)))
+      .returning({ id: contactListMembers.id });
+
+    if (!deleted) return reply.status(404).send({ error: "Contacto no encontrado en la lista" });
+
+    const [{ total }] = await db
+      .select({ total: count() })
+      .from(contactListMembers)
+      .where(eq(contactListMembers.listId, id));
+
+    await db
+      .update(contactLists)
+      .set({ contactCount: total, updatedAt: new Date() })
+      .where(eq(contactLists.id, id));
+
+    return { success: true };
+  });
+
+  // Remove ALL members from a list (empties it, keeps the list itself)
+  app.delete("/:id/members", async (request: FastifyRequest, reply: FastifyReply) => {
+    const { id } = request.params as { id: string };
+    const userId = (request as any).user.id;
+
+    const [list] = await db
+      .select({ id: contactLists.id })
+      .from(contactLists)
+      .where(and(eq(contactLists.id, id), eq(contactLists.userId, userId)))
+      .limit(1);
+
+    if (!list) return reply.status(404).send({ error: "Lista no encontrada" });
+
+    await db.delete(contactListMembers).where(eq(contactListMembers.listId, id));
+
+    await db
+      .update(contactLists)
+      .set({ contactCount: 0, updatedAt: new Date() })
+      .where(eq(contactLists.id, id));
+
+    return { success: true };
+  });
 }

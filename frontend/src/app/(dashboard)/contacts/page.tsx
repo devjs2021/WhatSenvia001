@@ -136,6 +136,50 @@ export default function ContactsPage() {
     },
   });
 
+  const removeMemberMutation = useMutation({
+    mutationFn: ({ listId, memberId }: { listId: string; memberId: string }) =>
+      api.delete(`/contact-lists/${listId}/members/${memberId}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["contact-list-detail", viewingList] });
+      queryClient.invalidateQueries({ queryKey: ["contact-lists"] });
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
+  const clearListMutation = useMutation({
+    mutationFn: (listId: string) => api.delete(`/contact-lists/${listId}/members`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["contact-list-detail", viewingList] });
+      queryClient.invalidateQueries({ queryKey: ["contact-lists"] });
+      toast.success(t('common.success'));
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
+  const [newListMemberPhones, setNewListMemberPhones] = useState("");
+  const addMembersMutation = useMutation({
+    mutationFn: ({ listId, phones }: { listId: string; phones: { phone: string; name?: string }[] }) =>
+      api.post(`/contact-lists/${listId}/members`, { phones }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["contact-list-detail", viewingList] });
+      queryClient.invalidateQueries({ queryKey: ["contact-lists"] });
+      setNewListMemberPhones("");
+      toast.success(t('common.success'));
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
+  function handleAddMembers(listId: string) {
+    const lines = newListMemberPhones.split(/[,\n\r;]+/).map((l) => l.trim()).filter(Boolean);
+    const phones = lines.map((line) => {
+      const parts = line.split(/\t/).map((p) => p.trim());
+      return { phone: parts[0].replace(/[^0-9]/g, ""), name: parts[1] || undefined };
+    }).filter((p) => p.phone.length >= 10);
+
+    if (phones.length === 0) return toast.error(t('contacts.noValidPhones'));
+    addMembersMutation.mutate({ listId, phones });
+  }
+
   const [uploading, setUploading] = useState(false);
 
   async function handleFileUpload(file: File) {
@@ -510,13 +554,38 @@ export default function ContactsPage() {
                     <Button variant="outline" size="sm" onClick={() => downloadListCsv(viewedList)}>
                       <Download className="mr-1 h-4 w-4" /> {t('contacts.downloadCsv')}
                     </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-destructive hover:text-destructive"
+                      disabled={viewedList.members.length === 0 || clearListMutation.isPending}
+                      onClick={() => {
+                        if (confirm(`¿Vaciar la lista "${viewedList.name}"? Se eliminan sus ${viewedList.members.length} contactos, pero la lista se conserva.`)) {
+                          clearListMutation.mutate(viewedList.id);
+                        }
+                      }}
+                    >
+                      <Trash2 className="mr-1 h-4 w-4" /> {t('contacts.clearList')}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-destructive hover:text-destructive"
+                      onClick={() => {
+                        if (confirm(`¿Eliminar la lista "${viewedList.name}" por completo?`)) {
+                          deleteListMutation.mutate(viewedList.id);
+                        }
+                      }}
+                    >
+                      <X className="mr-1 h-4 w-4" /> {t('contacts.deleteList')}
+                    </Button>
                     <Button variant="outline" size="sm" onClick={() => setViewingList(null)}>
-                      <X className="mr-1 h-4 w-4" /> {t('common.cancel')}
+                      {t('common.cancel')}
                     </Button>
                   </div>
                 </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-4">
                 <div className="overflow-x-auto max-h-80">
                   <table className="w-full">
                     <thead className="border-b bg-muted/50 sticky top-0">
@@ -524,18 +593,55 @@ export default function ContactsPage() {
                         <th className="px-4 py-2 text-left text-sm font-medium">#</th>
                         <th className="px-4 py-2 text-left text-sm font-medium">{t('contacts.phone')}</th>
                         <th className="px-4 py-2 text-left text-sm font-medium">{t('contacts.name')}</th>
+                        <th className="px-4 py-2 text-right text-sm font-medium"></th>
                       </tr>
                     </thead>
                     <tbody>
-                      {viewedList.members.map((m, i) => (
-                        <tr key={m.id} className="border-b">
-                          <td className="px-4 py-2 text-xs text-muted-foreground">{i + 1}</td>
-                          <td className="px-4 py-2 text-sm font-mono">{m.phone}</td>
-                          <td className="px-4 py-2 text-sm">{m.name || "-"}</td>
+                      {viewedList.members.length === 0 ? (
+                        <tr>
+                          <td colSpan={4} className="px-4 py-6 text-center text-sm text-muted-foreground">
+                            {t('contacts.noValidPhones')}
+                          </td>
                         </tr>
-                      ))}
+                      ) : (
+                        viewedList.members.map((m, i) => (
+                          <tr key={m.id} className="border-b group">
+                            <td className="px-4 py-2 text-xs text-muted-foreground">{i + 1}</td>
+                            <td className="px-4 py-2 text-sm font-mono">{m.phone}</td>
+                            <td className="px-4 py-2 text-sm">{m.name || "-"}</td>
+                            <td className="px-4 py-2 text-right">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6 text-muted-foreground hover:text-destructive sm:opacity-0 sm:group-hover:opacity-100"
+                                disabled={removeMemberMutation.isPending}
+                                onClick={() => removeMemberMutation.mutate({ listId: viewedList.id, memberId: m.id })}
+                                title={t('common.delete')}
+                              >
+                                <X className="h-3.5 w-3.5" />
+                              </Button>
+                            </td>
+                          </tr>
+                        ))
+                      )}
                     </tbody>
                   </table>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-2 border-t pt-4">
+                  <Input
+                    placeholder={t('contacts.addPhonesHelp')}
+                    value={newListMemberPhones}
+                    onChange={(e) => setNewListMemberPhones(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleAddMembers(viewedList.id)}
+                  />
+                  <Button
+                    size="sm"
+                    onClick={() => handleAddMembers(viewedList.id)}
+                    disabled={addMembersMutation.isPending || !newListMemberPhones.trim()}
+                  >
+                    <Plus className="mr-1 h-4 w-4" /> {t('contacts.addPhones')}
+                  </Button>
                 </div>
               </CardContent>
             </Card>

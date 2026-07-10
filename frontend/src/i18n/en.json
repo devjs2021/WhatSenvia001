@@ -310,6 +310,7 @@
     "members": "members",
     "downloadCsv": "Download CSV",
     "deleteList": "Delete list",
+    "clearList": "Clear list",
     "deleteConfirm": "Are you sure you want to delete this list?",
     "deleteContact": "Delete contact",
     "deleteContactConfirm": "Are you sure you want to delete this contact?"
