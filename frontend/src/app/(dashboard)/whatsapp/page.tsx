@@ -139,14 +139,19 @@ export default function WhatsAppPage() {
     }
   }, [sessions, connectingId]);
 
-  const handleMetaSuccess = async (code: string, wabaId: string, phoneNumberId: string) => {
+  const handleMetaSuccess = async (code: string, wabaId: string, phoneNumberId: string, isCoexistence: boolean) => {
     try {
       await api.post<ApiResponse<any>>("/meta/exchange-token", {
         code,
         waba_id: wabaId,
         phone_number_id: phoneNumberId,
+        is_coexistence: isCoexistence,
       });
-      toast.success("WhatsApp Business conectado exitosamente");
+      toast.success(
+        isCoexistence
+          ? "Cuenta de WhatsApp Business conectada. Sincronizando historial y contactos, esto puede tardar unos minutos..."
+          : "WhatsApp Business conectado exitosamente"
+      );
       queryClient.invalidateQueries({ queryKey: ["sessions"] });
     } catch (err: any) {
       toast.error(err.message || "Error al conectar con Meta");

@@ -344,6 +344,14 @@ async function bootstrap() {
     app.log.warn(`Auto-migration (notification_emails) note: ${err.message}`);
   }
 
+  // Auto-migration: WhatsApp Business app coexistence columns on whatsapp_sessions
+  try {
+    await db.execute(sql`ALTER TABLE whatsapp_sessions ADD COLUMN IF NOT EXISTS is_coexistence BOOLEAN NOT NULL DEFAULT FALSE`);
+    await db.execute(sql`ALTER TABLE whatsapp_sessions ADD COLUMN IF NOT EXISTS history_sync_status VARCHAR(20)`);
+  } catch (err: any) {
+    app.log.warn(`Auto-migration (whatsapp_sessions coexistence) note: ${err.message}`);
+  }
+
   // Start queue workers
   startMessageWorker();
   startCampaignWorker();

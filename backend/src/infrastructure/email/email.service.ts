@@ -197,6 +197,29 @@ export async function sendTemplateStatusEmail(
   await sendEmail({ to: email, subject: `Template "${templateName}" ${isApproved ? "aprobado ✅" : "rechazado ❌"}`, html });
 }
 
+export async function sendQualityAlertEmail(
+  email: string | string[],
+  name: string,
+  title: string,
+  detail: string
+): Promise<void> {
+  const appUrl = env.APP_URL;
+  const html = emailWrapper(title, `
+    <p style="font-size: 14px; color: #64748b; text-align: center; margin: 0 0 24px 0;">
+      Hola ${name}, Meta envio una actualizacion sobre tu cuenta de WhatsApp Business.
+    </p>
+    <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 12px; padding: 20px; text-align: center; margin-bottom: 24px;">
+      <p style="font-size: 36px; margin: 0 0 8px 0;">⚠️</p>
+      <p style="font-size: 14px; color: #92400e; margin: 0;">${detail}</p>
+    </div>
+    <div style="text-align: center;">
+      <a href="${appUrl}/whatsapp" style="display: inline-block; background: #f59e0b; color: white; text-decoration: none; padding: 12px 32px; border-radius: 12px; font-size: 14px; font-weight: 600;">Ver Detalles</a>
+    </div>
+  `);
+
+  await sendEmail({ to: email, subject: title, html });
+}
+
 export async function sendLicenseExpiringEmail(
   email: string | string[],
   name: string,

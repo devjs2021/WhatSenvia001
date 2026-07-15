@@ -6,7 +6,10 @@ import { db } from '../../../config/database.js'
 import { whatsappSessions } from '../../../infrastructure/database/schema/whatsapp-sessions.js'
 import { chatMessages } from '../../../infrastructure/database/schema/chat.js'
 import { messages } from '../../../infrastructure/database/schema/messages.js'
-import { eq } from 'drizzle-orm'
+import { contacts } from '../../../infrastructure/database/schema/contacts.js'
+import { metaTemplates } from '../../../infrastructure/database/schema/meta-templates.js'
+import { eq, and, or } from 'drizzle-orm'
+import { notifyPhoneQualityChange, notifyTemplateQualityChange, notifyAccountAlert } from '../services/quality-alert-notifier.js'
 import { chatBroadcast } from '../../chat/websocket/chat-broadcast.js'
 import { flowExecutor } from '../../bot-builder/services/flow-executor.service.js'
 import { chatService } from '../../chat/services/chat.service.js'
@@ -271,6 +274,250 @@ export async function metaWebhookRoutes(app: FastifyInstance) {
                   logger.error({ error: err.message }, 'Error updating messages status')
                 }
               }
+            }
+          } else if (change.field === 'history') {
+            // Coexistence: batch of past messages synced from the WhatsApp Business app (up to 6 months)
+            const value = change.value as any
+            const phoneNumberId = value.metadata?.phone_number_id
+            const [session] = await db
+              .select()
+              .from(whatsappSessions)
+              .where(eq(whatsappSessions.metaPhoneNumberId, phoneNumberId))
+              .limit(1)
+
+            if (!session) {
+              logger.warn({ phoneNumberId }, 'No session found for history sync webhook')
+              continue
+            }
+
+            const businessDigits = (value.metadata?.display_phone_number || session.phone || '').replace(/\D/g, '')
+            let lastPhase: string | undefined
+
+            for (const historyEntry of value.history || []) {
+              if (historyEntry.errors) {
+                logger.info({ sessionId: session.id, errors: historyEntry.errors }, 'Coexistence history sync declined by business')
+                await db.update(whatsappSessions).set({ historySyncStatus: 'declined' }).where(eq(whatsappSessions.id, session.id))
+                continue
+              }
+
+              lastPhase = historyEntry.metadata?.phase
+              for (const thread of historyEntry.threads || []) {
+                const contactPhone = thread.id
+                for (const msg of thread.messages || []) {
+                  const [existing] = await db
+                    .select({ id: chatMessages.id })
+                    .from(chatMessages)
+                    .where(eq(chatMessages.whatsappMessageId, msg.id))
+                    .limit(1)
+                  if (existing) continue
+
+                  const fromDigits = (msg.from || '').replace(/\D/g, '')
+                  const direction: 'incoming' | 'outgoing' =
+                    businessDigits && fromDigits === businessDigits ? 'outgoing' : 'incoming'
+                  const content = msg.type === 'text' ? (msg.text?.body || '') : `[${msg.type}]`
+                  const historyStatus = msg.history_context?.status
+                  const dbStatus = historyStatus === 'read' ? 'read'
+                    : historyStatus === 'delivered' ? 'delivered'
+                    : historyStatus === 'failed' ? 'failed'
+                    : 'sent'
+
+                  try {
+                    await db.insert(chatMessages).values({
+                      sessionId: session.id,
+                      phone: contactPhone,
+                      content: content || `[${msg.type}]`,
+                      direction,
+                      senderType: direction === 'outgoing' ? 'human' : 'user',
+                      whatsappMessageId: msg.id,
+                      status: direction === 'outgoing' ? dbStatus : 'sent',
+                      createdAt: new Date(parseInt(msg.timestamp) * 1000),
+                    })
+                  } catch (err: any) {
+                    logger.error({ error: err.message }, 'Error saving history message')
+                  }
+                }
+              }
+            }
+
+            const newStatus = lastPhase
+              ? (String(lastPhase).toLowerCase().includes('complete') ? 'completed' : 'syncing')
+              : 'completed'
+            await db.update(whatsappSessions).set({ historySyncStatus: newStatus }).where(eq(whatsappSessions.id, session.id))
+            logger.info({ sessionId: session.id, status: newStatus }, 'Coexistence history chunk processed')
+          } else if (change.field === 'smb_app_state_sync') {
+            // Coexistence: business customer's WhatsApp contacts
+            const value = change.value as any
+            const phoneNumberId = value.metadata?.phone_number_id
+            const [session] = await db
+              .select()
+              .from(whatsappSessions)
+              .where(eq(whatsappSessions.metaPhoneNumberId, phoneNumberId))
+              .limit(1)
+
+            if (!session) {
+              logger.warn({ phoneNumberId }, 'No session found for contact sync webhook')
+              continue
+            }
+
+            for (const item of value.state_sync || []) {
+              if (item.type !== 'contact' || item.action !== 'add') continue
+              const phone = (item.contact?.phone_number || '').replace(/\D/g, '')
+              if (!phone) continue
+              const name = item.contact?.full_name || item.contact?.first_name || null
+
+              try {
+                const [existing] = await db
+                  .select({ id: contacts.id })
+                  .from(contacts)
+                  .where(and(eq(contacts.userId, session.userId), eq(contacts.phone, phone)))
+                  .limit(1)
+
+                if (existing) {
+                  if (name) {
+                    await db.update(contacts).set({ name, updatedAt: new Date() }).where(eq(contacts.id, existing.id))
+                  }
+                } else {
+                  await db.insert(contacts).values({ userId: session.userId, phone, name })
+                }
+              } catch (err: any) {
+                logger.error({ error: err.message }, 'Error syncing coexistence contact')
+              }
+            }
+            logger.info({ sessionId: session.id, count: value.state_sync?.length || 0 }, 'Coexistence contacts synced')
+          } else if (change.field === 'smb_message_echoes') {
+            // Coexistence: message sent by the business from the WhatsApp Business app itself
+            const value = change.value as any
+            const phoneNumberId = value.metadata?.phone_number_id
+            const [session] = await db
+              .select()
+              .from(whatsappSessions)
+              .where(eq(whatsappSessions.metaPhoneNumberId, phoneNumberId))
+              .limit(1)
+
+            if (!session) {
+              logger.warn({ phoneNumberId }, 'No session found for message echo webhook')
+              continue
+            }
+
+            for (const echo of value.message_echoes || []) {
+              const [existing] = await db
+                .select({ id: chatMessages.id })
+                .from(chatMessages)
+                .where(eq(chatMessages.whatsappMessageId, echo.id))
+                .limit(1)
+              if (existing) continue
+
+              const content = echo.type === 'text' ? (echo.text?.body || '') : `[${echo.type}]`
+
+              try {
+                const [saved] = await db.insert(chatMessages).values({
+                  sessionId: session.id,
+                  phone: echo.to,
+                  content: content || `[${echo.type}]`,
+                  direction: 'outgoing',
+                  senderType: 'human',
+                  whatsappMessageId: echo.id,
+                  status: 'sent',
+                  createdAt: new Date(parseInt(echo.timestamp) * 1000),
+                }).returning()
+
+                chatBroadcast.broadcast(session.id, 'new_message', saved)
+              } catch (err: any) {
+                logger.error({ error: err.message }, 'Error saving message echo')
+              }
+            }
+          } else if (change.field === 'account_update') {
+            // Coexistence offboarding: business disconnected the app from the WhatsApp Business Platform settings
+            const value = change.value as any
+            if (value.event === 'PARTNER_REMOVED') {
+              const wabaId = value.waba_info?.waba_id
+              if (wabaId) {
+                const updated = await db
+                  .update(whatsappSessions)
+                  .set({ status: 'disconnected', updatedAt: new Date() })
+                  .where(eq(whatsappSessions.wabaId, wabaId))
+                  .returning({ id: whatsappSessions.id })
+                logger.info({ wabaId, sessions: updated.length }, 'WABA disconnected by business (PARTNER_REMOVED)')
+              }
+            }
+          } else if (change.field === 'phone_number_quality_update') {
+            // Quality rating / messaging limit change on a business phone number
+            const value = change.value as any
+            const displayDigits = (value.display_phone_number || '').replace(/\D/g, '')
+
+            const candidateSessions = await db
+              .select()
+              .from(whatsappSessions)
+              .where(eq(whatsappSessions.connectionType, 'meta_cloud'))
+            const session = candidateSessions.find(
+              (s) => (s.phone || '').replace(/\D/g, '') === displayDigits || s.metaPhoneNumberId === value.display_phone_number
+            )
+
+            if (!session) {
+              logger.warn({ displayPhone: value.display_phone_number }, 'No session found for phone_number_quality_update webhook')
+              continue
+            }
+
+            try {
+              await notifyPhoneQualityChange(session.userId, session.phone || value.display_phone_number, value.event, value.current_limit)
+            } catch (err: any) {
+              logger.error({ error: err.message }, 'Error notifying phone quality change')
+            }
+          } else if (change.field === 'message_template_quality_update') {
+            // Quality score change on one of the user's message templates
+            const value = change.value as any
+            const wabaId = entry.id
+
+            const [template] = await db
+              .select()
+              .from(metaTemplates)
+              .where(and(eq(metaTemplates.wabaId, wabaId), eq(metaTemplates.metaTemplateId, String(value.message_template_id))))
+              .limit(1)
+
+            if (!template) {
+              logger.warn({ wabaId, templateId: value.message_template_id }, 'No template found for message_template_quality_update webhook')
+              continue
+            }
+
+            try {
+              await notifyTemplateQualityChange(
+                template.userId,
+                value.message_template_name || template.name,
+                value.previous_quality_score,
+                value.new_quality_score
+              )
+            } catch (err: any) {
+              logger.error({ error: err.message }, 'Error notifying template quality change')
+            }
+          } else if (change.field === 'account_alerts') {
+            // General Meta account alerts (messaging limits, business status, etc.)
+            const value = change.value as any
+            const entityId = value.entity_id
+
+            const [session] = await db
+              .select()
+              .from(whatsappSessions)
+              .where(or(
+                eq(whatsappSessions.wabaId, entityId),
+                eq(whatsappSessions.metaBusinessId, entityId),
+                eq(whatsappSessions.metaPhoneNumberId, entityId)
+              ))
+              .limit(1)
+
+            if (!session) {
+              logger.warn({ entityId, entityType: value.entity_type }, 'No session found for account_alerts webhook')
+              continue
+            }
+
+            try {
+              await notifyAccountAlert(
+                session.userId,
+                value.alert_info?.alert_type,
+                value.alert_info?.alert_severity,
+                value.alert_info?.alert_description
+              )
+            } catch (err: any) {
+              logger.error({ error: err.message }, 'Error notifying account alert')
             }
           }
         }

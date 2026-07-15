@@ -11,7 +11,7 @@ declare global {
 }
 
 interface MetaSignupButtonProps {
-  onSuccess: (code: string, wabaId: string, phoneNumberId: string) => void
+  onSuccess: (code: string, wabaId: string, phoneNumberId: string, isCoexistence: boolean) => void
 }
 
 let fbReadyPromise: Promise<void> | null = null
@@ -70,6 +70,9 @@ export function MetaSignupButton({ onSuccess }: MetaSignupButtonProps) {
         if (data.type === 'WA_EMBEDDED_SIGNUP') {
           if (data.data?.waba_id) sessionStorage.setItem('wabaId', data.data.waba_id)
           if (data.data?.phone_number_id) sessionStorage.setItem('phoneNumberId', data.data.phone_number_id)
+          if (data.event === 'FINISH_WHATSAPP_BUSINESS_APP_ONBOARDING') {
+            sessionStorage.setItem('isCoexistence', 'true')
+          }
         }
       } catch {}
     }
@@ -92,13 +95,15 @@ export function MetaSignupButton({ onSuccess }: MetaSignupButtonProps) {
         const code = response.authResponse.code
         const wabaId = sessionStorage.getItem('wabaId') || ''
         const phoneNumberId = sessionStorage.getItem('phoneNumberId') || ''
-        onSuccess(code, wabaId, phoneNumberId)
+        const isCoexistence = sessionStorage.getItem('isCoexistence') === 'true'
+        sessionStorage.removeItem('isCoexistence')
+        onSuccess(code, wabaId, phoneNumberId, isCoexistence)
       }
     }, {
       config_id: '990741733486379',
       response_type: 'code',
       override_default_response_type: true,
-      extras: { version: 'v4' }
+      extras: { version: 'v4', featureType: 'whatsapp_business_app_onboarding' }
     })
   }, [onSuccess])
 

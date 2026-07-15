@@ -12,12 +12,13 @@ export async function metaExchangeRoutes(fastify: FastifyInstance) {
   fastify.addHook("preHandler", authGuard);
 
   fastify.post('/api/meta/exchange-token', async (
-    request: FastifyRequest<{ 
-      Body: { code: string; waba_id: string; phone_number_id: string } 
+    request: FastifyRequest<{
+      Body: { code: string; waba_id: string; phone_number_id: string; is_coexistence?: boolean }
     }>,
     reply: FastifyReply
   ) => {
-    const { code, waba_id, phone_number_id } = request.body
+    const { code, waba_id, is_coexistence } = request.body
+    let phone_number_id = request.body.phone_number_id
     const userId = (request as any).user.id
 
     try {
@@ -59,7 +60,31 @@ export async function metaExchangeRoutes(fastify: FastifyInstance) {
         fastify.log.warn({ error: err.message }, 'Long-lived token exchange failed, using short-lived token')
       }
 
-      fastify.log.info({ waba_id, phone_number_id }, 'Token obtained via Embedded Signup')
+      fastify.log.info({ waba_id, phone_number_id, is_coexistence }, 'Token obtained via Embedded Signup')
+
+      // Coexistence: the finish event only returns waba_id (the number was already
+      // registered in the WhatsApp Business app), so resolve phone_number_id here.
+      if (is_coexistence && !phone_number_id && waba_id) {
+        try {
+          const numbersRes = await fetch(
+            `https://graph.facebook.com/v21.0/${waba_id}/phone_numbers?fields=id,is_on_biz_app`,
+            { headers: { Authorization: `Bearer ${accessToken}` } }
+          )
+          const numbersData = await numbersRes.json() as any
+          const numbers = numbersData.data || []
+          const bizAppNumber = numbers.find((n: any) => n.is_on_biz_app) || numbers[0]
+          if (bizAppNumber?.id) {
+            phone_number_id = bizAppNumber.id
+            fastify.log.info({ waba_id, phone_number_id }, 'Resolved phone_number_id for coexistence onboarding')
+          }
+        } catch (err: any) {
+          fastify.log.warn({ error: err.message }, 'Could not resolve phone_number_id for coexistence onboarding')
+        }
+      }
+
+      if (is_coexistence && !phone_number_id) {
+        return reply.status(400).send({ error: 'No se pudo obtener el número de teléfono de la cuenta de WhatsApp Business' })
+      }
 
       // 2. Obtener el número de teléfono real desde el phone_number_id
       let displayPhone = ''
@@ -129,6 +154,8 @@ export async function metaExchangeRoutes(fastify: FastifyInstance) {
             metaTokenExpiresAt: tokenExpiresAt,
             phone: displayPhone || phone_number_id,
             status: 'connected',
+            isCoexistence: !!is_coexistence,
+            historySyncStatus: is_coexistence ? 'requested' : existingSession[0].historySyncStatus,
             lastConnectedAt: new Date(),
             updatedAt: new Date(),
           })
@@ -148,6 +175,8 @@ export async function metaExchangeRoutes(fastify: FastifyInstance) {
             metaTokenExpiresAt: tokenExpiresAt,
             phone: displayPhone || phone_number_id,
             status: 'connected',
+            isCoexistence: !!is_coexistence,
+            historySyncStatus: is_coexistence ? 'requested' : undefined,
             lastConnectedAt: new Date(),
           })
           .returning()
@@ -156,10 +185,11 @@ export async function metaExchangeRoutes(fastify: FastifyInstance) {
       fastify.log.info({ sessionId: session.id }, 'Meta Cloud session saved')
 
       // 4. Auto-register phone number with Meta so it's ready to send/receive
-      let registered = false
+      // Skipped for coexistence: the number is already registered via the WhatsApp Business app.
+      let registered = is_coexistence ? true : false
       const pin = crypto.randomInt(100000, 999999).toString()
       try {
-        if (phone_number_id) {
+        if (phone_number_id && !is_coexistence) {
           const regRes = await fetch(
             `https://graph.facebook.com/v21.0/${phone_number_id}/register`,
             {
@@ -209,6 +239,37 @@ export async function metaExchangeRoutes(fastify: FastifyInstance) {
         fastify.log.warn({ error: err.message }, 'WABA webhook subscription failed (non-blocking)')
       }
 
+      // 6. Coexistence: trigger the one-time sync of message history + contacts.
+      // Must happen within 24h of onboarding, so we fire it right away (non-blocking).
+      // Meta responds with history/smb_app_state_sync webhooks asynchronously.
+      let historySyncRequested = false
+      if (is_coexistence && phone_number_id) {
+        try {
+          const syncRes = await fetch(
+            `https://graph.facebook.com/v21.0/${phone_number_id}/smb_app_data`,
+            {
+              method: 'POST',
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ messaging_product: 'whatsapp', sync_type: 'history' }),
+            }
+          )
+          const syncData = await syncRes.json() as any
+          historySyncRequested = syncRes.ok
+          if (historySyncRequested) {
+            fastify.log.info({ phone_number_id, requestId: syncData.request_id }, 'Coexistence history sync requested')
+          } else {
+            fastify.log.warn({ phone_number_id, error: syncData.error }, 'Coexistence history sync request failed')
+            await db.update(whatsappSessions).set({ historySyncStatus: 'failed' }).where(eq(whatsappSessions.id, session.id))
+          }
+        } catch (err: any) {
+          fastify.log.warn({ error: err.message }, 'Coexistence history sync request failed (non-blocking)')
+          await db.update(whatsappSessions).set({ historySyncStatus: 'failed' }).where(eq(whatsappSessions.id, session.id))
+        }
+      }
+
       return reply.status(200).send({
         success: true,
         sessionId: session.id,
@@ -217,6 +278,8 @@ export async function metaExchangeRoutes(fastify: FastifyInstance) {
         phone: displayPhone || phone_number_id,
         registered,
         subscribed,
+        isCoexistence: !!is_coexistence,
+        historySyncRequested,
       })
 
     } catch (error) {
