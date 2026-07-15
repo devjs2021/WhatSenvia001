@@ -313,7 +313,12 @@
     "clearList": "Vaciar lista",
     "deleteConfirm": "¿Estás seguro de eliminar esta lista?",
     "deleteContact": "Eliminar contacto",
-    "deleteContactConfirm": "¿Estás seguro de eliminar este contacto?"
+    "deleteContactConfirm": "¿Estás seguro de eliminar este contacto?",
+    "splitIntoBlocks": "Dividir en bloques",
+    "blocksCreated": "bloques creados",
+    "selectSession": "Selecciona un número",
+    "batchSize": "Contactos por bloque",
+    "useRecommendedSize": "Usar tamaño recomendado"
   },
   "messages": {
     "sendMessage": "Enviar mensaje",

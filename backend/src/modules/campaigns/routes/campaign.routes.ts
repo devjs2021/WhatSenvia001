@@ -15,12 +15,14 @@ import {
   downloadCampaignReport,
   cancelCampaign,
   cancelAllPending,
+  getBatchRecommendation,
 } from "../controllers/campaign.controller.js";
 export async function campaignRoutes(app: FastifyInstance) {
   app.addHook("preHandler", authGuard);
 
   app.get("/", listCampaigns);
   app.get("/unified", listUnifiedCampaigns);
+  app.get("/batch-recommendation", getBatchRecommendation);
   app.get("/:id", getCampaign);
   app.get("/:id/stats", getCampaignStats);
   app.get("/:id/report", downloadCampaignReport);

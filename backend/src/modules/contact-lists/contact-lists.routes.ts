@@ -238,4 +238,74 @@ export async function contactListRoutes(app: FastifyInstance) {
 
     return { success: true };
   });
+
+  // Split a list's members into new sublists per an explicit block plan
+  // (each block has its own size and, optionally, a recommended send date).
+  // The original list is left untouched — this only creates new sublists.
+  app.post("/:id/split", async (request: FastifyRequest, reply: FastifyReply) => {
+    const { id } = request.params as { id: string };
+    const { blocks } = request.body as { blocks: { size: number; date?: string }[] };
+    const userId = (request as any).user.id;
+
+    if (!blocks || blocks.length === 0 || blocks.some((b) => !b.size || b.size < 1)) {
+      return reply.status(422).send({ error: "Debes indicar al menos un bloque con tamaño mayor a 0" });
+    }
+
+    const [list] = await db
+      .select()
+      .from(contactLists)
+      .where(and(eq(contactLists.id, id), eq(contactLists.userId, userId)))
+      .limit(1);
+
+    if (!list) return reply.status(404).send({ error: "Lista no encontrada" });
+
+    const members = await db
+      .select({ phone: contactListMembers.phone, name: contactListMembers.name })
+      .from(contactListMembers)
+      .where(eq(contactListMembers.listId, id))
+      .orderBy(contactListMembers.name);
+
+    if (members.length === 0) {
+      return reply.status(422).send({ error: "La lista no tiene contactos para dividir" });
+    }
+
+    const totalRequested = blocks.reduce((sum, b) => sum + b.size, 0);
+    if (totalRequested !== members.length) {
+      return reply.status(422).send({
+        error: `La suma de los bloques (${totalRequested}) debe ser igual al total de contactos de la lista (${members.length})`,
+      });
+    }
+
+    const createdLists = [];
+    let offset = 0;
+
+    for (let i = 0; i < blocks.length; i++) {
+      const chunk = members.slice(offset, offset + blocks[i].size);
+      offset += blocks[i].size;
+
+      const [newList] = await db
+        .insert(contactLists)
+        .values({
+          userId,
+          name: `${list.name} - Bloque ${i + 1}/${blocks.length}`,
+          description: list.description,
+          contactCount: chunk.length,
+          recommendedSendDate: blocks[i].date ? new Date(blocks[i].date!) : null,
+        })
+        .returning();
+
+      await db.insert(contactListMembers).values(
+        chunk.map((m) => ({ listId: newList.id, phone: m.phone, name: m.name }))
+      );
+
+      createdLists.push({
+        id: newList.id,
+        name: newList.name,
+        contactCount: chunk.length,
+        recommendedSendDate: newList.recommendedSendDate,
+      });
+    }
+
+    return { success: true, data: createdLists };
+  });
 }

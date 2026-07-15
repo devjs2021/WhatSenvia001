@@ -2,8 +2,33 @@ import { FastifyRequest, FastifyReply } from "fastify";
 import { CampaignService } from "../services/campaign.service.js";
 import { createCampaignSchema, updateCampaignSchema, queryCampaignsSchema, createUnifiedCampaignSchema } from "../schemas/campaign.schema.js";
 import { success, error, paginated } from "../../../shared/utils/api-response.js";
+import { recommendBatches } from "../services/batch-recommendation.service.js";
+import { db } from "../../../config/database.js";
+import { whatsappSessions } from "../../../infrastructure/database/schema/whatsapp-sessions.js";
+import { eq, and } from "drizzle-orm";
 
 const campaignService = new CampaignService();
+
+export async function getBatchRecommendation(request: FastifyRequest, reply: FastifyReply) {
+  const userId = (request as any).user.id;
+  const { sessionId, totalContacts } = request.query as { sessionId?: string; totalContacts?: string };
+
+  const total = parseInt(totalContacts || "", 10);
+  if (!sessionId || !total || total < 1) {
+    return error(reply, "sessionId y totalContacts son requeridos", 422);
+  }
+
+  const [session] = await db
+    .select({ messagingLimit: whatsappSessions.messagingLimit })
+    .from(whatsappSessions)
+    .where(and(eq(whatsappSessions.id, sessionId), eq(whatsappSessions.userId, userId)))
+    .limit(1);
+
+  if (!session) return error(reply, "Sesión no encontrada", 404);
+
+  const recommendation = recommendBatches(total, session.messagingLimit);
+  return success(reply, recommendation);
+}
 
 export async function listCampaigns(request: FastifyRequest, reply: FastifyReply) {
   const parsed = queryCampaignsSchema.safeParse(request.query);

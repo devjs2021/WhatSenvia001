@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, uploadFile } from "@/lib/api";
 import { useI18n } from "@/i18n";
-import type { PaginatedResponse, Contact, ApiResponse } from "@/types";
+import type { PaginatedResponse, Contact, ApiResponse, WhatsAppSession } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
@@ -36,12 +36,21 @@ interface ContactList {
   name: string;
   description: string | null;
   contactCount: number;
+  recommendedSendDate: string | null;
   createdAt: string;
   updatedAt: string;
 }
 
 interface ContactListWithMembers extends ContactList {
   members: { id: string; phone: string; name: string | null; createdAt: string }[];
+}
+
+interface BatchRecommendation {
+  dailyCap: number;
+  dailyCapKnown: boolean;
+  recommended: boolean;
+  batchSize: number;
+  blocks: { block: number; size: number; recommendedDate: string }[];
 }
 
 type Tab = "contacts" | "lists";
@@ -68,6 +77,11 @@ export default function ContactsPage() {
   const [listPhones, setListPhones] = useState("");
   const [viewingList, setViewingList] = useState<string | null>(null);
   const listFileRef = useRef<HTMLInputElement>(null);
+
+  // --- Split into blocks state ---
+  const [showSplit, setShowSplit] = useState(false);
+  const [splitSessionId, setSplitSessionId] = useState("");
+  const [splitBlocks, setSplitBlocks] = useState<{ size: number; date: string }[]>([]);
   const [listUploading, setListUploading] = useState(false);
 
   // --- Contacts queries ---
@@ -91,6 +105,59 @@ export default function ContactsPage() {
 
   const lists = listsData?.data || [];
   const viewedList = listDetailData?.data;
+
+  const { data: sessionsData } = useQuery({
+    queryKey: ["whatsapp-sessions"],
+    queryFn: () => api.get<ApiResponse<WhatsAppSession[]>>("/whatsapp/sessions"),
+  });
+  const sessions = sessionsData?.data || [];
+
+  const { data: recommendationData } = useQuery({
+    queryKey: ["batch-recommendation", splitSessionId, viewedList?.members.length],
+    queryFn: () =>
+      api.get<ApiResponse<BatchRecommendation>>(
+        `/campaigns/batch-recommendation?sessionId=${splitSessionId}&totalContacts=${viewedList?.members.length || 0}`
+      ),
+    enabled: showSplit && !!splitSessionId && !!viewedList?.members.length,
+  });
+  const recommendation = recommendationData?.data;
+
+  useEffect(() => {
+    if (recommendation) {
+      setSplitBlocks(recommendation.blocks.map((b) => ({ size: b.size, date: b.recommendedDate })));
+    }
+  }, [recommendation]);
+
+  useEffect(() => {
+    if (showSplit && splitBlocks.length === 0 && viewedList?.members.length) {
+      setSplitBlocks([{ size: viewedList.members.length, date: new Date().toISOString().slice(0, 10) }]);
+    }
+    if (!showSplit) {
+      setSplitBlocks([]);
+      setSplitSessionId("");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showSplit]);
+
+  const splitTotal = splitBlocks.reduce((sum, b) => sum + (b.size || 0), 0);
+  const splitTargetTotal = viewedList?.members.length || 0;
+
+  function updateSplitBlock(index: number, field: "size" | "date", value: string) {
+    setSplitBlocks((prev) =>
+      prev.map((b, i) => (i === index ? { ...b, [field]: field === "size" ? Number(value) || 0 : value } : b))
+    );
+  }
+
+  function addSplitBlock() {
+    const remaining = Math.max(0, splitTargetTotal - splitTotal);
+    const lastDate = splitBlocks[splitBlocks.length - 1]?.date;
+    const nextDate = lastDate ? new Date(new Date(lastDate).getTime() + 86400000).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10);
+    setSplitBlocks((prev) => [...prev, { size: remaining, date: nextDate }]);
+  }
+
+  function removeSplitBlock(index: number) {
+    setSplitBlocks((prev) => prev.filter((_, i) => i !== index));
+  }
 
   // --- Contacts mutations ---
   const createMutation = useMutation({
@@ -165,6 +232,18 @@ export default function ContactsPage() {
       queryClient.invalidateQueries({ queryKey: ["contact-lists"] });
       setNewListMemberPhones("");
       toast.success(t('common.success'));
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
+  const splitListMutation = useMutation({
+    mutationFn: ({ listId, blocks }: { listId: string; blocks: { size: number; date: string }[] }) =>
+      api.post<ApiResponse<{ id: string; name: string; contactCount: number }[]>>(`/contact-lists/${listId}/split`, { blocks }),
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ["contact-lists"] });
+      setShowSplit(false);
+      setSplitBlocks([]);
+      toast.success(`${res.data.length} ${t('contacts.blocksCreated')}`);
     },
     onError: (err: any) => toast.error(err.message),
   });
@@ -557,6 +636,14 @@ export default function ContactsPage() {
                     <Button
                       variant="outline"
                       size="sm"
+                      disabled={viewedList.members.length === 0}
+                      onClick={() => setShowSplit((v) => !v)}
+                    >
+                      <List className="mr-1 h-4 w-4" /> {t('contacts.splitIntoBlocks')}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
                       className="text-destructive hover:text-destructive"
                       disabled={viewedList.members.length === 0 || clearListMutation.isPending}
                       onClick={() => {
@@ -586,6 +673,87 @@ export default function ContactsPage() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
+                {showSplit && (
+                  <div className="rounded-md border bg-muted/30 p-4 space-y-3">
+                    <p className="text-sm font-medium">{t('contacts.splitIntoBlocks')}</p>
+                    <select
+                      className="flex h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                      value={splitSessionId}
+                      onChange={(e) => setSplitSessionId(e.target.value)}
+                    >
+                      <option value="">{t('contacts.selectSession')}</option>
+                      {sessions.map((s) => (
+                        <option key={s.id} value={s.id}>{s.name}{s.phone ? ` (${s.phone})` : ""}</option>
+                      ))}
+                    </select>
+
+                    {recommendation && (
+                      <p className="text-xs text-muted-foreground bg-background rounded-md border p-3">
+                        {recommendation.dailyCapKnown
+                          ? `Límite de mensajería actual del número: ~${recommendation.dailyCap}/día. `
+                          : `No conocemos aún el límite real de este número — usando un tope conservador de ${recommendation.dailyCap}/día. `}
+                        {recommendation.recommended
+                          ? `Sugerencia: ${recommendation.blocks.length} bloques de hasta ${recommendation.batchSize} contactos, uno por día. Puedes editar el tamaño y la fecha de cada bloque abajo.`
+                          : "Esta lista cabe dentro del límite diario recomendado — no sería necesario dividirla."}
+                      </p>
+                    )}
+
+                    {splitBlocks.length > 0 && (
+                      <div className="space-y-2">
+                        {splitBlocks.map((block, i) => (
+                          <div key={i} className="flex items-center gap-2">
+                            <span className="text-xs text-muted-foreground w-16 shrink-0">Bloque {i + 1}</span>
+                            <Input
+                              type="number"
+                              min={1}
+                              className="w-28"
+                              value={block.size}
+                              onChange={(e) => updateSplitBlock(i, "size", e.target.value)}
+                            />
+                            <Input
+                              type="date"
+                              className="w-40"
+                              value={block.date}
+                              onChange={(e) => updateSplitBlock(i, "date", e.target.value)}
+                            />
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                              onClick={() => removeSplitBlock(i)}
+                              disabled={splitBlocks.length <= 1}
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        ))}
+
+                        <div className="flex items-center justify-between pt-1">
+                          <button type="button" className="text-xs text-primary underline" onClick={addSplitBlock}>
+                            + Agregar bloque
+                          </button>
+                          <span className={`text-xs ${splitTotal === splitTargetTotal ? "text-muted-foreground" : "text-destructive"}`}>
+                            {splitTotal} / {splitTargetTotal} contactos asignados
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex justify-end gap-2">
+                      <Button variant="outline" size="sm" onClick={() => setShowSplit(false)}>
+                        {t('common.cancel')}
+                      </Button>
+                      <Button
+                        size="sm"
+                        disabled={splitBlocks.length === 0 || splitTotal !== splitTargetTotal || splitListMutation.isPending}
+                        onClick={() => splitListMutation.mutate({ listId: viewedList.id, blocks: splitBlocks })}
+                      >
+                        {t('contacts.splitIntoBlocks')}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
                 <div className="overflow-x-auto max-h-80">
                   <table className="w-full">
                     <thead className="border-b bg-muted/50 sticky top-0">
@@ -706,6 +874,11 @@ export default function ContactsPage() {
                         <span className="text-muted-foreground">{t('nav.contacts')}</span>
                       </div>
                     </div>
+                    {list.recommendedSendDate && (
+                      <Badge variant="outline" className="mt-2 text-[10px]">
+                        Envío recomendado: {new Date(list.recommendedSendDate).toLocaleDateString(locale, { day: "numeric", month: "short", year: "numeric" })}
+                      </Badge>
+                    )}
                     <p className="text-[10px] text-muted-foreground mt-2">
                       {new Date(list.createdAt).toLocaleDateString(locale, { day: "numeric", month: "short", year: "numeric" })}
                     </p>

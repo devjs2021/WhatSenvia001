@@ -94,6 +94,7 @@ export interface WhatsAppSession {
   phone?: string;
   status: "disconnected" | "connecting" | "connected" | "qr_pending";
   connectionType?: "baileys" | "meta_cloud";
+  messagingLimit?: string | null;
   isDefault: boolean;
   qrCode?: string;
   lastConnectedAt?: string;

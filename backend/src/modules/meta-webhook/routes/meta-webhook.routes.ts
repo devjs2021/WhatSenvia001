@@ -458,6 +458,14 @@ export async function metaWebhookRoutes(app: FastifyInstance) {
               continue
             }
 
+            if (value.current_limit) {
+              try {
+                await db.update(whatsappSessions).set({ messagingLimit: value.current_limit }).where(eq(whatsappSessions.id, session.id))
+              } catch (err: any) {
+                logger.error({ error: err.message }, 'Error persisting messaging limit')
+              }
+            }
+
             try {
               await notifyPhoneQualityChange(session.userId, session.phone || value.display_phone_number, value.event, value.current_limit)
             } catch (err: any) {

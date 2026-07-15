@@ -348,8 +348,16 @@ async function bootstrap() {
   try {
     await db.execute(sql`ALTER TABLE whatsapp_sessions ADD COLUMN IF NOT EXISTS is_coexistence BOOLEAN NOT NULL DEFAULT FALSE`);
     await db.execute(sql`ALTER TABLE whatsapp_sessions ADD COLUMN IF NOT EXISTS history_sync_status VARCHAR(20)`);
+    await db.execute(sql`ALTER TABLE whatsapp_sessions ADD COLUMN IF NOT EXISTS messaging_limit VARCHAR(20)`);
   } catch (err: any) {
     app.log.warn(`Auto-migration (whatsapp_sessions coexistence) note: ${err.message}`);
+  }
+
+  // Auto-migration: recommended send date on contact_lists (for split-into-blocks)
+  try {
+    await db.execute(sql`ALTER TABLE contact_lists ADD COLUMN IF NOT EXISTS recommended_send_date TIMESTAMP`);
+  } catch (err: any) {
+    app.log.warn(`Auto-migration (contact_lists recommended_send_date) note: ${err.message}`);
   }
 
   // Start queue workers
